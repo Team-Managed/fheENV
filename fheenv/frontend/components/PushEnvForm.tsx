@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContract } from "wagmi";
-import { cofheClient, Encryptable } from "@/lib/cofhe";
 import { generateAesKey, aesEncrypt, splitAesKeyToUint128 } from "@/lib/aes";
 import { uploadToIPFS } from "@/lib/ipfs";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
@@ -42,6 +41,7 @@ export function PushEnvForm({ projectId, envName }: Props) {
             addLog(`✅ IPFS: ${cid.slice(0, 16)}...`);
 
             addLog("⚙️  Connecting to CoFHE...");
+            const { cofheClient, Encryptable } = await import("@/lib/cofhe");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await cofheClient.connect(publicClient as any, walletClient as any);
 

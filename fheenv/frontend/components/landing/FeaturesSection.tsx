@@ -1,7 +1,7 @@
 "use client";
 import { Shield, EyeOff, Zap } from "lucide-react";
 import { SmartAccessCard } from "@/components/ui/smart-access-card";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const features = [
   {

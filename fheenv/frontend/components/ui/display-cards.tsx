@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 export interface DisplayCardProps {
   className?: string;

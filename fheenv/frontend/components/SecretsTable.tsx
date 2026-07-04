@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContract } from "wagmi";
-import { FheTypes } from "@cofhe/sdk";
-import { cofheClient, Encryptable } from "@/lib/cofhe";
 import { generateAesKey, aesEncrypt, aesDecrypt, joinUint128ToAesKey, splitAesKeyToUint128 } from "@/lib/aes";
 import { fetchFromIPFS, uploadToIPFS } from "@/lib/ipfs";
 import { parseEnv, serializeEnv } from "@/lib/envParser";
@@ -55,6 +53,7 @@ export function SecretsTable({ projectId, envName }: Props) {
         setLoading(true); setError(null); setSecrets(null);
         try {
             setLoadingMsg("Connecting to CoFHE…");
+            const { cofheClient, FheTypes } = await import("@/lib/cofhe");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await cofheClient.connect(publicClient as any, walletClient as any);
             setLoadingMsg("Creating FHE permit…");
@@ -149,6 +148,7 @@ export function SecretsTable({ projectId, envName }: Props) {
 
             // 4. FHE-encrypt new key halves
             setSaveMsg("FHE-encrypting AES key…");
+            const { cofheClient, Encryptable } = await import("@/lib/cofhe");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await cofheClient.connect(publicClient as any, walletClient as any);
             const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Terminal } from "lucide-react";
 
@@ -16,10 +16,10 @@ const PlaintextEnv = () => (
   >
     <div className="text-slate-600 mb-3 font-medium"># .env.production — Local Secrets</div>
     {[
-      { key: "DATABASE_URL",       val: "postgres://user:pass@localhost:5432/db" },
+      { key: "DATABASE_URL", val: "postgres://user:pass@localhost:5432/db" },
       { key: "NEXT_PUBLIC_API_KEY", val: "pk_live_123456789abcdef" },
-      { key: "OPENAI_API_KEY",     val: "sk-proj-987654321xyzabc" },
-      { key: "STRIPE_SECRET_KEY",  val: "sk_live_AbCdEfGhIjKlMnOp" },
+      { key: "OPENAI_API_KEY", val: "sk-proj-987654321xyzabc" },
+      { key: "STRIPE_SECRET_KEY", val: "sk_live_AbCdEfGhIjKlMnOp" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
         <span style={{ color: "#2DD4BF" }}>{key}</span>
@@ -42,10 +42,10 @@ const EncryptedEnv = () => (
   >
     <div className="text-slate-600 mb-3 font-medium"># .env.production — FHE Encrypted Vault 🔒</div>
     {[
-      { key: "DATABASE_URL",       val: "0x8f2a4b9c7d3e1f5a…" },
+      { key: "DATABASE_URL", val: "0x8f2a4b9c7d3e1f5a…" },
       { key: "NEXT_PUBLIC_API_KEY", val: "0x1a2b3c4d5e6f7a8b…" },
-      { key: "OPENAI_API_KEY",     val: "0xf1e2d3c4b5a69788…" },
-      { key: "STRIPE_SECRET_KEY",  val: "0x9a8b7c6d5e4f3a2b…" },
+      { key: "OPENAI_API_KEY", val: "0xf1e2d3c4b5a69788…" },
+      { key: "STRIPE_SECRET_KEY", val: "0x9a8b7c6d5e4f3a2b…" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
         <span style={{ color: "#2DD4BF" }}>{key}</span>
@@ -114,13 +114,13 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
     let alive = true;
     const wait = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
     (async () => {
-      await wait(400);   if (!alive) return; setStep(1);  // type "fheenv create"
-      await wait(700);   if (!alive) return; setStep(2);  // create done
-      await wait(800);   if (!alive) return; setStep(3);  // type "fheenv push"
-      await wait(800);   if (!alive) return; setStep(4);  // encrypting…
-      await wait(1400);  if (!alive) return; setStep(5);  // type "fheenv pull"
-      await wait(800);   if (!alive) return; setStep(6);  // decrypting…
-      await wait(3500);  if (!alive) return; setStep(0);  // reset
+      await wait(400); if (!alive) return; setStep(1);  // type "fheenv create"
+      await wait(700); if (!alive) return; setStep(2);  // create done
+      await wait(800); if (!alive) return; setStep(3);  // type "fheenv push"
+      await wait(800); if (!alive) return; setStep(4);  // encrypting…
+      await wait(1400); if (!alive) return; setStep(5);  // type "fheenv pull"
+      await wait(800); if (!alive) return; setStep(6);  // decrypting…
+      await wait(3500); if (!alive) return; setStep(0);  // reset
     })();
     return () => { alive = false; };
   }, [step]);
