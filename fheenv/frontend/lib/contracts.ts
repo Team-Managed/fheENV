@@ -10,7 +10,7 @@ export const REGISTRY_ABI = parseAbi([
   "function createProject(string name) returns (uint256)",
   "function addOwner(uint256 projectId, address newOwner)",
   "function transferOwnership(uint256 projectId, address newOwner)",
-  "function updateEnvironment(uint256 projectId, string envName, tuple(uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyHigh, tuple(uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyLow, string blobCid, uint256 expectedVersion)",
+  "function updateEnvironment(uint256 projectId, string envName, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyHigh, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyLow, string blobCid, uint256 expectedVersion)",
   "function grantAccess(uint256 projectId, string envName, address member)",
   "function batchGrantAccess(uint256 projectId, string envName, address[] members)",
   "function revokeAccess(uint256 projectId, string envName, address member)",
