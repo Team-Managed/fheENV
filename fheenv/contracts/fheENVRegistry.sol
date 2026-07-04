@@ -90,9 +90,26 @@ contract fheENVRegistry {
         emit OwnerAdded(projectId, newOwner);
     }
 
+    /// @notice Transfer primary ownership to a new address. Revokes the caller's owner status.
+    /// @dev    Use addOwner first if you want to add without removing yourself.
+    function transferOwnership(uint256 projectId, address newOwner)
+        external
+        projectExists(projectId)
+        onlyProjectOwner(projectId)
+    {
+        require(newOwner != address(0), "Invalid address");
+        require(newOwner != msg.sender, "Already owner");
+        owners[projectId][newOwner] = true;
+        owners[projectId][msg.sender] = false;
+        projects[projectId].primaryOwner = newOwner;
+        emit OwnerAdded(projectId, newOwner);
+    }
+
     // ─── Environment Management ───────────────────────────────────────────────
 
-    /// @notice Normalize env name to hash to prevent case collisions.
+    /// @notice Hash env name for use as a mapping key.
+    /// @dev    Case normalization (lowercase) is the caller's responsibility.
+    ///         This contract does not enforce casing — pass normalized names from the client.
     function envNameToHash(string calldata envName) public pure returns (bytes32) {
         return keccak256(bytes(envName));
     }
@@ -111,25 +128,24 @@ contract fheENVRegistry {
         Environment storage env = environments[projectId][envHash];
 
         require(env.version == expectedVersion, "Version mismatch: concurrent rotation detected");
-        require(bytes(blobCid).length > 0, "blobCid required");
+        require(bytes(blobCid).length > 0 && bytes(blobCid).length <= 128, "Invalid blobCid");
 
         euint128 keyHigh = FHE.asEuint128(inKeyHigh);
         euint128 keyLow  = FHE.asEuint128(inKeyLow);
 
-        // Contract retains access to re-grant to future members
-        FHE.allowThis(keyHigh);
-        FHE.allowThis(keyLow);
-
-        // Owner retains access
-        FHE.allow(keyHigh, msg.sender);
-        FHE.allow(keyLow, msg.sender);
-
+        // Effects — write state before FHE interactions (CEI pattern)
         env.aesKeyHigh  = keyHigh;
         env.aesKeyLow   = keyLow;
         env.blobCid     = blobCid;
         env.version     = expectedVersion + 1;
         env.updatedAt   = block.timestamp;
         env.initialized = true;
+
+        // Interactions — FHE permission grants after state is committed
+        FHE.allowThis(keyHigh);
+        FHE.allowThis(keyLow);
+        FHE.allow(keyHigh, msg.sender);
+        FHE.allow(keyLow, msg.sender);
 
         emit EnvironmentUpdated(projectId, envHash, blobCid, env.version);
     }
@@ -176,16 +192,17 @@ contract fheENVRegistry {
     }
 
     /// @notice Remove a member from the access list and emit AccessRevoked.
-    ///         IMPORTANT: CoFHE has no revokeAllow primitive — this does NOT
-    ///         cryptographically invalidate the old FHE handles. The owner MUST
-    ///         call updateEnvironment (rotation) immediately after to issue new
-    ///         ciphertext handles that the removed member never receives FHE.allow on.
+    /// @dev    CoFHE has no revokeAllow primitive — FHE cryptographic access on the current
+    ///         ciphertext handles persists until updateEnvironment() rotates the AES key.
+    ///         Until rotation, the removed member can still decrypt using their old permit.
     function revokeAccess(
         uint256 projectId,
         string calldata envName,
         address member
     ) external projectExists(projectId) onlyProjectOwner(projectId) {
         bytes32 envHash = envNameToHash(envName);
+        Environment storage env = environments[projectId][envHash];
+        require(env.initialized, "Environment not initialized");
         members[projectId][envHash][member] = false;
         emit AccessRevoked(projectId, envHash, member);
     }
@@ -200,13 +217,14 @@ contract fheENVRegistry {
             euint128 aesKeyHigh,
             euint128 aesKeyLow,
             string memory blobCid,
-            uint256 version
+            uint256 version,
+            uint256 updatedAt
         )
     {
         bytes32 envHash = envNameToHash(envName);
         Environment storage env = environments[projectId][envHash];
         require(env.initialized, "Environment not initialized");
-        return (env.aesKeyHigh, env.aesKeyLow, env.blobCid, env.version);
+        return (env.aesKeyHigh, env.aesKeyLow, env.blobCid, env.version, env.updatedAt);
     }
 
     /// @notice Check if an address has access to an environment.
