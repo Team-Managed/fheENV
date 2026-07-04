@@ -142,6 +142,24 @@ const REGISTRY_ABI = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    name: "AccessGranted",
+    type: "event",
+    inputs: [
+      { name: "projectId", type: "uint256", indexed: true },
+      { name: "envHash", type: "bytes32", indexed: true },
+      { name: "member", type: "address", indexed: true },
+    ],
+  },
+  {
+    name: "AccessRevoked",
+    type: "event",
+    inputs: [
+      { name: "projectId", type: "uint256", indexed: true },
+      { name: "envHash", type: "bytes32", indexed: true },
+      { name: "member", type: "address", indexed: true },
+    ],
+  },
 ] as const;
 
 // ── Read helpers ───────────────────────────────────────────────────────────────
@@ -325,13 +343,6 @@ export async function getActiveMembers(
   envName: string,
   publicClient: PublicClient,
 ): Promise<Address[]> {
-  // keccak256("AccessGranted(uint256,bytes32,address)")
-  const grantedTopic =
-    "0x7901bc0b5970f2d4954caeb7f443382e198a9eca0bd48cf52d65413ab9e2b971" as `0x${string}`;
-  // keccak256("AccessRevoked(uint256,bytes32,address)")
-  const revokedTopic =
-    "0x44fde7990b0868c66623a80253e32e4fd439aaf2775eb1a94b4d5862f42d1aa4" as `0x${string}`;
-
   const envHash = (await publicClient.readContract({
     address: registryAddress,
     abi: REGISTRY_ABI,
@@ -339,33 +350,37 @@ export async function getActiveMembers(
     args: [envName],
   })) as `0x${string}`;
 
-  const projectIdHex = ("0x" +
-    projectId.toString(16).padStart(64, "0")) as `0x${string}`;
+  const grantedEvent = REGISTRY_ABI.find(
+    (x) => x.type === "event" && x.name === "AccessGranted",
+  ) as (typeof REGISTRY_ABI)[number] & { type: "event" };
+  const revokedEvent = REGISTRY_ABI.find(
+    (x) => x.type === "event" && x.name === "AccessRevoked",
+  ) as (typeof REGISTRY_ABI)[number] & { type: "event" };
 
   const [grantedLogs, revokedLogs] = await Promise.all([
     publicClient.getLogs({
       address: registryAddress,
-      topics: [grantedTopic, projectIdHex, envHash],
+      event: grantedEvent,
+      args: { projectId, envHash } as Record<string, unknown>,
       fromBlock: 0n,
     }),
     publicClient.getLogs({
       address: registryAddress,
-      topics: [revokedTopic, projectIdHex, envHash],
+      event: revokedEvent,
+      args: { projectId, envHash } as Record<string, unknown>,
       fromBlock: 0n,
     }),
   ]);
 
   const granted = new Set<Address>(
     grantedLogs
-      .map((l) => l.topics[3])
-      .filter(Boolean)
-      .map((t) => ("0x" + t!.slice(26)) as Address),
+      .map((l) => (l.args as Record<string, unknown>).member as Address | undefined)
+      .filter(Boolean) as Address[],
   );
   const revoked = new Set<Address>(
     revokedLogs
-      .map((l) => l.topics[3])
-      .filter(Boolean)
-      .map((t) => ("0x" + t!.slice(26)) as Address),
+      .map((l) => (l.args as Record<string, unknown>).member as Address | undefined)
+      .filter(Boolean) as Address[],
   );
 
   return [...granted].filter((addr) => !revoked.has(addr));
