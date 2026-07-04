@@ -33,27 +33,36 @@ program
   });
 
 // ── fheenv init ───────────────────────────────────────────────────────────────
-// Defaults: registry + chain baked in for Sepolia deployment.
-// RPC and Pinata JWT fall back to FHEENV_RPC / FHEENV_PINATA_JWT env vars.
+// All network values baked in — only --name is required.
 const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
-const SEPOLIA_RPC      = "https://rpc.sepolia.org";
+const SEPOLIA_RPC = "https://rpc.sepolia.org";
 const SEPOLIA_CHAIN_ID = 11155111;
+const DEFAULT_PINATA_JWT =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwODI3NGZlZS1kNTFmLTQ2NzQtOTEwZS0wOGNmMGFhNGJkMjkiLCJlbWFpbCI6Imt1bmFsbWFuaXNoc2hhaEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNDliMTYzZDUxMjU1MjY1MDY2MDQiLCJzY29wZWRLZXlTZWNyZXQiOiI2ODE1ODQ1NDEzNGNiNTliZTE1NTNiMjkxYmIyMGM0ODFkZjJmMjdmM2RhNjYwMDA2Y2JhMDdhMDE5NzIwNjUyIiwiZXhwIjoxODE0Njk1MjQ1fQ.UpixYrkIJsvFW-xWwzXd22aW2pzZDh7aKy-TR54fCOU";
 
 program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
   .requiredOption("-n, --name <name>", "Project name")
-  .option("-r, --registry <address>", "Registry contract address", SEPOLIA_REGISTRY)
-  .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
+  .option(
+    "-r, --registry <address>",
+    "Registry contract address",
+    SEPOLIA_REGISTRY,
+  )
+  .option(
+    "--rpc <url>",
+    "RPC URL (or set FHEENV_RPC)",
+    process.env.FHEENV_RPC ?? SEPOLIA_RPC,
+  )
   .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
-  .option("--pinata-jwt <jwt>", "Pinata JWT (or set FHEENV_PINATA_JWT)", process.env.FHEENV_PINATA_JWT)
+  .option(
+    "--pinata-jwt <jwt>",
+    "Pinata JWT for IPFS uploads",
+    process.env.FHEENV_PINATA_JWT ?? DEFAULT_PINATA_JWT,
+  )
   .option("-e, --env <envName>", "Default environment name", "production")
   .action(async (opts) => {
     try {
-      if (!opts.pinataJwt) {
-        console.error(chalk.red("Error: Pinata JWT is required. Pass --pinata-jwt or set FHEENV_PINATA_JWT."));
-        process.exit(1);
-      }
       await initCommand({
         name: opts.name,
         registry: opts.registry,
