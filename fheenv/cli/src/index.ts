@@ -90,9 +90,7 @@ program
 // ── fheenv run ────────────────────────────────────────────────────────────────
 program
   .command("run")
-  .description(
-    "Decrypt env and inject into child process env (no disk write)"
-  )
+  .description("Decrypt env and inject into child process env (no disk write)")
   .option("-e, --env <envName>", "Environment name", "production")
   .allowUnknownOption()
   .passThroughOptions()
@@ -127,7 +125,7 @@ team
 team
   .command("remove")
   .description(
-    "Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)"
+    "Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)",
   )
   .requiredOption("-m, --member <address>", "Ethereum address to revoke")
   .option("-e, --env <envName>", "Environment name", "production")

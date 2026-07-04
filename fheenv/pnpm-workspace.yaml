@@ -1,0 +1,19 @@
+packages:
+  - "frontend"
+  - "cli"
+
+minimumReleaseAgeExclude:
+  - viem@2.54.3
+
+# Hardhat 2 and some CoFHE packages use phantom deps (e.g. @openzeppelin/contracts).
+# shamefullyHoist gives npm-style flat node_modules so they resolve correctly.
+shamefullyHoist: true
+
+# pnpm v11: allowBuilds replaces onlyBuiltDependencies.
+allowBuilds:
+  "@fhenixprotocol/cofhe-contracts": true
+  bufferutil: true
+  keccak: true
+  secp256k1: true
+  sharp: false
+  utf-8-validate: true

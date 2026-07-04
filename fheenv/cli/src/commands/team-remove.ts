@@ -10,7 +10,9 @@ export interface TeamRemoveOptions {
   member: string;
 }
 
-export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> {
+export async function teamRemoveCommand(
+  opts: TeamRemoveOptions,
+): Promise<void> {
   const config = readConfig();
   const envName = opts.envName ?? "production";
 
@@ -21,9 +23,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
   // ⚠️  ROTATION REQUIRED — prominently warn the user
   console.log();
   console.log(
-    chalk.bgRed.white.bold(
-      " ⚠️  SECURITY NOTICE: KEY ROTATION REQUIRED "
-    )
+    chalk.bgRed.white.bold(" ⚠️  SECURITY NOTICE: KEY ROTATION REQUIRED "),
   );
   console.log(
     chalk.red(
@@ -32,8 +32,8 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
         "YOU MUST rotate the environment after revoking access:\n" +
         "  1. Run `fheenv push` to re-encrypt with a NEW AES key\n" +
         "  2. This generates fresh FHE ciphertexts the removed member cannot decrypt\n" +
-        "  3. Only then is your secret material truly inaccessible to them\n"
-    )
+        "  3. Only then is your secret material truly inaccessible to them\n",
+    ),
   );
   console.log();
 
@@ -41,7 +41,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
   try {
     const { publicClient, walletClient } = createClients(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
 
     await revokeAccess(
@@ -50,18 +50,16 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       envName,
       opts.member as Address,
       walletClient,
-      publicClient
+      publicClient,
     );
 
     spinner.succeed(
-      chalk.yellow(
-        `Access revoked for ${opts.member} from env "${envName}"`
-      )
+      chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`),
     );
     console.log(
       chalk.bgYellow.black.bold(
-        " → ACTION REQUIRED: Run `fheenv push` NOW to rotate the AES key. "
-      )
+        " → ACTION REQUIRED: Run `fheenv push` NOW to rotate the AES key. ",
+      ),
     );
   } catch (err) {
     spinner.fail("Revoke access failed");

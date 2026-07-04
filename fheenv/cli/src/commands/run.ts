@@ -16,7 +16,9 @@ export interface RunOptions {
 
 export async function runCommand(opts: RunOptions): Promise<void> {
   if (opts.command.length === 0) {
-    throw new Error("No command provided. Usage: fheenv run -- <command> [args...]");
+    throw new Error(
+      "No command provided. Usage: fheenv run -- <command> [args...]",
+    );
   }
 
   const config = readConfig();
@@ -26,7 +28,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
   try {
     const { publicClient, walletClient } = createClients(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
@@ -36,7 +38,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
       registryAddress,
       projectId,
       envName,
-      publicClient
+      publicClient,
     );
 
     if (!envData.blobCid) {
@@ -44,21 +46,25 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     }
 
     spinner.text = "Decrypting AES key via threshold network...";
-    const fheClient = await createFheClient(config.chainId, publicClient, walletClient);
+    const fheClient = await createFheClient(
+      config.chainId,
+      publicClient,
+      walletClient,
+    );
 
     const keyHigh = await fheDecryptUint128(
       fheClient,
       envData.aesKeyHigh,
       config.chainId,
       publicClient,
-      walletClient
+      walletClient,
     );
     const keyLow = await fheDecryptUint128(
       fheClient,
       envData.aesKeyLow,
       config.chainId,
       publicClient,
-      walletClient
+      walletClient,
     );
 
     const aesKey = joinUint128ToAesKeyNode(keyHigh, keyLow);
@@ -83,7 +89,9 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     });
 
     child.on("error", (err) => {
-      process.stderr.write(`fheenv run: failed to start process: ${err.message}\n`);
+      process.stderr.write(
+        `fheenv run: failed to start process: ${err.message}\n`,
+      );
       process.exit(1);
     });
 

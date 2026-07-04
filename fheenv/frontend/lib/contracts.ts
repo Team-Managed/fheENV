@@ -20,4 +20,5 @@ export const REGISTRY_ABI = [
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
 ] as const;
 
-export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "") as `0x${string}`;
+export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS ||
+  "") as `0x${string}`;

@@ -15,7 +15,7 @@ describe("fheENVRegistry", function () {
   let registry: any;
 
   const AES_KEY_HIGH = BigInt("0xdeadbeefcafebabe1234567890abcdef");
-  const AES_KEY_LOW  = BigInt("0xfeedfacebadf00d123456789abcdef01");
+  const AES_KEY_LOW = BigInt("0xfeedfacebadf00d123456789abcdef01");
   const BLOB_CID = "QmTestBlobCID123456789";
 
   async function encryptAesKey() {
@@ -61,7 +61,9 @@ describe("fheENVRegistry", function () {
   });
 
   it("3. rejects empty project name", async function () {
-    await expect(registry.createProject("")).to.be.revertedWith("Name: 1-64 chars");
+    await expect(registry.createProject("")).to.be.revertedWith(
+      "Name: 1-64 chars",
+    );
   });
 
   it("4. allows adding a co-owner", async function () {
@@ -78,7 +80,10 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     const { high, low } = await encryptAesKey();
     await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, 0n);
-    const [, , blobCid, version, updatedAt] = await registry.getEnvironment(0n, "production");
+    const [, , blobCid, version, updatedAt] = await registry.getEnvironment(
+      0n,
+      "production",
+    );
     expect(version).to.equal(1n);
     expect(blobCid).to.equal(BLOB_CID);
     expect(updatedAt).to.be.gt(0n);
@@ -99,7 +104,9 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     const { high, low } = await encryptAesKey();
     await expect(
-      registry.connect(stranger).updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
+      registry
+        .connect(stranger)
+        .updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
     ).to.be.revertedWith("Not a project owner");
   });
 
@@ -108,7 +115,9 @@ describe("fheENVRegistry", function () {
   it("8. grants access to a member", async function () {
     await setupWithEnv();
     await registry.grantAccess(0n, "production", member.address);
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(true);
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
+      true,
+    );
   });
 
   it("9. batch grants access to multiple members", async function () {
@@ -126,7 +135,9 @@ describe("fheENVRegistry", function () {
     await registry.revokeAccess(0n, "production", member.address);
     // hasAccess returns false — FHE cryptographic access on old ciphertext
     // persists until rotation (intended behavior per contract comments)
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(false);
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
+      false,
+    );
   });
 
   it("11. rejects access grant by non-owner", async function () {
@@ -138,8 +149,9 @@ describe("fheENVRegistry", function () {
 
   it("12. rejects batch with >100 members", async function () {
     await setupWithEnv();
-    const addrs = Array.from({ length: 101 }, (_, i) =>
-      `0x${(i + 1).toString(16).padStart(40, "0")}`,
+    const addrs = Array.from(
+      { length: 101 },
+      (_, i) => `0x${(i + 1).toString(16).padStart(40, "0")}`,
     );
     await expect(
       registry.batchGrantAccess(0n, "production", addrs),
@@ -161,4 +173,3 @@ describe("fheENVRegistry", function () {
     expect(h1).to.not.equal(h3);
   });
 });
-

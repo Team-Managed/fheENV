@@ -17,9 +17,19 @@ export async function aesEncrypt(
   keyBytes: Uint8Array,
 ): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
-  const cryptoKey = await crypto.subtle.importKey("raw", keyBytes.buffer as ArrayBuffer, ALGO, false, ["encrypt"]);
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes.buffer as ArrayBuffer,
+    ALGO,
+    false,
+    ["encrypt"],
+  );
   const encoded = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt({ name: ALGO, iv }, cryptoKey, encoded);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: ALGO, iv },
+    cryptoKey,
+    encoded,
+  );
   const combined = new Uint8Array(IV_LENGTH + ciphertext.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(ciphertext), IV_LENGTH);
@@ -33,8 +43,18 @@ export async function aesDecrypt(
   const combined = Uint8Array.from(atob(base64Blob), (c) => c.charCodeAt(0));
   const iv = combined.slice(0, IV_LENGTH);
   const ciphertext = combined.slice(IV_LENGTH);
-  const cryptoKey = await crypto.subtle.importKey("raw", keyBytes.buffer as ArrayBuffer, ALGO, false, ["decrypt"]);
-  const decrypted = await crypto.subtle.decrypt({ name: ALGO, iv }, cryptoKey, ciphertext);
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes.buffer as ArrayBuffer,
+    ALGO,
+    false,
+    ["decrypt"],
+  );
+  const decrypted = await crypto.subtle.decrypt(
+    { name: ALGO, iv },
+    cryptoKey,
+    ciphertext,
+  );
   return new TextDecoder().decode(decrypted);
 }
 

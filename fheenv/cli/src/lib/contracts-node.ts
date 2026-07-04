@@ -18,7 +18,7 @@ export interface InEuint128 {
 
 export interface EnvironmentData {
   aesKeyHigh: bigint; // ctHash of encrypted AES key high 128 bits
-  aesKeyLow: bigint;  // ctHash of encrypted AES key low 128 bits
+  aesKeyLow: bigint; // ctHash of encrypted AES key low 128 bits
   blobCid: string;
   version: bigint;
   updatedAt: bigint;
@@ -132,7 +132,7 @@ export async function getEnvironment(
   registryAddress: Address,
   projectId: bigint,
   envName: string,
-  publicClient: PublicClient
+  publicClient: PublicClient,
 ): Promise<EnvironmentData> {
   const result = (await publicClient.readContract({
     address: registryAddress,
@@ -156,7 +156,7 @@ export async function createProject(
   registryAddress: Address,
   name: string,
   walletClient: WalletClient,
-  publicClient: PublicClient
+  publicClient: PublicClient,
 ): Promise<bigint> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
@@ -182,12 +182,12 @@ export async function createProject(
   }
 
   // Fallback: read nextProjectId - 1
-  const next = await publicClient.readContract({
+  const next = (await publicClient.readContract({
     address: registryAddress,
     abi: REGISTRY_ABI,
     functionName: "nextProjectId",
     args: [0n],
-  }) as bigint;
+  })) as bigint;
   return next - 1n;
 }
 
@@ -202,7 +202,7 @@ export async function updateEnvironment(
     expectedVersion: bigint;
   },
   walletClient: WalletClient,
-  publicClient: PublicClient
+  publicClient: PublicClient,
 ): Promise<void> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
@@ -231,7 +231,7 @@ export async function grantAccess(
   envName: string,
   member: Address,
   walletClient: WalletClient,
-  publicClient: PublicClient
+  publicClient: PublicClient,
 ): Promise<void> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
@@ -253,7 +253,7 @@ export async function revokeAccess(
   envName: string,
   member: Address,
   walletClient: WalletClient,
-  publicClient: PublicClient
+  publicClient: PublicClient,
 ): Promise<void> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");

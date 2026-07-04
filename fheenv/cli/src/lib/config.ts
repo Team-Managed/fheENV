@@ -14,9 +14,7 @@ export interface FheEnvConfig {
 export function readConfig(): FheEnvConfig {
   const configPath = path.resolve(process.cwd(), CONFIG_FILE);
   if (!fs.existsSync(configPath)) {
-    throw new Error(
-      `No ${CONFIG_FILE} found. Run \`fheenv init\` first.`
-    );
+    throw new Error(`No ${CONFIG_FILE} found. Run \`fheenv init\` first.`);
   }
   return JSON.parse(fs.readFileSync(configPath, "utf-8"));
 }
@@ -24,6 +22,6 @@ export function readConfig(): FheEnvConfig {
 export function writeConfig(config: FheEnvConfig): void {
   fs.writeFileSync(
     path.resolve(process.cwd(), CONFIG_FILE),
-    JSON.stringify(config, null, 2)
+    JSON.stringify(config, null, 2),
   );
 }

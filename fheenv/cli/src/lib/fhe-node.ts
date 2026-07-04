@@ -21,14 +21,14 @@ type AnyCofheClient = any;
 export async function createFheClient(
   chainId: number,
   publicClient: PublicClient,
-  walletClient: WalletClient
+  walletClient: WalletClient,
 ): Promise<AnyCofheClient> {
   const chain = getChainById(chainId);
   if (!chain) {
     throw new Error(
       `Unsupported chain ${chainId}. Supported: ${Object.keys(
-        require("@cofhe/sdk/chains").chains
-      ).join(", ")}`
+        require("@cofhe/sdk/chains").chains,
+      ).join(", ")}`,
     );
   }
   // @ts-ignore
@@ -44,7 +44,7 @@ export async function fheEncryptUint128(
   client: AnyCofheClient,
   value: bigint,
   account: `0x${string}`,
-  chainId: number
+  chainId: number,
 ): Promise<FheEncryptedUint128> {
   const [encrypted] = await client
     .encryptInputs([Encryptable.uint128(value)])
@@ -64,13 +64,13 @@ export async function fheDecryptUint128(
   ctHash: bigint,
   chainId: number,
   publicClient: PublicClient,
-  walletClient: WalletClient
+  walletClient: WalletClient,
 ): Promise<bigint> {
   // @ts-ignore — viem version mismatch
   const permit = await client.permits.getOrCreateSelfPermit(
     publicClient as any,
     walletClient as any,
-    chainId
+    chainId,
   );
   const value = await client
     .decryptForView(ctHash, FheTypes.Uint128)

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fheENV — FHE BUIDL Mumbai</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ── Core Variables & Reset ──────────────────────── */
+        :root {
+            --bg: #030712;
+            /* Slate-950 deep dark */
+            --surface: rgba(30, 41, 59, 0.4);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --surface-hover: rgba(51, 65, 85, 0.5);
+
+            --indigo: #6366f1;
+            --indigo-glow: rgba(99, 102, 241, 0.2);
+
+            --green: #10b981;
+            --red: #ef4444;
+            --amber: #f59e0b;
+
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+
+            --font-sans: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Ambient Background & Noise ──────────────────── */
+        #bg-iframe {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+
+        /* ── Presentation Deck ───────────────────────────── */
+        #deck {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            perspective: 1000px;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 80px;
+            opacity: 0;
+            transform: translateX(40px) scale(0.98);
+            pointer-events: none;
+            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .slide.exit-left {
+            opacity: 0;
+            transform: translateX(-40px) scale(0.98);
+        }
+
+        /* ── Navigation UI ───────────────────────────────── */
+        #dots {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dot.active {
+            background: var(--indigo);
+            transform: scale(1.5);
+            box-shadow: 0 0 12px var(--indigo-glow);
+        }
+
+        #progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            z-index: 10;
+            background: linear-gradient(90deg, var(--indigo), #a855f7);
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ── Typography & Components ─────────────────────── */
+        .eyebrow {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #818cf8;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .headline {
+            font-size: clamp(40px, 5vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--surface-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--surface-border);
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 1: Cover
+    ══════════════════════════════════════════════════════ */
+        .cover-logo {
+            font-family: var(--font-mono);
+            font-size: clamp(72px, 8vw, 120px);
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .cover-fhe {
+            color: var(--indigo);
+        }
+
+        .cover-env {
+            color: var(--text-main);
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 0.5ch;
+            height: 1em;
+            background-color: var(--indigo);
+            vertical-align: baseline;
+            animation: blink 1.2s steps(2, start) infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 2: Slack Leak
+    ══════════════════════════════════════════════════════ */
+        .slack-ui {
+            background: #1a1d21;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.8);
+            font-family: var(--font-sans);
+        }
+
+        .slack-header {
+            background: #222529;
+            border-bottom: 1px solid #383a3d;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slack-header img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .slack-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .msg {
+            display: flex;
+            gap: 16px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s;
+        }
+
+        .msg.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .secret-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            background: #0f1115;
+            border: 1px solid #2b2d31;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: #a1a1aa;
+        }
+
+        .secret-logo {
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        /* Leak Alert */
+        #leak-alert {
+            position: absolute;
+            inset: -4px;
+            z-index: 10;
+            border: 2px solid var(--red);
+            border-radius: 16px;
+            background: rgba(239, 68, 68, 0.1);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        #leak-alert.show {
+            opacity: 1;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 3: Competitors
+    ══════════════════════════════════════════════════════ */
+        .company-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            width: 100%;
+        }
+
+        .comp-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .comp-warning {
+            margin-top: auto;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            color: #fca5a5;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 4: Architecture Flow
+    ══════════════════════════════════════════════════════ */
+        .flow-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .flow-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .flow-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .arrow-down {
+            margin: 8px auto;
+            opacity: 0.5;
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 5: Code & Math
+    ══════════════════════════════════════════════════════ */
+        .mac-window {
+            background: #0f111a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .mac-header {
+            background: #1e293b;
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .code-content {
+            padding: 24px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .syn-keyword {
+            color: #c084fc;
+        }
+
+        .syn-func {
+            color: #60a5fa;
+        }
+
+        .syn-comment {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        /* ══════════════════════════════════════════════════════
+       SLIDE 6: Features
+    ══════════════════════════════════════════════════════ */
+        .feat-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feat-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .feat-list li i {
+            color: var(--indigo);
+        }
+    </style>
+</head>
+
+<body>
+
+    <iframe id="bg-iframe" src="../../gradientool-d5b41172.html"></iframe>
+    <div id="progress"></div>
+
+    <div id="deck">
+
+        <!-- 1. COVER -->
+        <div class="slide active">
+            <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+                <div class="eyebrow"><i data-lucide="shield-check" style="width: 16px;"></i> FHE BUIDL Mumbai /
+                    Analytics Track</div>
+                <div class="cover-logo">
+                    <span class="cover-fhe">fhe</span><span class="cover-env">ENV</span>
+                </div>
+                <p style="font-size: 24px; color: var(--text-muted); max-width: 600px; line-height: 1.5;">
+                    Your .env, encrypted. Not even us.<span class="cursor-blink"></span>
+                </p>
+
+                <div style="display: flex; gap: 16px; margin-top: 24px;">
+                    <span class="badge"><img src="https://img.logo.dev/nextjs.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                            style="height:20px; filter: invert(1);"> Next.js</span>
+                    <span class="badge" style="border-color: rgba(99,102,241,0.5);"><img
+                            src="https://avatars.githubusercontent.com/u/137282759?v=4"
+                            style="height:22px; width:22px; border-radius:5px;"> Fhenix</span>
+                    <span class="badge"><i data-lucide="terminal" style="width: 14px;"></i> CLI App</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. THE PROBLEM (SLACK) -->
+        <div class="slide">
+            <div style="display: flex; gap: 80px; width: 100%; max-width: 1200px; align-items: center;">
+                <div style="flex: 1;">
+                    <div class="eyebrow"><i data-lucide="alert-triangle" style="width: 16px;"></i> The Reality</div>
+                    <h2 class="headline">You've done this. Today.</h2>
+                    <p style="font-size: 18px; color: var(--text-muted); line-height: 1.6; margin-bottom: 32px;">
+                        80% of breaches start with a stolen credential. Slack is where secrets go to die.
+                    </p>
+                    <div class="glass-card" style="padding: 24px; border-left: 4px solid var(--red);">
+                        <h4 style="color: white; margin-bottom: 8px;">The Slack Problem</h4>
+                        <p style="font-size: 14px; color: var(--text-muted);">
+                            Once pasted, your keys live on Slack's servers and backups. Forever.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="flex: 1.2; position: relative;">
+                    <!-- Fake Slack UI -->
+                    <div class="slack-ui">
+                        <div class="slack-header">
+                            <img src="https://img.logo.dev/slack.com?token=pk_BShsdiwDTuyRVVBW5GadOg" alt="Slack">
+                            <span style="font-weight: 600; font-size: 14px;"># dev-team</span>
+                        </div>
+                        <div class="slack-body">
+
+                            <div class="msg visible" id="s2-msg1">
+                                <div class="avatar" style="background: #fbbf24; color: #000;">P</div>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Priya <span
+                                            style="font-weight: 400; color: #71717a; font-size: 12px;">10:24 AM</span>
+                                    </div>
+                                    <div style="color: #d4d4d8; font-size: 15px;" id="s2-text1">hey can you send the
+                                        prod DB password real quick?</div>
+                                </div>
+                            </div>
+
+                            <div class="msg visible" id="s2-msg2" style="position: relative;">
+                                <div id="leak-alert" class="show">
+                                    <span class="badge"
+                                        style="background: var(--red); color: white; border: none; font-size: 14px; font-weight: 800; letter-spacing: 0.1em; box-shadow: 0 8px 32px rgba(239,68,68,0.5);"><i
+                                            data-lucide="siren" style="width: 16px;"></i> SECRETS EXPOSED</span>
+                                </div>
+                                <div class="avatar" style="background: #818cf8; color: #fff;">R</div>
+                                <div style="width: 100%;">
+                                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Rohan <span
+                                            style="font-weight: 400; color: #71717a; font-size: 12px;">10:25 AM</span>
+                                    </div>
+                                    <div style="color: #d4d4d8; font-size: 15px;" id="s2-text2">sure, here's everything
+                                        updated:</div>
+
+                                    <div id="s2-secrets"
+                                        style="opacity: 1; transition: opacity 0.3s; margin-top: 12px;">
+                                        <div class="secret-line">
+                                            <img src="https://img.logo.dev/openai.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                                                class="secret-logo">
+                                            <span>OPENAI_KEY=sk-proj-T7Xv9q...</span>
+                                        </div>
+                                        <div class="secret-line">
+                                            <img src="https://img.logo.dev/stripe.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                                                class="secret-logo" style="background: white; padding: 2px;">
+                                            <span>STRIPE_SECRET=sk_live_abc1...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. COMPETITORS -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center;">
+                <div class="eyebrow"><i data-lucide="server-crash" style="width: 16px;"></i> The Illusion of Security
+                </div>
+                <h2 class="headline" style="text-align: center;">Same problem, different server.</h2>
+
+                <div class="company-grid" style="margin-top: 48px;" id="comp-grid">
+
+                    <div class="glass-card comp-card"
+                        style="opacity: 0; transform: translateY(20px); transition: all 0.5s;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <img src="https://img.logo.dev/doppler.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                                style="height: 44px; border-radius: 10px;">
+                            <h3 style="font-size: 20px; font-weight: 700;">Doppler</h3>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+                            Their servers hold your raw keys. One breach, millions exposed.
+                        </p>
+                        <div class="comp-warning"><i data-lucide="eye"></i> Doppler can read your keys.</div>
+                    </div>
+
+                    <div class="glass-card comp-card"
+                        style="opacity: 0; transform: translateY(20px); transition: all 0.5s 0.15s;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <img src="https://img.logo.dev/hashicorp.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                                style="height: 44px; border-radius: 10px;">
+                            <h3 style="font-size: 20px; font-weight: 700;">HashiCorp Vault</h3>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+                            Admins have full plaintext access. Insider threat is real.
+                        </p>
+                        <div class="comp-warning"><i data-lucide="eye"></i> Admins can read your keys.</div>
+                    </div>
+
+                    <div class="glass-card comp-card"
+                        style="opacity: 0; transform: translateY(20px); transition: all 0.5s 0.3s;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <img src="https://img.logo.dev/aws.amazon.com?token=pk_BShsdiwDTuyRVVBW5GadOg"
+                                style="height: 44px; border-radius: 10px; background: white; padding: 5px;">
+                            <h3 style="font-size: 20px; font-weight: 700;">AWS Secrets</h3>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+                            Cloud lock-in. US subpoenas hand over your production secrets.
+                        </p>
+                        <div class="comp-warning"><i data-lucide="eye"></i> Cloud ops can read your keys.</div>
+                    </div>
+
+                </div>
+
+                <div
+                    style="margin-top: 48px; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.1); padding: 16px 32px; border-radius: 12px; color: #fca5a5; font-weight: 600; letter-spacing: 0.05em;">
+                    ALL EXISTING SOLUTIONS REQUIRE TRUSTING A COMPANY. TRUST IS A LIABILITY.
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SOLUTION / ARCHITECTURE -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1100px;">
+                <div class="eyebrow"><i data-lucide="network" style="width: 16px;"></i> The Paradigm Shift</div>
+                <h2 class="headline">Mathematically private.</h2>
+
+                <div class="flow-grid" style="margin-top: 48px;">
+
+                    <!-- Legacy -->
+                    <div class="glass-card" style="border-color: rgba(239,68,68,0.3);">
+                        <div class="eyebrow" style="color: #fca5a5;"><i data-lucide="x-circle" style="width: 16px;"></i>
+                            The "Trust Us" Model</div>
+
+                        <div class="flow-col" style="margin-top: 24px;">
+                            <div class="flow-box"><span
+                                    style="font-family:var(--font-mono);font-size:11px;background:#1a2e1a;border:1px solid #22c55e;color:#22c55e;padding:2px 6px;border-radius:4px;">.env</span>
+                                Developer writes secrets</div>
+                            <i data-lucide="arrow-down" class="arrow-down"></i>
+                            <div class="flow-box"
+                                style="background: rgba(239,68,68,0.15); border-color: var(--red); color: white;">
+                                <i data-lucide="server"></i> Centralized Server stores Plaintext
+                            </div>
+                            <i data-lucide="arrow-down" class="arrow-down"></i>
+                            <div class="flow-box"><i data-lucide="users"></i> Teammate fetches</div>
+                        </div>
+                    </div>
+
+                    <!-- fheENV -->
+                    <div class="glass-card" style="border-color: rgba(99,102,241,0.5);">
+                        <div class="eyebrow" style="color: #a5b4fc;"><i data-lucide="check-circle-2"
+                                style="width: 16px;"></i> The fheENV Math Model</div>
+
+                        <div class="flow-col" style="margin-top: 24px;">
+                            <div class="flow-box"><span
+                                    style="font-family:var(--font-mono);font-size:11px;background:#1a2e1a;border:1px solid #22c55e;color:#22c55e;padding:2px 6px;border-radius:4px;">.env</span>
+                                Encrypted with AES-GCM locally</div>
+                            <i data-lucide="arrow-down" class="arrow-down"></i>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div class="flow-box" style="text-align:center; display:block;">
+                                    <div style="font-weight: 600; color: #94a3b8; font-size: 12px; margin-bottom: 4px;">
+                                        <span
+                                            style="font-family:var(--font-mono);font-size:10px;background:#1a2e1a;border:1px solid #22c55e;color:#22c55e;padding:1px 5px;border-radius:3px;">.env</span>
+                                        Blob
+                                    </div>
+                                    <div style="color: white;"><i data-lucide="box"></i> IPFS</div>
+                                </div>
+                                <div class="flow-box"
+                                    style="text-align:center; display:block; background: rgba(99,102,241,0.15); border-color: var(--indigo);">
+                                    <div style="font-weight: 600; color: #a5b4fc; font-size: 12px; margin-bottom: 4px;">
+                                        AES Key (FHE)</div>
+                                    <div style="color: white; display:flex; align-items:center; gap:6px;"><img
+                                            src="https://avatars.githubusercontent.com/u/137282759?v=4"
+                                            style="height:20px;width:20px;border-radius:4px;"> Fhenix Chain</div>
+                                </div>
+                            </div>
+                            <i data-lucide="arrow-down" class="arrow-down"></i>
+                            <div class="flow-box"><i data-lucide="key"></i> Teammate FHE-decrypts key locally</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. WHY FHE -->
+        <div class="slide">
+            <div style="display: flex; gap: 64px; max-width: 1200px; width: 100%; align-items: center;">
+                <div style="flex: 1;">
+                    <div class="eyebrow"><i data-lucide="cpu" style="width: 16px;"></i> Cryptographic primitive</div>
+                    <h2 class="headline" style="font-size: 48px;">Why FHE is the only way.</h2>
+                    <p style="font-size: 16px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px;">
+                        ZK proves you know a secret — it can't selectively share it. AES needs a trusted key server.
+                    </p>
+                    <p style="font-size: 16px; color: var(--text-main); line-height: 1.6; font-weight: 600;">
+                        FHE stores the AES key encrypted on-chain. Access is granted cryptographically — to wallet
+                        addresses only.
+                    </p>
+                </div>
+
+                <div style="flex: 1.1;">
+                    <div class="mac-window">
+                        <div class="mac-header">
+                            <div class="mac-btn" style="background: #ff5f56;"></div>
+                            <div class="mac-btn" style="background: #ffbd2e;"></div>
+                            <div class="mac-btn" style="background: #27c93f;"></div>
+                            <span
+                                style="font-family: var(--font-mono); font-size: 12px; color: #64748b; margin-left: 12px; display:flex; align-items:center; gap:6px;"><img
+                                    src="https://avatars.githubusercontent.com/u/137282759?v=4"
+                                    style="height:18px;width:18px;border-radius:4px;"> fheENVRegistry.sol</span>
+                        </div>
+                        <div class="code-content">
+                            <span class="syn-comment">// 1. Store AES-256 key as FHE ciphertext</span><br>
+                            <span class="syn-keyword">euint128</span> aesKeyHigh = <span
+                                class="syn-func">FHE.asEuint128</span>(inHigh);<br>
+                            <span class="syn-keyword">euint128</span> aesKeyLow = <span
+                                class="syn-func">FHE.asEuint128</span>(inLow);<br>
+                            <br>
+                            <span class="syn-comment">// 2. Grant teammate access on-chain</span><br>
+                            <span class="syn-func">FHE.allow</span>(aesKeyHigh, teammateAddress);<br>
+                            <br>
+                            <span class="syn-comment">// 3. Revoke access instantly</span><br>
+                            <span class="syn-func">FHE.revokeAllow</span>(aesKeyHigh, formerMember);<br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. WHAT WE BUILD -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center;">
+                <div class="eyebrow"><i data-lucide="layers" style="width: 16px;"></i> The Setup</div>
+                <h2 class="headline">What we'll build.</h2>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; margin-top: 32px;">
+
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                            <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;"><i
+                                    data-lucide="scroll-text" style="color: var(--indigo);"></i></div>
+                            <h3 style="font-size: 20px; font-weight: 700;">Smart Contract</h3>
+                        </div>
+                        <ul class="feat-list">
+                            <li><i data-lucide="check" style="color: var(--green);"></i> <code>fheENVRegistry.sol</code>
+                            </li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Optimistic rotation locking
+                            </li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Batch team access granting</li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Live on Sepolia Testnet</li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                            <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;"><i
+                                    data-lucide="layout-dashboard" style="color: var(--indigo);"></i></div>
+                            <h3 style="font-size: 20px; font-weight: 700;">Web Dashboard</h3>
+                        </div>
+                        <ul class="feat-list">
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Next.js + Wagmi</li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Browser-side encryption</li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Team management UI</li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> On-chain audit logs</li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                            <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;"><i
+                                    data-lucide="terminal-square" style="color: var(--indigo);"></i></div>
+                            <h3 style="font-size: 20px; font-weight: 700;">Developer CLI</h3>
+                        </div>
+                        <ul class="feat-list">
+                            <li><i data-lucide="check" style="color: var(--green);"></i>
+                                <code>fheenv push --env prod</code>
+                            </li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i>
+                                <code>fheenv pull --env prod</code>
+                            </li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i>
+                                <code>fheenv run -- node app</code>
+                            </li>
+                            <li><i data-lucide="check" style="color: var(--green);"></i> Headless CI/CD ready</li>
+                        </ul>
+                    </div>
+
+                </div>
+
+
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation Dots -->
+    <div id="dots"></div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const TOTAL_SLIDES = 6;
+        let currentSlide = 0;
+        let isAnimating = false;
+
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.getElementById('dots');
+        const progressBar = document.getElementById('progress');
+
+        // Build dots
+        for (let i = 0; i < TOTAL_SLIDES; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => navigateTo(i));
+            dotsContainer.appendChild(dot);
+        }
+
+        function navigateTo(index) {
+            if (isAnimating || index === currentSlide || index < 0 || index >= TOTAL_SLIDES) return;
+            isAnimating = true;
+
+            const previousSlide = currentSlide;
+            currentSlide = index;
+
+            slides[previousSlide].classList.add('exit-left');
+            slides[previousSlide].classList.remove('active');
+
+            setTimeout(() => {
+                slides[previousSlide].classList.remove('exit-left');
+                slides[currentSlide].classList.add('active');
+
+                updateNavigation();
+                triggerSlideAnimations(currentSlide);
+
+                setTimeout(() => { isAnimating = false; }, 600);
+            }, 50); // slight delay to ensure DOM updates
+        }
+
+        function updateNavigation() {
+            progressBar.style.width = `${((currentSlide + 1) / TOTAL_SLIDES) * 100}%`;
+            document.querySelectorAll('.dot').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === currentSlide);
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); navigateTo(currentSlide + 1); }
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); navigateTo(currentSlide - 1); }
+        });
+
+        // Click navigation
+        document.getElementById('deck').addEventListener('click', (e) => {
+            if (!e.target.closest('.dot')) navigateTo(currentSlide + 1);
+        });
+
+        // --- Slide Specific Animations ---
+
+        function triggerSlideAnimations(index) {
+            // Slide 3: Stagged competitors
+            if (index === 2) {
+                const cards = document.querySelectorAll('#comp-grid .comp-card');
+                cards.forEach(c => c.style.opacity = '1');
+                cards.forEach(c => c.style.transform = 'translateY(0)');
+            }
+        }
+
+        // Initial Setup
+        updateNavigation();
+
+    </script>
+</body>
+
+</html>

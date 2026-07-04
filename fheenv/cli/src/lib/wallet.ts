@@ -21,7 +21,7 @@ export function loadAccountKey(): `0x${string}` {
     return keyfile.privateKey as `0x${string}`;
   }
   throw new Error(
-    "No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY."
+    "No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY.",
   );
 }
 

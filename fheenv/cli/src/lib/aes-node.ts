@@ -22,7 +22,10 @@ export function aesDecryptNode(base64Blob: string, key: Buffer): string {
   const combined = Buffer.from(base64Blob, "base64");
   const iv = combined.slice(0, IV_LENGTH);
   const authTag = combined.slice(combined.length - AUTH_TAG_LENGTH);
-  const ciphertext = combined.slice(IV_LENGTH, combined.length - AUTH_TAG_LENGTH);
+  const ciphertext = combined.slice(
+    IV_LENGTH,
+    combined.length - AUTH_TAG_LENGTH,
+  );
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(authTag);
   return Buffer.concat([

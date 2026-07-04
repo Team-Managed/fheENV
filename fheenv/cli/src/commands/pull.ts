@@ -24,7 +24,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
   try {
     const { publicClient, walletClient } = createClients(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
@@ -35,7 +35,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
       registryAddress,
       projectId,
       envName,
-      publicClient
+      publicClient,
     );
 
     if (!envData.blobCid) {
@@ -43,22 +43,27 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
     }
 
     // 2. Connect FHE client and decrypt key halves via threshold network
-    spinner.text = "Decrypting AES key via threshold network (requires permit)...";
-    const fheClient = await createFheClient(config.chainId, publicClient, walletClient);
+    spinner.text =
+      "Decrypting AES key via threshold network (requires permit)...";
+    const fheClient = await createFheClient(
+      config.chainId,
+      publicClient,
+      walletClient,
+    );
 
     const keyHigh = await fheDecryptUint128(
       fheClient,
       envData.aesKeyHigh,
       config.chainId,
       publicClient,
-      walletClient
+      walletClient,
     );
     const keyLow = await fheDecryptUint128(
       fheClient,
       envData.aesKeyLow,
       config.chainId,
       publicClient,
-      walletClient
+      walletClient,
     );
 
     // 3. Reconstruct AES key
@@ -74,10 +79,14 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
     fs.writeFileSync(outPath, envContent, { mode: 0o600 });
 
     spinner.succeed(
-      chalk.green(`Decrypted env written to ${outFile} (permissions: 0600)`)
+      chalk.green(`Decrypted env written to ${outFile} (permissions: 0600)`),
     );
     console.log(
-      chalk.dim(`  Version: ${envData.version} | Updated: ${new Date(Number(envData.updatedAt) * 1000).toISOString()}`)
+      chalk.dim(
+        `  Version: ${envData.version} | Updated: ${new Date(
+          Number(envData.updatedAt) * 1000,
+        ).toISOString()}`,
+      ),
     );
   } catch (err) {
     spinner.fail("Pull failed");

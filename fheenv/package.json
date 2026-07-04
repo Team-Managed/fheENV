@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "description": "fheENV monorepo — FHE-encrypted environment variable manager",
   "private": true,
-  "workspaces": [
-    "frontend",
-    "cli"
-  ],
+  "packageManager": "pnpm@11.8.0",
   "scripts": {
     "test": "hardhat test",
     "compile": "hardhat compile",

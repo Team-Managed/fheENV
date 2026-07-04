@@ -27,13 +27,16 @@ export async function initCommand(opts: InitOptions): Promise<void> {
 
   const spinner = ora(`Creating project "${opts.name}" on-chain...`).start();
   try {
-    const { publicClient, walletClient } = createClients(opts.rpcUrl, opts.chainId);
+    const { publicClient, walletClient } = createClients(
+      opts.rpcUrl,
+      opts.chainId,
+    );
 
     const projectId = await createProject(
       opts.registry as Address,
       opts.name,
       walletClient,
-      publicClient
+      publicClient,
     );
 
     const config: FheEnvConfig = {
@@ -45,9 +48,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
     };
     writeConfig(config);
 
-    spinner.succeed(
-      chalk.green(`Project created! ID: ${projectId}`)
-    );
+    spinner.succeed(chalk.green(`Project created! ID: ${projectId}`));
     console.log(chalk.cyan("  .fheenv.json written to current directory."));
     if (opts.envName) {
       console.log(chalk.dim(`  Next: fheenv push --env ${opts.envName}`));

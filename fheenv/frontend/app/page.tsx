@@ -77,7 +77,7 @@ function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () =>
       className="text-left border border-gray-800 rounded-xl p-5 bg-gray-900 hover:border-indigo-600 transition-colors">
       <p className="text-xl mb-1">📁</p>
       <p className="font-semibold">{project[0]}</p>
-      <p className="text-xs text-gray-500 font-mono mt-1">{project[1].slice(0,6)}...{project[1].slice(-4)}</p>
+      <p className="text-xs text-gray-500 font-mono mt-1">{project[1].slice(0, 6)}...{project[1].slice(-4)}</p>
       <p className="text-xs text-gray-600 mt-2">Project #{projectId.toString()}</p>
     </button>
   );

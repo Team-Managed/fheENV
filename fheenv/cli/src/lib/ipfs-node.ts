@@ -6,7 +6,7 @@ const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs";
 export async function uploadToIPFSNode(
   content: string,
   name: string,
-  jwt: string
+  jwt: string,
 ): Promise<string> {
   const formData = new FormData();
   formData.append("file", Buffer.from(content), { filename: name });
@@ -19,7 +19,7 @@ export async function uploadToIPFSNode(
         ...formData.getHeaders(),
         Authorization: `Bearer ${jwt}`,
       },
-    }
+    },
   );
   return res.data.IpfsHash as string;
 }

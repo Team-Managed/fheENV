@@ -19,7 +19,9 @@ export function parseEnvNode(raw: string): Record<string, string> {
 }
 
 export function serializeEnvNode(vars: Record<string, string>): string {
-  return Object.entries(vars)
-    .map(([k, v]) => `${k}=${v}`)
-    .join("\n") + "\n";
+  return (
+    Object.entries(vars)
+      .map(([k, v]) => `${k}=${v}`)
+      .join("\n") + "\n"
+  );
 }

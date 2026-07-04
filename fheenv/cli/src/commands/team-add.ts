@@ -22,7 +22,7 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
   try {
     const { publicClient, walletClient } = createClients(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
 
     await grantAccess(
@@ -31,16 +31,18 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
       envName,
       opts.member as Address,
       walletClient,
-      publicClient
+      publicClient,
     );
 
     spinner.succeed(
-      chalk.green(`Access granted: ${opts.member} can now pull env "${envName}"`)
+      chalk.green(
+        `Access granted: ${opts.member} can now pull env "${envName}"`,
+      ),
     );
     console.log(
       chalk.dim(
-        `  They will need your CID to fetch the blob, and their address must have FHE decryption access.`
-      )
+        `  They will need your CID to fetch the blob, and their address must have FHE decryption access.`,
+      ),
     );
   } catch (err) {
     spinner.fail("Grant access failed");
