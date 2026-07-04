@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useReadContract } from "wagmi";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
 import { WalletButton } from "@/components/WalletButton";
+import { AuditLog } from "@/components/AuditLog";
 
 const ENVIRONMENTS = [
     { name: "development", label: "Development", indicator: "🟢" },
@@ -72,6 +73,11 @@ export default function ProjectPage({ params }: Props) {
             <p className="text-xs text-gray-700 mt-6 text-center">
                 Project #{id}
             </p>
+
+            {/* Audit Log */}
+            <div className="mt-10">
+                <AuditLog projectId={projectId} />
+            </div>
         </main>
     );
 }

@@ -110,6 +110,24 @@ const REGISTRY_ABI = [
     inputs: [
       { internalType: "uint256", name: "projectId", type: "uint256" },
       { internalType: "string", name: "envName", type: "string" },
+      { internalType: "address[]", name: "newMembers", type: "address[]" },
+    ],
+    name: "batchGrantAccess",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "string", name: "envName", type: "string" }],
+    name: "envNameToHash",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "projectId", type: "uint256" },
+      { internalType: "string", name: "envName", type: "string" },
       { internalType: "address", name: "member", type: "address" },
     ],
     name: "hasAccess",
@@ -267,4 +285,86 @@ export async function revokeAccess(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+}
+
+export async function batchGrantAccess(
+  registryAddress: Address,
+  projectId: bigint,
+  envName: string,
+  members: Address[],
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+): Promise<void> {
+  if (members.length === 0) return;
+  const account = walletClient.account;
+  if (!account) throw new Error("WalletClient has no account");
+
+  // Contract caps batch at 100; split if needed
+  for (let i = 0; i < members.length; i += 100) {
+    const chunk = members.slice(i, i + 100);
+    const hash = await walletClient.writeContract({
+      address: registryAddress,
+      abi: REGISTRY_ABI,
+      functionName: "batchGrantAccess",
+      args: [projectId, envName, chunk],
+      account,
+      chain: walletClient.chain ?? null,
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
+  }
+}
+
+/**
+ * Returns the set of addresses currently in the access list for an env
+ * by replaying AccessGranted / AccessRevoked events from the chain.
+ */
+export async function getActiveMembers(
+  registryAddress: Address,
+  projectId: bigint,
+  envName: string,
+  publicClient: PublicClient,
+): Promise<Address[]> {
+  // keccak256("AccessGranted(uint256,bytes32,address)")
+  const grantedTopic =
+    "0x09e6e0c47b7f93bff32dc52b11bd4741c75a41c8b82cb83d46aa8d81c1944093" as `0x${string}`;
+  // keccak256("AccessRevoked(uint256,bytes32,address)")
+  const revokedTopic =
+    "0x94a1fc5b0b8ce9fd61e3caacf7b5e1c1b9e3e7c8e4e2c3d0a1b9c8e7f6d5e4d" as `0x${string}`;
+
+  const envHash = await publicClient.readContract({
+    address: registryAddress,
+    abi: REGISTRY_ABI,
+    functionName: "envNameToHash",
+    args: [envName],
+  }) as `0x${string}`;
+
+  const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
+
+  const [grantedLogs, revokedLogs] = await Promise.all([
+    publicClient.getLogs({
+      address: registryAddress,
+      topics: [grantedTopic, projectIdHex, envHash],
+      fromBlock: 0n,
+    }),
+    publicClient.getLogs({
+      address: registryAddress,
+      topics: [revokedTopic, projectIdHex, envHash],
+      fromBlock: 0n,
+    }),
+  ]);
+
+  const granted = new Set<Address>(
+    grantedLogs
+      .map((l) => l.topics[3])
+      .filter(Boolean)
+      .map((t) => ("0x" + t!.slice(26)) as Address),
+  );
+  const revoked = new Set<Address>(
+    revokedLogs
+      .map((l) => l.topics[3])
+      .filter(Boolean)
+      .map((t) => ("0x" + t!.slice(26)) as Address),
+  );
+
+  return [...granted].filter((addr) => !revoked.has(addr));
 }

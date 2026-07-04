@@ -8,6 +8,7 @@ import { pullCommand } from "./commands/pull";
 import { runCommand } from "./commands/run";
 import { teamAddCommand } from "./commands/team-add";
 import { teamRemoveCommand } from "./commands/team-remove";
+import { rotateCommand } from "./commands/rotate";
 
 const program = new Command();
 
@@ -132,6 +133,23 @@ team
   .action(async (opts) => {
     try {
       await teamRemoveCommand({ member: opts.member, envName: opts.env });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv rotate ─────────────────────────────────────────────────────────────
+program
+  .command("rotate")
+  .description(
+    "Rotate AES key: re-encrypt env with a fresh key and re-grant access to all current members",
+  )
+  .option("-e, --env <envName>", "Environment name", "production")
+  .option("-f, --file <path>", "Path to .env file to re-encrypt", ".env")
+  .action(async (opts) => {
+    try {
+      await rotateCommand({ envName: opts.env, envFile: opts.file });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
