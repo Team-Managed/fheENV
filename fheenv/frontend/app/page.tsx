@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { useRouter } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
@@ -10,6 +10,10 @@ export default function Dashboard() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  // Prevent hydration mismatch: isConnected is false on server, true on client
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const clientConnected = mounted && isConnected;
 
   const { data: nextId } = useReadContract({
     address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "nextProjectId",
@@ -26,7 +30,7 @@ export default function Dashboard() {
           <p className="text-gray-500 text-sm mt-1">Your .env, encrypted. Not even us.</p>
         </div>
         <div className="flex items-center gap-3">
-          {isConnected && (
+          {clientConnected && (
             <button onClick={() => setShowModal(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
               + New Project
@@ -36,7 +40,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {!isConnected ? (
+      {!clientConnected ? (
         <div className="text-center py-20 text-gray-600">
           <p className="text-5xl mb-4">🔐</p>
           <p className="text-lg">Connect your wallet to manage projects.</p>

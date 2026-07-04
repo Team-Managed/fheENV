@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from "wagmi";
 import { sepolia } from "wagmi/chains";
 
@@ -8,6 +9,16 @@ export function WalletButton() {
     const { disconnect } = useDisconnect();
     const chainId = useChainId();
     const { switchChain } = useSwitchChain();
+
+    // Prevent SSR/client hydration mismatch — wallet state is always
+    // unknown on the server, so hold rendering until mounted on the client.
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    if (!mounted) return (
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium opacity-0 pointer-events-none">
+            Connect Wallet
+        </button>
+    );
 
     const isWrongNetwork = isConnected && chainId !== sepolia.id;
 
