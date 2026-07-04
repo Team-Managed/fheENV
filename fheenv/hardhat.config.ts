@@ -1,8 +1,9 @@
-import { HardhatUserConfig } from "hardhat/config";
-import * as dotenv from "dotenv";
-dotenv.config();
+import { defineConfig } from "hardhat/config";
+import cofhePlugin from "@cofhe/hardhat-3-plugin";
+import "dotenv/config";
 
-const config: HardhatUserConfig = {
+export default defineConfig({
+  plugins: [cofhePlugin],
   solidity: {
     version: "0.8.25",
     settings: { optimizer: { enabled: true, runs: 200 } },
@@ -19,5 +20,8 @@ const config: HardhatUserConfig = {
         }
       : {}),
   },
-};
-export default config;
+  cofhe: {
+    logMocks: false,
+    gasWarning: false,
+  },
+});
