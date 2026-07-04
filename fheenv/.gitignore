@@ -4,4 +4,8 @@ typechain-types/
 artifacts/
 cache/
 .env
-*.env.local
+.env.*
+!.env.example
+coverage/
+coverage.json
+gasReporterOutput.json
