@@ -35,7 +35,8 @@ program
 // ── fheenv init ───────────────────────────────────────────────────────────────
 // All network values baked in — only --name is required.
 const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
-const SEPOLIA_RPC = "https://rpc.sepolia.org";
+const SEPOLIA_RPC =
+  "https://sepolia.infura.io/v3/2f47822adc2844fbae3a6fe15913289f";
 const SEPOLIA_CHAIN_ID = 11155111;
 const DEFAULT_PINATA_JWT =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwODI3NGZlZS1kNTFmLTQ2NzQtOTEwZS0wOGNmMGFhNGJkMjkiLCJlbWFpbCI6Imt1bmFsbWFuaXNoc2hhaEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNDliMTYzZDUxMjU1MjY1MDY2MDQiLCJzY29wZWRLZXlTZWNyZXQiOiI2ODE1ODQ1NDEzNGNiNTliZTE1NTNiMjkxYmIyMGM0ODFkZjJmMjdmM2RhNjYwMDA2Y2JhMDdhMDE5NzIwNjUyIiwiZXhwIjoxODE0Njk1MjQ1fQ.UpixYrkIJsvFW-xWwzXd22aW2pzZDh7aKy-TR54fCOU";
