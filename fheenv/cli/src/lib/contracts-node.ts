@@ -327,10 +327,10 @@ export async function getActiveMembers(
 ): Promise<Address[]> {
   // keccak256("AccessGranted(uint256,bytes32,address)")
   const grantedTopic =
-    "0x09e6e0c47b7f93bff32dc52b11bd4741c75a41c8b82cb83d46aa8d81c1944093" as `0x${string}`;
+    "0x7901bc0b5970f2d4954caeb7f443382e198a9eca0bd48cf52d65413ab9e2b971" as `0x${string}`;
   // keccak256("AccessRevoked(uint256,bytes32,address)")
   const revokedTopic =
-    "0x94a1fc5b0b8ce9fd61e3caacf7b5e1c1b9e3e7c8e4e2c3d0a1b9c8e7f6d5e4d" as `0x${string}`;
+    "0x44fde7990b0868c66623a80253e32e4fd439aaf2775eb1a94b4d5862f42d1aa4" as `0x${string}`;
 
   const envHash = (await publicClient.readContract({
     address: registryAddress,
