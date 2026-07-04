@@ -1,121 +1,119 @@
 name: Release CLI
 
 on:
-    push:
-        tags:
-            - "v*.*.*"
+  push:
+    tags:
+      - "v*.*.*"
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    build:
-        name: Build (${{ matrix.os }})
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                include:
-                    - os: ubuntu-latest
-                      platform: linux
-                      artifact: fheenv-linux
-                      binary: fheenv
-                    - os: macos-latest
-                      platform: macos
-                      artifact: fheenv-macos
-                      binary: fheenv
-                    - os: windows-latest
-                      platform: windows
-                      artifact: fheenv-windows
-                      binary: fheenv.exe
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: fheenv-linux
+            binary: fheenv
+          - os: macos-latest
+            platform: macos
+            artifact: fheenv-macos
+            binary: fheenv
+          - os: windows-latest
+            platform: windows
+            artifact: fheenv-windows
+            binary: fheenv.exe
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: latest
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-            - name: Install dependencies
-              working-directory: fheenv/cli
-              run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        working-directory: fheenv/cli
+        run: pnpm install --frozen-lockfile
 
-            - name: Build TypeScript
-              working-directory: fheenv/cli
-              run: pnpm run build
+      - name: Build TypeScript
+        working-directory: fheenv/cli
+        run: pnpm run build
 
-            - name: Bundle into standalone binary (Linux / macOS)
-              if: matrix.platform != 'windows'
-              working-directory: fheenv/cli
-              run: |
-                  npx pkg dist/index.js \
-                    --target node20-${{ matrix.platform }}-x64 \
-                    --output ${{ matrix.binary }} \
-                    --compress GZip
+      - name: Bundle into standalone binary (Linux / macOS)
+        if: matrix.platform != 'windows'
+        working-directory: fheenv/cli
+        run: |
+          npx @yao-pkg/pkg dist/index.js \
+            --target node22-${{ matrix.platform }}-x64 \
+            --output ${{ matrix.binary }}
 
-            - name: Bundle into standalone binary (Windows)
-              if: matrix.platform == 'windows'
-              working-directory: fheenv/cli
-              shell: pwsh
-              run: |
-                  npx pkg dist/index.js `
-                    --target node20-win-x64 `
-                    --output ${{ matrix.binary }} `
-                    --compress GZip
+      - name: Bundle into standalone binary (Windows)
+        if: matrix.platform == 'windows'
+        working-directory: fheenv/cli
+        shell: pwsh
+        run: |
+          npx @yao-pkg/pkg dist/index.js `
+            --target node22-win-x64 `
+            --output ${{ matrix.binary }}
 
-            - name: Upload artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: ${{ matrix.artifact }}
-                  path: fheenv/cli/${{ matrix.binary }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: fheenv/cli/${{ matrix.binary }}
 
-    release:
-        name: Create GitHub Release
-        needs: build
-        runs-on: ubuntu-latest
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Download all artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  path: dist/
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
 
-            - name: Rename binaries for release
-              run: |
-                  mv dist/fheenv-linux/fheenv   dist/fheenv-linux
-                  mv dist/fheenv-macos/fheenv   dist/fheenv-macos
-                  mv dist/fheenv-windows/fheenv.exe dist/fheenv-windows.exe
+      - name: Rename binaries for release
+        run: |
+          mv dist/fheenv-linux/fheenv   dist/fheenv-linux
+          mv dist/fheenv-macos/fheenv   dist/fheenv-macos
+          mv dist/fheenv-windows/fheenv.exe dist/fheenv-windows.exe
 
-            - name: Create release
-              uses: softprops/action-gh-release@v2
-              with:
-                  name: fheenv ${{ github.ref_name }}
-                  body: |
-                      ## fheenv ${{ github.ref_name }}
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: fheenv ${{ github.ref_name }}
+          body: |
+            ## fheenv ${{ github.ref_name }}
 
-                      Zero-trust `.env` secrets manager powered by FHE.
+            Zero-trust `.env` secrets manager powered by FHE.
 
-                      ### Download
+            ### Download
 
-                      | Platform | File |
-                      |----------|------|
-                      | macOS (Intel + Apple Silicon) | `fheenv-macos` |
-                      | Linux x64 | `fheenv-linux` |
-                      | Windows x64 | `fheenv-windows.exe` |
+            | Platform | File |
+            |----------|------|
+            | macOS (Intel + Apple Silicon) | `fheenv-macos` |
+            | Linux x64 | `fheenv-linux` |
+            | Windows x64 | `fheenv-windows.exe` |
 
-                      See the [README](https://github.com/${{ github.repository }}#installation) for full installation instructions.
-                  files: |
-                      dist/fheenv-linux
-                      dist/fheenv-macos
-                      dist/fheenv-windows.exe
-                  draft: false
-                  prerelease: ${{ contains(github.ref_name, '-') }}
+            See the [README](https://github.com/${{ github.repository }}#installation) for full installation instructions.
+          files: |
+            dist/fheenv-linux
+            dist/fheenv-macos
+            dist/fheenv-windows.exe
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
