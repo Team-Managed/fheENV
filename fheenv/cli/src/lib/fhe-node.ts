@@ -66,16 +66,11 @@ export async function fheDecryptUint128(
   publicClient: PublicClient,
   walletClient: WalletClient,
 ): Promise<bigint> {
-  // @ts-ignore — viem version mismatch
-  const permit = await client.permits.getOrCreateSelfPermit(
-    publicClient as any,
-    walletClient as any,
-    chainId,
-  );
+  // getOrCreateSelfPermit uses the already-connected client — no args needed
+  await client.permits.getOrCreateSelfPermit();
   const value = await client
     .decryptForView(ctHash, FheTypes.Uint128)
     .setChainId(chainId)
-    .withPermit(permit)
     .execute();
   return value as bigint;
 }

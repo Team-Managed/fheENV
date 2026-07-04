@@ -1,0 +1,6 @@
+# Never commit secrets — even demo ones
+.env
+.env.*
+!.env.example
+.fheenv.json
+.env.decrypted

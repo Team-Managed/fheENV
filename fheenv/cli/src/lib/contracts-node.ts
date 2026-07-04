@@ -136,7 +136,7 @@ const REGISTRY_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    inputs: [],
     name: "nextProjectId",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
@@ -190,8 +190,9 @@ export async function createProject(
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
   // Parse ProjectCreated log to get projectId
+  // keccak256("ProjectCreated(uint256,address,string)")
   const projectCreatedTopic =
-    "0x63c8a30d6de2a5c5a39c82e9a2a18e4b45e9a01fd4b42a0db01e2b4b8b1d1c2" as Hex;
+    "0x9d9ec461f162f3f4fdb9f6d189bfe13c59e48d8acd23a4c3bfcf7cc0fe4e84ed" as Hex;
 
   for (const log of receipt.logs) {
     if (log.topics[0] === projectCreatedTopic && log.topics[1]) {
@@ -204,7 +205,7 @@ export async function createProject(
     address: registryAddress,
     abi: REGISTRY_ABI,
     functionName: "nextProjectId",
-    args: [0n],
+    args: [],
   })) as bigint;
   return next - 1n;
 }
@@ -331,14 +332,15 @@ export async function getActiveMembers(
   const revokedTopic =
     "0x94a1fc5b0b8ce9fd61e3caacf7b5e1c1b9e3e7c8e4e2c3d0a1b9c8e7f6d5e4d" as `0x${string}`;
 
-  const envHash = await publicClient.readContract({
+  const envHash = (await publicClient.readContract({
     address: registryAddress,
     abi: REGISTRY_ABI,
     functionName: "envNameToHash",
     args: [envName],
-  }) as `0x${string}`;
+  })) as `0x${string}`;
 
-  const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
+  const projectIdHex = ("0x" +
+    projectId.toString(16).padStart(64, "0")) as `0x${string}`;
 
   const [grantedLogs, revokedLogs] = await Promise.all([
     publicClient.getLogs({

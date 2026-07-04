@@ -158,7 +158,9 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
     console.log(chalk.dim(`  New IPFS CID : ${blobCid}`));
     console.log(
       chalk.dim(
-        `  Members re-granted : ${activeMembers.length > 0 ? activeMembers.join(", ") : "none"}`,
+        `  Members re-granted : ${
+          activeMembers.length > 0 ? activeMembers.join(", ") : "none"
+        }`,
       ),
     );
     console.log(
