@@ -15,7 +15,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@cofhe/hardhat-plugin": "^0.6.0",
     "@fhenixprotocol/cofhe-contracts": "^0.1.4",
