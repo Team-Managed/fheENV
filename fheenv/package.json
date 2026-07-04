@@ -1,0 +1,28 @@
+{
+  "name": "fheenv",
+  "version": "1.0.0",
+  "description": "fheENV monorepo — FHE-encrypted environment variable manager",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "cli"
+  ],
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@cofhe/hardhat-plugin": "^0.6.0",
+    "@fhenixprotocol/cofhe-contracts": "^0.1.4",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.9.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

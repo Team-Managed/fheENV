@@ -1,0 +1,7 @@
+node_modules/
+dist/
+typechain-types/
+artifacts/
+cache/
+.env
+*.env.local
