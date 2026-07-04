@@ -12,22 +12,7 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   // Prevent hydration mismatch: isConnected is false on server, true on client
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    // Direct RPC sanity check — bypasses wagmi entirely
-    const rpc = process.env.NEXT_PUBLIC_SEPOLIA_RPC || "https://rpc.sepolia.org";
-    fetch(rpc, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "eth_call",
-        params: [{ to: REGISTRY_ADDRESS, data: "0xe935b7b1" /* nextProjectId() */ }, "latest"],
-      }),
-    })
-      .then(r => r.json())
-      .then(j => console.log("[fheENV] direct RPC result for nextProjectId():", j))
-      .catch(e => console.error("[fheENV] direct RPC error:", e));
-  }, []);
+  useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
 
   const { data: nextId, isLoading: loadingCount, error: countError } = useReadContract({
@@ -38,13 +23,7 @@ export default function Dashboard() {
     query: { enabled: !!REGISTRY_ADDRESS },
   });
 
-  // ── Debug: log every render so we can see what wagmi returns ──────────────
-  console.log("[fheENV] REGISTRY_ADDRESS:", REGISTRY_ADDRESS);
-  console.log("[fheENV] nextId:", nextId?.toString(), "| loading:", loadingCount, "| error:", countError?.message ?? null);
-  console.log("[fheENV] wallet:", address, "| connected:", isConnected, "| mounted:", mounted);
-
   const projectIds = Array.from({ length: Number(nextId ?? 0) }, (_, i) => BigInt(i));
-  console.log("[fheENV] projectIds:", projectIds.map(String));
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-10">
@@ -106,16 +85,12 @@ export default function Dashboard() {
 type ProjectTuple = readonly [string, string, bigint, boolean];
 
 function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () => void }) {
-  const { data: raw, error: cardError } = useReadContract({
+  const { data: raw } = useReadContract({
     address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "projects", args: [projectId],
     chainId: 11155111,
   });
-  console.log(`[fheENV] ProjectCard #${projectId}:`, raw, "error:", cardError?.message ?? null);
   const project = raw as unknown as ProjectTuple | undefined;
-  if (!project || !project[3]) {
-    console.log(`[fheENV] ProjectCard #${projectId} hidden — project[3] (exists):`, project?.[3]);
-    return null;
-  }
+  if (!project || !project[3]) return null;
   return (
     <button onClick={onClick}
       className="text-left border border-gray-800 rounded-xl p-5 bg-gray-900 hover:border-indigo-600 transition-colors">

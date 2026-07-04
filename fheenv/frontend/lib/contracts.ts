@@ -1,6 +1,12 @@
+import { parseAbi } from "viem";
+
 // InEuint128 tuple: (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature)
 // Matches compiled artifact: fheENVRegistry.json -> updateEnvironment inputs
-export const REGISTRY_ABI = [
+//
+// parseAbi converts human-readable strings to JSON ABI objects.
+// This is required because wagmi's useReadContract with the chainId parameter
+// uses a code path that calls `'name' in abiItem` — which throws on raw strings.
+export const REGISTRY_ABI = parseAbi([
   "function createProject(string name) returns (uint256)",
   "function addOwner(uint256 projectId, address newOwner)",
   "function transferOwnership(uint256 projectId, address newOwner)",
@@ -18,7 +24,7 @@ export const REGISTRY_ABI = [
   "event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
-] as const;
+]);
 
 export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS ||
   "") as `0x${string}`;
