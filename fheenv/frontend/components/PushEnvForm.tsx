@@ -74,19 +74,39 @@ export function PushEnvForm({ projectId, envName }: Props) {
     }
 
     return (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="font-semibold mb-1">Push Secrets — <span className="text-indigo-400">{envName}</span></h3>
-            <p className="text-xs text-gray-500 mb-4">Encryption happens in your browser. Nothing plaintext leaves your device.</p>
-            <textarea value={rawEnv} onChange={(e) => setRawEnv(e.target.value)}
+        <div style={{ background: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: "0.875rem", padding: "1.5rem" }}>
+            <div className="flex items-center gap-2.5 mb-5">
+                <div className="size-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(45,212,191,0.1)" }}>
+                    <span className="text-base">⬆</span>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-200">Push Secrets</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Encryption happens in your browser — plaintext never leaves your device.</p>
+                </div>
+            </div>
+            <textarea
+                value={rawEnv}
+                onChange={(e) => setRawEnv(e.target.value)}
                 placeholder={"DATABASE_URL=postgres://...\nOPENAI_KEY=sk-proj-...\nSTRIPE_SECRET=sk_live_..."}
-                rows={8} className="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 mb-4 resize-none" />
-            <button onClick={handlePush} disabled={loading || !rawEnv.trim()}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 text-white py-2 rounded-lg text-sm font-medium">
-                {loading ? "Encrypting & Pushing..." : "🔒 Encrypt & Push"}
+                rows={7}
+                className="w-full rounded-xl px-4 py-3 text-xs font-mono text-slate-300 outline-none transition-all resize-none mb-4"
+                style={{ background: "rgba(3,7,18,0.6)", border: "1px solid var(--surface-border)" }}
+                onFocus={e => (e.target.style.borderColor = "var(--aqua)")}
+                onBlur={e => (e.target.style.borderColor = "var(--surface-border)")}
+            />
+            <button
+                onClick={handlePush}
+                disabled={loading || !rawEnv.trim()}
+                className="w-full py-2.5 rounded-full text-sm font-bold transition-all disabled:opacity-40"
+                style={{ background: "var(--aqua)", color: "#030712", boxShadow: loading ? "none" : "0 0 14px var(--aqua-glow)" }}
+            >
+                {loading ? "Encrypting & Pushing…" : "Encrypt & Push →"}
             </button>
             {log.length > 0 && (
-                <div className="mt-4 bg-gray-950 rounded-lg p-3 text-xs font-mono text-gray-300 space-y-1 max-h-40 overflow-y-auto">
-                    {log.map((l, i) => <p key={i}>{l}</p>)}
+                <div className="mt-4 rounded-xl p-3.5 max-h-40 overflow-y-auto space-y-1" style={{ background: "rgba(3,7,18,0.7)", border: "1px solid var(--surface-border)" }}>
+                    {log.map((l, i) => (
+                        <p key={i} className="text-xs font-mono" style={{ color: l.startsWith("✅") ? "var(--aqua)" : l.startsWith("❌") ? "#f87171" : "var(--text-muted)" }}>{l}</p>
+                    ))}
                 </div>
             )}
         </div>

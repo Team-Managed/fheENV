@@ -122,52 +122,44 @@ export function AuditLog({ projectId }: Props) {
     }, [publicClient, projectId]);
 
     return (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-gray-400">
+        <div style={{ background: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: "0.875rem", padding: "1.5rem" }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: "var(--text-muted)" }}>
                 Audit Log
-            </h3>
+            </p>
 
             {loading && (
-                <p className="text-xs text-gray-500 animate-pulse">
-                    Loading on-chain events…
+                <p className="text-xs font-mono animate-pulse" style={{ color: "var(--aqua)" }}>
+                    Fetching on-chain events…
                 </p>
             )}
-
-            {error && <p className="text-xs text-red-400">{error}</p>}
-
+            {error && <p className="text-xs text-red-400 font-mono">{error}</p>}
             {!loading && !error && logs.length === 0 && (
-                <p className="text-xs text-gray-600">No events yet for this project.</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>No events recorded yet for this project.</p>
             )}
 
             {!loading && logs.length > 0 && (
                 <ol className="space-y-3">
                     {logs.map((l, i) => (
-                        <li key={i} className="flex items-start gap-3 text-xs">
-                            <span
-                                className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${l.dot}`}
-                            />
+                        <li key={i} className="flex items-start gap-3">
+                            <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${l.dot}`} />
                             <div className="flex-1 min-w-0">
-                                <span className={`font-medium ${l.color}`}>{l.label}</span>
+                                <span className={`text-xs font-semibold ${l.color}`}>{l.label}</span>
                                 {l.detail && (
-                                    <span className="ml-2 text-gray-500 font-mono truncate">
+                                    <span className="ml-2 text-xs font-mono truncate" style={{ color: "var(--text-muted)" }}>
                                         {l.detail}
                                     </span>
                                 )}
-                                <div className="flex items-center gap-2 mt-0.5 text-gray-600">
-                                    <span>Block {l.blockNumber.toString()}</span>
+                                <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                                    <span className="font-mono">#{l.blockNumber.toString()}</span>
                                     {l.timestamp && (
-                                        <span>
-                                            ·{" "}
-                                            {formatDistanceToNow(new Date(l.timestamp * 1000), {
-                                                addSuffix: true,
-                                            })}
-                                        </span>
+                                        <span>· {formatDistanceToNow(new Date(l.timestamp * 1000), { addSuffix: true })}</span>
                                     )}
                                     <a
                                         href={`https://sepolia.etherscan.io/tx/${l.txHash}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="hover:text-indigo-400 transition-colors"
+                                        className="transition-colors"
+                                        style={{ color: "var(--aqua)" }}
                                     >
                                         ↗ tx
                                     </a>

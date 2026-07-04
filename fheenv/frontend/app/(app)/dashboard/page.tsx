@@ -2,15 +2,14 @@
 import { useState, useEffect } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { useRouter } from "next/navigation";
-import { WalletButton } from "@/components/WalletButton";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
+import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen } from "lucide-react";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  // Prevent hydration mismatch: isConnected is false on server, true on client
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
@@ -26,44 +25,70 @@ export default function Dashboard() {
   const projectIds = Array.from({ length: Number(nextId ?? 0) }, (_, i) => BigInt(i));
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10">
+    <>
+      {/* Page header */}
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-3xl font-bold"><span className="text-indigo-400">fhe</span>ENV</h1>
-          <p className="text-gray-500 text-sm mt-1">Your .env, encrypted. Not even us.</p>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Projects</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Each project holds isolated environments with FHE-encrypted secrets.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          {clientConnected && (
-            <button onClick={() => setShowModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-              + New Project
-            </button>
-          )}
-          <WalletButton />
-        </div>
+        {clientConnected && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
+            style={{
+              background: "var(--aqua)",
+              color: "#030712",
+              boxShadow: "0 0 16px var(--aqua-glow)",
+            }}
+          >
+            <Plus className="size-4" />
+            New Project
+          </button>
+        )}
       </div>
 
+      {/* States */}
       {!clientConnected ? (
-        <div className="text-center py-20 text-gray-600">
-          <p className="text-5xl mb-4">🔐</p>
-          <p className="text-lg">Connect your wallet to manage projects.</p>
+        <div className="text-center py-24 flex flex-col items-center gap-4">
+          <div className="size-14 rounded-full flex items-center justify-center" style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}>
+            <FolderLock className="size-6" style={{ color: "var(--aqua)" }} />
+          </div>
+          <div>
+            <p className="font-semibold text-slate-200">Connect your wallet</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Your projects are tied to your wallet address.</p>
+          </div>
         </div>
       ) : loadingCount ? (
-        <div className="text-center py-20 text-gray-600">
-          <p className="animate-pulse">Loading projects from Sepolia…</p>
+        <div className="text-center py-24 flex flex-col items-center gap-3" style={{ color: "var(--text-muted)" }}>
+          <Loader2 className="size-6 animate-spin" style={{ color: "var(--aqua)" }} />
+          <p className="text-sm">Reading from Sepolia…</p>
         </div>
       ) : countError ? (
-        <div className="text-center py-20 text-red-500 text-sm font-mono">
-          <p className="mb-2">⚠ Failed to read from contract</p>
-          <p className="text-xs text-gray-600 break-all">{countError.message}</p>
-          <p className="text-xs text-gray-600 mt-2">Registry: {REGISTRY_ADDRESS}</p>
+        <div className="rounded-xl p-6 flex items-start gap-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <AlertCircle className="size-5 text-red-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-400">Contract read failed</p>
+            <p className="text-xs mt-1 font-mono break-all" style={{ color: "var(--text-muted)" }}>{countError.message}</p>
+          </div>
         </div>
       ) : projectIds.length === 0 ? (
-        <div className="text-center py-20 text-gray-600">
-          <p className="text-5xl mb-4">📦</p>
-          <p>No projects yet.</p>
-          <button onClick={() => setShowModal(true)} className="mt-4 text-indigo-400 hover:underline text-sm">
-            Create your first project →
+        <div className="text-center py-24 flex flex-col items-center gap-4">
+          <div className="size-14 rounded-full flex items-center justify-center" style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}>
+            <FolderOpen className="size-6" style={{ color: "var(--text-muted)" }} />
+          </div>
+          <div>
+            <p className="font-semibold text-slate-300">No projects yet</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Create your first project to start encrypting secrets.</p>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-1 text-sm font-medium transition-colors"
+            style={{ color: "var(--aqua)" }}
+          >
+            Create project →
           </button>
         </div>
       ) : (
@@ -78,7 +103,7 @@ export default function Dashboard() {
         <CreateProjectModal onClose={() => setShowModal(false)}
           onCreated={(id) => { setShowModal(false); router.push(`/project/${id}`); }} />
       )}
-    </main>
+    </>
   );
 }
 
@@ -92,12 +117,35 @@ function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () =>
   const project = raw as unknown as ProjectTuple | undefined;
   if (!project || !project[3]) return null;
   return (
-    <button onClick={onClick}
-      className="text-left border border-gray-800 rounded-xl p-5 bg-gray-900 hover:border-indigo-600 transition-colors">
-      <p className="text-xl mb-1">📁</p>
-      <p className="font-semibold">{project[0]}</p>
-      <p className="text-xs text-gray-500 font-mono mt-1">{project[1].slice(0, 6)}...{project[1].slice(-4)}</p>
-      <p className="text-xs text-gray-600 mt-2">Project #{projectId.toString()}</p>
+    <button
+      onClick={onClick}
+      className="group text-left rounded-xl p-5 transition-all duration-200"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--surface-border)",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--aqua)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px var(--aqua-glow)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--surface-border)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "none";
+      }}
+    >
+      <div className="size-9 rounded-lg flex items-center justify-center mb-4 transition-colors" style={{ background: "rgba(45,212,191,0.1)" }}>
+        <FolderLock className="size-4" style={{ color: "var(--aqua)" }} />
+      </div>
+      <p className="font-semibold text-slate-100 text-sm">{project[0]}</p>
+      <p className="text-xs font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>
+        {project[1].slice(0, 6)}…{project[1].slice(-4)}
+      </p>
+      <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: "1px solid var(--surface-border)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>Project #{projectId.toString()}</span>
+        <span className="text-xs font-medium transition-colors" style={{ color: "var(--aqua)" }}>Open →</span>
+      </div>
     </button>
   );
 }
+
+
