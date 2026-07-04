@@ -53,7 +53,8 @@ export function PushEnvForm({ projectId, envName }: Props) {
                     if (ctx?.isStart) addLog(`   ⏳ ${step}...`);
                     if (ctx?.isEnd) addLog(`   ✓ ${step} (${ctx.duration}ms)`);
                 })
-                .execute();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .execute() as any;
 
             addLog("📝 Submitting to blockchain...");
             const { request } = await publicClient.simulateContract({

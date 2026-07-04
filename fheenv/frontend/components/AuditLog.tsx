@@ -70,8 +70,8 @@ export function AuditLog({ projectId }: Props) {
                 for (const ev of EVENTS) {
                     const raw = await publicClient!.getLogs({
                         address: REGISTRY_ADDRESS,
-                        topics: [ev.topic, projectIdHex],
-                        fromBlock: 0n,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        ...(({ topics: [ev.topic, projectIdHex], fromBlock: 0n }) as any),
                     });
 
                     for (const l of raw) {
