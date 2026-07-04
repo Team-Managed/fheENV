@@ -3,10 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <title>fheENV — Pitch Deck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       :root {
         --bg: #030712;
@@ -167,6 +170,9 @@
         text-transform: uppercase;
         color: var(--aq);
         margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
       }
       .h1 {
         font-size: 56px;
@@ -510,18 +516,18 @@
           <div
             style="
               display: flex;
-              gap: 9px;
+              gap: 10px;
               flex-wrap: wrap;
               justify-content: center;
             "
           >
-            <span class="badge aq-badge">Fully Homomorphic Encryption</span>
-            <span class="badge">Fhenix CoFHE</span>
-            <span class="badge">CLI + Web + Contract</span>
-            <span class="badge">IPFS / Pinata</span>
+            <span class="badge aq-badge"><i data-lucide="lock" style="width:12px;height:12px;"></i> Fully Homomorphic Encryption</span>
+            <span class="badge"><img src="https://avatars.githubusercontent.com/u/137282759?v=4" style="height:18px;width:18px;border-radius:4px;"> Fhenix CoFHE</span>
+            <span class="badge"><img src="https://img.logo.dev/nextjs.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:18px;filter:invert(1);"> Next.js + wagmi</span>
+            <span class="badge"><i data-lucide="terminal" style="width:12px;height:12px;"></i> CLI + Web + Contract</span>
           </div>
           <p style="font-family: var(--fm); font-size: 11px; color: var(--d)">
-            Next.js · wagmi · Hardhat · viem · Solidity 0.8.25 · Node.js
+            Hardhat · viem · Solidity 0.8.25 · IPFS / Pinata · AES-256-GCM
           </p>
         </div>
       </div>
@@ -576,22 +582,7 @@
           <div style="flex: 1.3">
             <div class="slack">
               <div class="sl-h">
-                <div
-                  style="
-                    width: 22px;
-                    height: 22px;
-                    background: #4a154b;
-                    border-radius: 5px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 11px;
-                    font-weight: 700;
-                  "
-                >
-                  #
-                </div>
+                <img src="https://img.logo.dev/slack.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:20px;width:20px;border-radius:4px;">
                 <span>dev-team</span>
               </div>
               <div class="sl-b">
@@ -629,11 +620,18 @@
                   </div>
                   <div style="width: 100%">
                     <b style="font-size: 12px">Rohan</b>
-                    <div class="srow">
+                    <div class="srow" style="display:flex;align-items:center;gap:8px;">
+                      <img src="https://img.logo.dev/postgresql.org?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:16px;width:16px;border-radius:3px;flex-shrink:0;">
                       DATABASE_URL=postgres://prod:s3cr3t@db.app/myapp
                     </div>
-                    <div class="srow">OPENAI_KEY=sk-proj-T7Xv9q...</div>
-                    <div class="srow">STRIPE_SECRET=sk_live_xyz789...</div>
+                    <div class="srow" style="display:flex;align-items:center;gap:8px;">
+                      <img src="https://img.logo.dev/openai.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:16px;width:16px;border-radius:3px;flex-shrink:0;background:#000;">
+                      OPENAI_KEY=sk-proj-T7Xv9q...
+                    </div>
+                    <div class="srow" style="display:flex;align-items:center;gap:8px;">
+                      <img src="https://img.logo.dev/stripe.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:16px;width:16px;border-radius:3px;flex-shrink:0;background:#635BFF;padding:2px;">
+                      STRIPE_SECRET=sk_live_xyz789...
+                    </div>
                   </div>
                 </div>
               </div>
@@ -674,21 +672,8 @@
               class="card"
               style="display: flex; flex-direction: column; gap: 12px"
             >
-              <div style="display: flex; align-items: center; gap: 10px">
-                <div
-                  style="
-                    width: 36px;
-                    height: 36px;
-                    background: #6366f1;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 18px;
-                  "
-                >
-                  ☁
-                </div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <img src="https://img.logo.dev/doppler.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:44px;width:44px;border-radius:10px;">
                 <b style="font-size: 16px">Doppler</b>
               </div>
               <p
@@ -763,21 +748,8 @@
               class="card"
               style="display: flex; flex-direction: column; gap: 12px"
             >
-              <div style="display: flex; align-items: center; gap: 10px">
-                <div
-                  style="
-                    width: 36px;
-                    height: 36px;
-                    background: #f59e0b;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 18px;
-                  "
-                >
-                  ☁
-                </div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <img src="https://img.logo.dev/aws.amazon.com?token=pk_BShsdiwDTuyRVVBW5GadOg" style="height:44px;width:44px;border-radius:10px;background:white;padding:6px;">
                 <b style="font-size: 16px">AWS Secrets</b>
               </div>
               <p
@@ -1792,31 +1764,26 @@
         <div class="w" style="gap: 20px">
           <div class="eye" style="justify-content: center">🏆 Judging</div>
           <div class="h2" style="text-align: center">
-            Built to score <span class="aq">35 / 35.</span>
+            Built for <span class="aq">this track.</span>
           </div>
           <div class="card" style="padding: 0; overflow: hidden; width: 100%">
             <table>
               <thead>
                 <tr>
-                  <th style="width: 26%">Criteria</th>
-                  <th style="width: 7%; text-align: center">Max</th>
+                  <th style="width: 30%">Criteria</th>
                   <th>Evidence</th>
-                  <th style="width: 7%; text-align: center">Score</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>Problem Statement</td>
-                  <td class="sm">10</td>
                   <td>
                     Universal dev problem. Backed by breach stats. Clear
                     villain: centralized trust.
                   </td>
-                  <td class="sc">10</td>
                 </tr>
                 <tr>
                   <td>Fhenix FHE Use Case</td>
-                  <td class="sm">10</td>
                   <td>
                     FHE is architecturally irreplaceable —
                     <code style="font-family: var(--fm); color: var(--aq)"
@@ -1826,60 +1793,23 @@
                       >FHE.allow()</code
                     >, Threshold Network. No substitute exists.
                   </td>
-                  <td class="sc">10</td>
                 </tr>
                 <tr>
                   <td>MVP / Demo Video</td>
-                  <td class="sm">10</td>
                   <td>
                     Live: push → Etherscan shows zero plaintext → wallet B
                     decrypts → rotation locks out.
                   </td>
-                  <td class="sc">10</td>
                 </tr>
                 <tr>
                   <td>E2E Deployment</td>
-                  <td class="sm">5</td>
                   <td>
                     Contract on Sepolia. Web app live. CLI on npm. IPFS via
                     Pinata.
                   </td>
-                  <td class="sc">5</td>
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div style="display: flex; justify-content: center">
-            <div
-              style="
-                display: inline-flex;
-                align-items: center;
-                gap: 14px;
-                padding: 12px 32px;
-                background: var(--aq1);
-                border: 1px solid var(--aq2);
-                border-radius: 999px;
-              "
-            >
-              <span
-                style="font-family: var(--fm); font-size: 12px; color: var(--m)"
-                >Total</span
-              >
-              <span
-                style="
-                  font-family: var(--fm);
-                  font-size: 38px;
-                  font-weight: 800;
-                  color: var(--aq);
-                  line-height: 1;
-                "
-                >35</span
-              >
-              <span
-                style="font-family: var(--fm); font-size: 12px; color: var(--d)"
-                >/ 35</span
-              >
-            </div>
           </div>
         </div>
       </div>
