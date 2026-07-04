@@ -1,0 +1,2099 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>fheENV — Pitch Deck</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #030712;
+        --s: rgba(30, 41, 59, 0.55);
+        --b: rgba(255, 255, 255, 0.09);
+        --aq: #2dd4bf;
+        --aq2: rgba(45, 212, 191, 0.2);
+        --aq1: rgba(45, 212, 191, 0.1);
+        --aq0: rgba(45, 212, 191, 0.05);
+        --pk: #ffb5a7;
+        --pk1: rgba(255, 181, 167, 0.1);
+        --rd: #ef4444;
+        --am: #f59e0b;
+        --gn: #10b981;
+        --t: #f8fafc;
+        --m: #94a3b8;
+        --d: #64748b;
+        --f: "Space Grotesk", sans-serif;
+        --fm: "JetBrains Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--t);
+        font-family: var(--f);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Deck: fixed 1280×720 canvas, scaled by JS ── */
+      #deck {
+        position: fixed;
+        width: 1280px;
+        height: 720px;
+        transform-origin: top left;
+      }
+      .sl {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 80px;
+        overflow: hidden;
+      }
+      .sl.on {
+        display: flex;
+      }
+      .sl::before {
+        content: "";
+        position: absolute;
+        top: -15%;
+        right: -8%;
+        width: 50%;
+        height: 50%;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(45, 212, 191, 0.07),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+      .sl::after {
+        content: "";
+        position: absolute;
+        bottom: -18%;
+        left: -8%;
+        width: 42%;
+        height: 42%;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 181, 167, 0.05),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      /* ── UI chrome (outside deck, viewport-relative) ── */
+      #bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--aq), var(--pk));
+        z-index: 99;
+      }
+      #nav {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 99;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        border: none;
+        padding: 0;
+      }
+      .dot.on {
+        background: var(--aq);
+        transform: scale(1.6);
+      }
+      #ctr {
+        position: fixed;
+        bottom: 20px;
+        right: 24px;
+        font-family: var(--fm);
+        font-size: 10px;
+        color: var(--d);
+        z-index: 99;
+      }
+
+      /* ── Layout helpers ── */
+      .w {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1140px;
+        display: flex;
+        flex-direction: column;
+      }
+      .row {
+        flex-direction: row;
+        gap: 52px;
+        align-items: flex-start;
+      }
+      .cen {
+        align-items: center;
+        text-align: center;
+      }
+
+      /* ── Type ── */
+      .eye {
+        font-family: var(--fm);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--aq);
+        margin-bottom: 12px;
+      }
+      .h1 {
+        font-size: 56px;
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+      .h2 {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+      .h3 {
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      .aq {
+        color: var(--aq);
+      }
+      .pk {
+        color: var(--pk);
+      }
+      p.sub {
+        font-size: 14px;
+        color: var(--m);
+        line-height: 1.6;
+      }
+
+      /* ── Cards ── */
+      .card {
+        background: var(--s);
+        border: 1px solid var(--b);
+        border-radius: 12px;
+        padding: 18px 22px;
+      }
+      .aq-card {
+        border-color: var(--aq2);
+        background: var(--aq0);
+      }
+      .rd-card {
+        border-color: rgba(239, 68, 68, 0.22);
+        background: rgba(239, 68, 68, 0.05);
+      }
+
+      /* ── Badge ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-family: var(--fm);
+        font-size: 10px;
+        font-weight: 600;
+        border: 1px solid var(--b);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--m);
+      }
+      .aq-badge {
+        border-color: var(--aq2);
+        background: var(--aq1);
+        color: var(--aq);
+      }
+      .pk-badge {
+        border-color: rgba(255, 181, 167, 0.3);
+        background: var(--pk1);
+        color: var(--pk);
+      }
+
+      /* ── Code window ── */
+      .mac {
+        background: #0d1117;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .mac-h {
+        background: #161b22;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .mac-d {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .mac-t {
+        margin-left: auto;
+        font-family: var(--fm);
+        font-size: 10px;
+        color: var(--d);
+      }
+      pre {
+        padding: 14px 18px;
+        font-family: var(--fm);
+        font-size: 11.5px;
+        line-height: 1.8;
+        color: #cbd5e1;
+        overflow: hidden;
+      }
+      .kw {
+        color: #c084fc;
+      }
+      .fn {
+        color: #60a5fa;
+      }
+      .hl {
+        color: var(--aq);
+      }
+      .cm {
+        color: var(--d);
+        font-style: italic;
+      }
+      .ok {
+        color: var(--gn);
+      }
+
+      /* ── Table ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        font-family: var(--fm);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--aq);
+        padding: 8px 14px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      td {
+        padding: 9px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 12.5px;
+        color: var(--m);
+      }
+      td:first-child {
+        color: var(--t);
+        font-weight: 600;
+      }
+      .sc {
+        font-family: var(--fm);
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--aq);
+        text-align: center;
+      }
+      .sm {
+        font-family: var(--fm);
+        font-size: 11px;
+        color: var(--d);
+        text-align: center;
+      }
+
+      /* ── Flow node ── */
+      .node {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--b);
+        border-radius: 8px;
+        padding: 9px 13px;
+        font-family: var(--fm);
+        font-size: 11.5px;
+        color: var(--m);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .node.g {
+        border-color: var(--aq2);
+        background: var(--aq0);
+        color: var(--aq);
+      }
+      .node.r {
+        border-color: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.04);
+      }
+      .arr {
+        text-align: center;
+        color: var(--d);
+        margin: 3px 0;
+      }
+
+      /* ── Slack ── */
+      .slack {
+        background: #1a1d21;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .sl-h {
+        background: #222529;
+        border-bottom: 1px solid #333;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .sl-b {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .msg {
+        display: flex;
+        gap: 11px;
+      }
+      .av {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .srow {
+        margin-top: 4px;
+        background: #0f1115;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 5px;
+        padding: 5px 11px;
+        font-family: var(--fm);
+        font-size: 11px;
+        color: #a1a1aa;
+      }
+      .lk {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--rd);
+        color: #fff;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      /* ── Misc ── */
+      .bl {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .bl li {
+        font-family: var(--fm);
+        font-size: 11px;
+        color: var(--m);
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .bl li::before {
+        content: "→";
+        color: var(--aq);
+        font-size: 9px;
+        flex-shrink: 0;
+      }
+      .stat {
+        text-align: center;
+      }
+      .stat .n {
+        font-family: var(--fm);
+        font-size: 38px;
+        font-weight: 800;
+        color: var(--aq);
+        line-height: 1;
+      }
+      .stat .l {
+        font-size: 11px;
+        color: var(--m);
+        margin-top: 4px;
+      }
+      .cur {
+        display: inline-block;
+        width: 0.4ch;
+        height: 0.85em;
+        background: var(--aq);
+        vertical-align: baseline;
+        margin-left: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="nav"></div>
+    <div id="ctr"></div>
+
+    <div id="deck">
+      <!-- ▓▓ 1 — COVER ▓▓ -->
+      <div class="sl on">
+        <div class="w cen" style="gap: 22px">
+          <div class="eye">⬡ FHE BUIDL Mumbai · Analytics Track · 2026</div>
+          <div
+            style="
+              font-family: var(--fm);
+              font-size: 116px;
+              font-weight: 700;
+              letter-spacing: -0.05em;
+              line-height: 1;
+            "
+          >
+            <span class="aq">fhe</span>ENV
+          </div>
+          <p
+            style="
+              font-size: 20px;
+              color: var(--m);
+              max-width: 480px;
+              line-height: 1.5;
+              font-weight: 500;
+            "
+          >
+            Your
+            <code
+              style="
+                font-family: var(--fm);
+                color: var(--aq);
+                background: var(--aq1);
+                padding: 1px 8px;
+                border-radius: 5px;
+                border: 1px solid var(--aq2);
+              "
+              >.env</code
+            >, encrypted. Not even us.<span class="cur"></span>
+          </p>
+          <div
+            style="
+              display: flex;
+              gap: 9px;
+              flex-wrap: wrap;
+              justify-content: center;
+            "
+          >
+            <span class="badge aq-badge">Fully Homomorphic Encryption</span>
+            <span class="badge">Fhenix CoFHE</span>
+            <span class="badge">CLI + Web + Contract</span>
+            <span class="badge">IPFS / Pinata</span>
+          </div>
+          <p style="font-family: var(--fm); font-size: 11px; color: var(--d)">
+            Next.js · wagmi · Hardhat · viem · Solidity 0.8.25 · Node.js
+          </p>
+        </div>
+      </div>
+
+      <!-- ▓▓ 2 — PROBLEM ▓▓ -->
+      <div class="sl">
+        <div class="w row" style="align-items: center">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 16px"
+          >
+            <div class="eye">▲ The Reality</div>
+            <div class="h2">
+              You've done this.<br /><span class="aq">Today.</span>
+            </div>
+            <p class="sub">
+              Every dev team shares secrets on Slack.<br />That message lives on
+              someone else's server — forever.
+            </p>
+            <div class="card rd-card" style="padding: 14px 20px">
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 36px;
+                  font-weight: 800;
+                  color: var(--rd);
+                  line-height: 1;
+                "
+              >
+                80%
+              </div>
+              <div style="font-size: 12px; color: var(--m); margin-top: 3px">
+                of breaches start with a stolen credential
+              </div>
+            </div>
+            <div class="card" style="padding: 14px 20px">
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 36px;
+                  font-weight: 800;
+                  color: var(--am);
+                  line-height: 1;
+                "
+              >
+                642+
+              </div>
+              <div style="font-size: 12px; color: var(--m); margin-top: 3px">
+                credential breaches in 2025 alone
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1.3">
+            <div class="slack">
+              <div class="sl-h">
+                <div
+                  style="
+                    width: 22px;
+                    height: 22px;
+                    background: #4a154b;
+                    border-radius: 5px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 11px;
+                    font-weight: 700;
+                  "
+                >
+                  #
+                </div>
+                <span>dev-team</span>
+              </div>
+              <div class="sl-b">
+                <div class="msg">
+                  <div class="av" style="background: #fbbf24; color: #000">
+                    P
+                  </div>
+                  <div>
+                    <b style="font-size: 12px">Priya</b>
+                    <div
+                      style="font-size: 13px; color: #d4d4d8; margin-top: 3px"
+                    >
+                      hey can you send the prod DB password? 🙏
+                    </div>
+                  </div>
+                </div>
+                <div class="msg" style="position: relative">
+                  <div
+                    style="
+                      position: absolute;
+                      inset: -5px;
+                      border: 2px solid var(--rd);
+                      border-radius: 8px;
+                      background: rgba(239, 68, 68, 0.07);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      z-index: 2;
+                    "
+                  >
+                    <span class="lk">⚠ SECRETS EXPOSED</span>
+                  </div>
+                  <div class="av" style="background: #818cf8; color: #fff">
+                    R
+                  </div>
+                  <div style="width: 100%">
+                    <b style="font-size: 12px">Rohan</b>
+                    <div class="srow">
+                      DATABASE_URL=postgres://prod:s3cr3t@db.app/myapp
+                    </div>
+                    <div class="srow">OPENAI_KEY=sk-proj-T7Xv9q...</div>
+                    <div class="srow">STRIPE_SECRET=sk_live_xyz789...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p
+              style="
+                text-align: center;
+                margin-top: 8px;
+                font-family: var(--fm);
+                font-size: 10px;
+                color: var(--d);
+              "
+            >
+              Now lives on Slack's servers · backups · forever.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 3 — EXISTING TOOLS ▓▓ -->
+      <div class="sl">
+        <div class="w" style="gap: 20px">
+          <div class="eye" style="justify-content: center">
+            ✗ The Illusion of Security
+          </div>
+          <div class="h2" style="text-align: center">
+            Same problem. <span class="aq">Different server.</span>
+          </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 18px;
+              margin-top: 4px;
+            "
+          >
+            <div
+              class="card"
+              style="display: flex; flex-direction: column; gap: 12px"
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 36px;
+                    height: 36px;
+                    background: #6366f1;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                  "
+                >
+                  ☁
+                </div>
+                <b style="font-size: 16px">Doppler</b>
+              </div>
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--m);
+                  line-height: 1.6;
+                  flex: 1;
+                "
+              >
+                Centralized server holds your keys in plaintext.<br />$20M
+                raised. Still reads your secrets.
+              </p>
+              <div
+                style="
+                  padding: 8px 12px;
+                  background: rgba(239, 68, 68, 0.08);
+                  border: 1px solid rgba(239, 68, 68, 0.22);
+                  border-radius: 7px;
+                  color: #fca5a5;
+                  font-size: 11px;
+                "
+              >
+                ⚠ Doppler can read your keys
+              </div>
+            </div>
+            <div
+              class="card"
+              style="display: flex; flex-direction: column; gap: 12px"
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 36px;
+                    height: 36px;
+                    background: #16a34a;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                  "
+                >
+                  🏛
+                </div>
+                <b style="font-size: 16px">HashiCorp Vault</b>
+              </div>
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--m);
+                  line-height: 1.6;
+                  flex: 1;
+                "
+              >
+                Admin has full access. $6.4B IBM acquisition. Complex self-host.
+              </p>
+              <div
+                style="
+                  padding: 8px 12px;
+                  background: rgba(239, 68, 68, 0.08);
+                  border: 1px solid rgba(239, 68, 68, 0.22);
+                  border-radius: 7px;
+                  color: #fca5a5;
+                  font-size: 11px;
+                "
+              >
+                ⚠ Admin has full plaintext access
+              </div>
+            </div>
+            <div
+              class="card"
+              style="display: flex; flex-direction: column; gap: 12px"
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 36px;
+                    height: 36px;
+                    background: #f59e0b;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                  "
+                >
+                  ☁
+                </div>
+                <b style="font-size: 16px">AWS Secrets</b>
+              </div>
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--m);
+                  line-height: 1.6;
+                  flex: 1;
+                "
+              >
+                US servers. $0.40/secret/month. Subject to government subpoena.
+              </p>
+              <div
+                style="
+                  padding: 8px 12px;
+                  background: rgba(239, 68, 68, 0.08);
+                  border: 1px solid rgba(239, 68, 68, 0.22);
+                  border-radius: 7px;
+                  color: #fca5a5;
+                  font-size: 11px;
+                "
+              >
+                ⚠ US gov can subpoena it
+              </div>
+            </div>
+          </div>
+          <div
+            style="
+              padding: 13px 22px;
+              background: rgba(239, 68, 68, 0.07);
+              border: 1px solid rgba(239, 68, 68, 0.18);
+              border-radius: 8px;
+              text-align: center;
+              color: #fca5a5;
+              font-size: 13px;
+              font-weight: 600;
+            "
+          >
+            All three require you to <strong>trust a company</strong> — that
+            trust is your attack surface.
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 4 — SOLUTION ▓▓ -->
+      <div class="sl">
+        <div class="w" style="gap: 18px">
+          <div class="eye" style="justify-content: center">🔒 The Solution</div>
+          <div class="h2" style="text-align: center">
+            Zero-trust secrets. <span class="aq">Mathematically.</span>
+          </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr auto 1fr;
+              align-items: start;
+              margin-top: 4px;
+            "
+          >
+            <div
+              class="card rd-card"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 18px 22px;
+              "
+            >
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 10px;
+                  color: #fca5a5;
+                  text-transform: uppercase;
+                  letter-spacing: 0.12em;
+                  margin-bottom: 6px;
+                "
+              >
+                Today
+              </div>
+              <div class="node r">📄 .env plaintext</div>
+              <div class="arr">↓</div>
+              <div class="node r">🖥 Central server reads everything</div>
+              <div class="arr">↓</div>
+              <div class="node r">👥 Team</div>
+              <div
+                style="
+                  margin-top: 10px;
+                  padding: 8px;
+                  background: rgba(239, 68, 68, 0.06);
+                  border-radius: 6px;
+                  font-size: 11px;
+                  color: #fca5a5;
+                  text-align: center;
+                "
+              >
+                "Trust us" model
+              </div>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0 24px;
+                height: 100%;
+              "
+            >
+              <div style="flex: 1; width: 1px; background: var(--b)"></div>
+              <span
+                style="
+                  font-family: var(--fm);
+                  font-size: 11px;
+                  color: var(--d);
+                  border: 1px solid var(--b);
+                  background: var(--bg);
+                  padding: 4px 8px;
+                  border-radius: 5px;
+                "
+                >vs</span
+              >
+              <div style="flex: 1; width: 1px; background: var(--b)"></div>
+            </div>
+
+            <div
+              class="card aq-card"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 18px 22px;
+              "
+            >
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 10px;
+                  color: var(--aq);
+                  text-transform: uppercase;
+                  letter-spacing: 0.12em;
+                  margin-bottom: 6px;
+                "
+              >
+                fheENV
+              </div>
+              <div class="node g">📄 .env (your device only)</div>
+              <div class="arr" style="color: var(--aq)">↓</div>
+              <div class="node g">🔒 AES-256 encrypt → IPFS blob</div>
+              <div class="arr" style="color: var(--aq)">↓</div>
+              <div class="node g">⚙ AES key → 2× euint128 → FHE on-chain</div>
+              <div class="arr" style="color: var(--aq)">↓</div>
+              <div class="node g">👛 Wallet decrypts via Threshold Network</div>
+              <div
+                style="
+                  margin-top: 10px;
+                  padding: 8px;
+                  background: var(--aq0);
+                  border: 1px solid var(--aq2);
+                  border-radius: 6px;
+                  font-size: 11px;
+                  color: var(--aq);
+                  text-align: center;
+                "
+              >
+                Mathematically impossible to read
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 5 — HOW IT WORKS ▓▓ -->
+      <div class="sl">
+        <div class="w row">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 16px"
+          >
+            <div class="eye">⚙ Architecture</div>
+            <div class="h3">AES + FHE <span class="aq">Envelope</span></div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                margin-top: 4px;
+              "
+            >
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  01
+                </div>
+                <div>
+                  <b style="font-size: 13px">Generate AES-256 key</b><br /><span
+                    style="font-size: 11.5px; color: var(--m)"
+                    >Random per rotation. Never stored anywhere.</span
+                  >
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  02
+                </div>
+                <div>
+                  <b style="font-size: 13px">AES-GCM encrypt → IPFS</b
+                  ><br /><span style="font-size: 11.5px; color: var(--m)"
+                    >Blob is gibberish without the key. CID stored
+                    on-chain.</span
+                  >
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  03
+                </div>
+                <div>
+                  <b style="font-size: 13px"
+                    >Split AES key → 2× euint128 on-chain</b
+                  ><br /><span style="font-size: 11.5px; color: var(--m)"
+                    >FHE-encrypted. No node can read it.</span
+                  >
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  04
+                </div>
+                <div>
+                  <b style="font-size: 13px">FHE.allow() per wallet</b
+                  ><br /><span style="font-size: 11.5px; color: var(--m)"
+                    >Threshold Network decrypts only to authorized
+                    address.</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 12px"
+          >
+            <div
+              style="
+                font-family: var(--fm);
+                font-size: 10px;
+                color: var(--aq);
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+              "
+            >
+              Where data lives
+            </div>
+            <div class="card" style="padding: 0; overflow: hidden">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th>Data</th>
+                    <th>Readable?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-family: var(--fm)">On-chain</td>
+                    <td>2× euint128 AES handles</td>
+                    <td style="color: var(--rd)">✗ FHE encrypted</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family: var(--fm)">IPFS</td>
+                    <td>AES-encrypted .env blob</td>
+                    <td style="color: var(--rd)">✗ Gibberish</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family: var(--fm)">Fhenix nodes</td>
+                    <td>FHE computation</td>
+                    <td style="color: var(--rd)">✗ Encrypted</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family: var(--fm)">Your device</td>
+                    <td>Plaintext .env</td>
+                    <td style="color: var(--aq)">✓ Only you</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card aq-card" style="padding: 13px 16px">
+              <b style="font-size: 12px; color: var(--t)"
+                >One FHE decrypt per pull</b
+              >
+              <p style="font-size: 11.5px; color: var(--m); margin-top: 4px">
+                Whole .env uses one AES key → constant FHE overhead regardless
+                of secret count.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 6 — WHY FHE ▓▓ -->
+      <div class="sl">
+        <div class="w row">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 12px"
+          >
+            <div class="eye">⚡ Why FHE</div>
+            <div class="h3">
+              Other primitives <span class="aq">can't do this.</span>
+            </div>
+            <div class="card rd-card" style="padding: 12px 16px">
+              <b style="font-size: 12px; color: #fca5a5">✗ ZK Proofs</b>
+              <p style="font-size: 11.5px; color: var(--m); margin-top: 3px">
+                Prove "I know X" — can't selectively reveal encrypted data to
+                different parties.
+              </p>
+            </div>
+            <div class="card rd-card" style="padding: 12px 16px">
+              <b style="font-size: 12px; color: #fca5a5">✗ AES / RSA alone</b>
+              <p style="font-size: 11.5px; color: var(--m); margin-top: 3px">
+                Someone must hold the decryption key — that someone is your
+                attack surface.
+              </p>
+            </div>
+            <div class="card aq-card" style="padding: 12px 16px">
+              <b style="font-size: 12px; color: var(--aq)"
+                >✓ FHE (Fhenix CoFHE)</b
+              >
+              <p style="font-size: 11.5px; color: var(--m); margin-top: 3px">
+                Key stored as ciphertext.
+                <code style="color: var(--aq)">FHE.allow()</code> grants
+                per-wallet decrypt. Threshold Network — no single party
+                reconstructs.
+              </p>
+            </div>
+            <div class="card" style="padding: 12px 16px">
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 10px;
+                  color: var(--aq);
+                  margin-bottom: 7px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                "
+              >
+                Operations Used
+              </div>
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 11px;
+                  color: var(--m);
+                  display: flex;
+                  flex-direction: column;
+                  gap: 3px;
+                "
+              >
+                <div>
+                  <span class="hl">FHE.asEuint128()</span> — store AES key chunk
+                </div>
+                <div>
+                  <span class="hl">FHE.allow(handle, addr)</span> — grant
+                  decrypt
+                </div>
+                <div>
+                  <span class="hl">FHE.allowThis()</span> — re-grant on rotation
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1.1">
+            <div class="mac">
+              <div class="mac-h">
+                <div class="mac-d" style="background: #ff5f57"></div>
+                <div class="mac-d" style="background: #febc2e"></div>
+                <div class="mac-d" style="background: #28c840"></div>
+                <div class="mac-t">fheENVRegistry.sol</div>
+              </div>
+              <pre><span class="cm">// AES key → two FHE-encrypted uint128</span>
+<span class="kw">euint128</span> hi = <span class="fn">FHE.asEuint128</span>(inHigh);
+<span class="kw">euint128</span> lo = <span class="fn">FHE.asEuint128</span>(inLow);
+
+<span class="fn">FHE.allowThis</span>(hi); <span class="fn">FHE.allowThis</span>(lo);
+<span class="fn">FHE.allow</span>(hi, <span class="hl">msg.sender</span>);
+
+<span class="cm">// Grant teammate decrypt</span>
+<span class="fn">FHE.allow</span>(env.aesKeyHigh, <span class="hl">member</span>);
+<span class="fn">FHE.allow</span>(env.aesKeyLow,  <span class="hl">member</span>);
+
+<span class="cm">// Revoke = rotate → new handles, old abandoned</span>
+<span class="fn">updateEnvironment</span>(id, name,
+  newHi, newLo, newCid,
+  <span class="hl">expectedVersion</span> <span class="cm">// optimistic lock</span>
+);
+
+<span class="cm">// Batch grant up to 100 in one tx</span>
+<span class="fn">batchGrantAccess</span>(id, name, <span class="kw">address</span>[] <span class="hl">members</span>);</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 7 — WHAT WE BUILT ▓▓ -->
+      <div class="sl">
+        <div class="w" style="gap: 18px">
+          <div class="eye" style="justify-content: center">
+            📦 What We Built
+          </div>
+          <div class="h2" style="text-align: center">
+            Three components. <span class="aq">Fully working.</span>
+          </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+            "
+          >
+            <div
+              class="card"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 20px;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 34px;
+                    height: 34px;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                  "
+                >
+                  📄
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 700">
+                    Smart Contract
+                  </div>
+                  <div
+                    style="
+                      font-family: var(--fm);
+                      font-size: 10px;
+                      color: var(--d);
+                    "
+                  >
+                    Solidity 0.8.25 · Sepolia
+                  </div>
+                </div>
+              </div>
+              <ul class="bl">
+                <li>createProject / addOwner</li>
+                <li>updateEnvironment + optimistic lock</li>
+                <li>grantAccess / batchGrantAccess</li>
+                <li>revokeAccess + mandatory rotate</li>
+              </ul>
+              <span class="badge aq-badge" style="width: fit-content"
+                >Deployed · Sepolia</span
+              >
+            </div>
+
+            <div
+              class="card"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 20px;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 34px;
+                    height: 34px;
+                    background: var(--pk1);
+                    border: 1px solid rgba(255, 181, 167, 0.2);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                  "
+                >
+                  🖥
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 700">
+                    Web Dashboard
+                  </div>
+                  <div
+                    style="
+                      font-family: var(--fm);
+                      font-size: 10px;
+                      color: var(--d);
+                    "
+                  >
+                    Next.js 14 · wagmi · @cofhe/sdk
+                  </div>
+                </div>
+              </div>
+              <ul class="bl">
+                <li>Wallet auth — no email/password</li>
+                <li>Push: AES encrypt → IPFS</li>
+                <li>Pull: FHE decrypt → view secrets</li>
+                <li>Team: grant / revoke + audit log</li>
+              </ul>
+              <span class="badge pk-badge" style="width: fit-content"
+                >Live App</span
+              >
+            </div>
+
+            <div
+              class="card"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 20px;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 34px;
+                    height: 34px;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                  "
+                >
+                  ⌨
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 700">CLI Tool</div>
+                  <div
+                    style="
+                      font-family: var(--fm);
+                      font-size: 10px;
+                      color: var(--d);
+                    "
+                  >
+                    Node.js · npm installable
+                  </div>
+                </div>
+              </div>
+              <ul class="bl">
+                <li>fheenv push / pull / run</li>
+                <li>fheenv rotate (new AES + re-grant)</li>
+                <li>fheenv team add / remove</li>
+                <li>FHEENV_PRIVATE_KEY for CI/CD</li>
+              </ul>
+              <span class="badge aq-badge" style="width: fit-content"
+                >npm i -g fheenv</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 8 — DEMO ▓▓ -->
+      <div class="sl">
+        <div class="w row">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 14px"
+          >
+            <div class="eye">▶ Demo Flow</div>
+            <div class="h3">What judges <span class="aq">will see.</span></div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 11px;
+                margin-top: 4px;
+              "
+            >
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  1
+                </div>
+                <div>
+                  <b style="font-size: 12px">Push (Wallet A)</b>
+                  <p style="font-size: 11.5px; color: var(--m)">
+                    Paste .env → encrypt + upload → FHE-encrypt key halves → tx
+                    submitted.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  2
+                </div>
+                <div>
+                  <b style="font-size: 12px">Inspect Etherscan</b>
+                  <p style="font-size: 11.5px; color: var(--m)">
+                    <b style="color: var(--aq)">Zero readable secrets</b> — only
+                    FHE-encrypted bytes visible.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  3
+                </div>
+                <div>
+                  <b style="font-size: 12px">Grant (Wallet A → Wallet B)</b>
+                  <p style="font-size: 11.5px; color: var(--m)">
+                    FHE.allow() for both key halves. One transaction.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  4
+                </div>
+                <div>
+                  <b style="font-size: 12px">Pull (Wallet B)</b>
+                  <p style="font-size: 11.5px; color: var(--m)">
+                    Threshold decrypts AES key locally → secrets appear. ✓
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px">
+                <div
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: var(--aq1);
+                    border: 1px solid var(--aq2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--fm);
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: var(--aq);
+                    flex-shrink: 0;
+                  "
+                >
+                  5
+                </div>
+                <div>
+                  <b style="font-size: 12px">Revoke + Rotate</b>
+                  <p style="font-size: 11.5px; color: var(--m)">
+                    New AES key → new FHE handles → Wallet B locked out
+                    cryptographically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1.1">
+            <div class="mac">
+              <div class="mac-h">
+                <div class="mac-d" style="background: #ff5f57"></div>
+                <div class="mac-d" style="background: #febc2e"></div>
+                <div class="mac-d" style="background: #28c840"></div>
+                <div class="mac-t">fheenv-cli</div>
+              </div>
+              <pre><span class="hl" style="font-weight:700">~/app ➜</span> fheenv push --env production
+<span class="cm">  Encrypting + uploading to IPFS...</span>
+<span class="cm">  FHE-encrypting AES key...</span>
+<span class="ok">  ✔ Pushed (CID: Qm4xF9...)</span>
+
+<span class="hl" style="font-weight:700">~/app ➜</span> fheenv team add 0xB2c...3f4
+<span class="ok">  ✔ Access granted</span>
+
+<span class="hl" style="font-weight:700">~/app ➜</span> fheenv team remove 0xB2c...3f4
+<span class="cm">  Revoking + rotating AES key...</span>
+<span class="ok">  ✔ Rotation complete. Member locked out.</span>
+
+<span class="hl" style="font-weight:700">~/app ➜</span> FHEENV_PRIVATE_KEY=0x... fheenv run -- node app.js
+<span class="ok">  ✔ Secrets injected. No disk write.</span>
+
+<span class="cm">  # Etherscan calldata:</span>
+<span style="color:var(--d)">  0xa3f219c8...c7b2d9f0e4a1... </span>
+<span class="ok">  # Zero plaintext ✓</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 9 — ANALYTICS TRACK ▓▓ -->
+      <div class="sl">
+        <div class="w" style="gap: 18px">
+          <div class="eye" style="justify-content: center">
+            📊 Analytics Track
+          </div>
+          <div class="h2" style="text-align: center">
+            Purpose-built for <span class="aq">this track.</span>
+          </div>
+          <p
+            style="
+              text-align: center;
+              font-size: 12px;
+              color: var(--d);
+              font-style: italic;
+            "
+          >
+            "Autonomous systems operating on encrypted information while
+            maintaining security and user privacy"
+          </p>
+          <div class="card" style="padding: 0; overflow: hidden; width: 100%">
+            <table>
+              <thead>
+                <tr>
+                  <th>Track Criteria</th>
+                  <th>fheENV</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Encrypted information operations</td>
+                  <td>AES-256 + FHE — never plaintext on any server</td>
+                </tr>
+                <tr>
+                  <td>Autonomous systems</td>
+                  <td>
+                    CI/CD pulls secrets autonomously via
+                    <code style="font-family: var(--fm); color: var(--aq)"
+                      >FHEENV_PRIVATE_KEY</code
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Security &amp; user privacy</td>
+                  <td>Cryptographic access control + on-chain audit log</td>
+                </tr>
+                <tr>
+                  <td>Fhenix FHE use case</td>
+                  <td>
+                    <code style="font-family: var(--fm); color: var(--aq)"
+                      >euint128</code
+                    >,
+                    <code style="font-family: var(--fm); color: var(--aq)"
+                      >FHE.allow()</code
+                    >, rotation-enforced revocation
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card aq-card" style="width: 100%; padding: 14px 20px">
+            <p style="font-size: 13.5px; color: var(--t); line-height: 1.6">
+              fheENV is the
+              <b class="aq">secrets layer for the encrypted web</b> —
+              foundational infrastructure for any app that handles credentials
+              without a centralized trust point.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 10 — MARKET ▓▓ -->
+      <div class="sl">
+        <div class="w row">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 16px"
+          >
+            <div class="eye">📈 Market</div>
+            <div class="h3">
+              $2.3B market. <span class="aq">Zero FHE players.</span>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+              "
+            >
+              <div class="card stat">
+                <div class="n">$2.3B</div>
+                <div class="l">Market size 2025</div>
+              </div>
+              <div class="card stat">
+                <div class="n">$8.9B</div>
+                <div class="l">Projected 2030</div>
+              </div>
+              <div class="card stat">
+                <div class="n pk">$6.4B</div>
+                <div class="l">HashiCorp → IBM</div>
+              </div>
+            </div>
+            <div class="card" style="padding: 14px 18px">
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 10px;
+                  color: var(--aq);
+                  margin-bottom: 8px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                "
+              >
+                The Gap
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 5px;
+                  font-size: 12.5px;
+                  color: var(--m);
+                "
+              >
+                <div>Doppler · Vault · AWS — all readable by operator</div>
+                <div class="aq" style="font-weight: 600; margin-top: 3px">
+                  fheENV — mathematically private. Free.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            style="flex: 1; display: flex; flex-direction: column; gap: 12px"
+          >
+            <div
+              style="
+                font-family: var(--fm);
+                font-size: 10px;
+                color: var(--aq);
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+              "
+            >
+              India Opportunity
+            </div>
+            <div
+              class="card"
+              style="padding: 14px 18px; border-color: rgba(255, 181, 167, 0.2)"
+            >
+              <div
+                style="
+                  font-family: var(--fm);
+                  font-size: 32px;
+                  font-weight: 800;
+                  color: var(--pk);
+                  line-height: 1;
+                "
+              >
+                5M+
+              </div>
+              <div style="font-size: 12px; color: var(--m); margin-top: 3px">
+                Software developers — fastest-growing dev market
+              </div>
+            </div>
+            <div class="card" style="padding: 14px 18px">
+              <b style="font-size: 13px">DPDP Act 2023</b>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--m);
+                  margin-top: 4px;
+                  line-height: 1.6;
+                "
+              >
+                India's new data protection law demands demonstrable security.
+                fheENV delivers cryptographic proof — not policy.
+              </p>
+            </div>
+            <div class="card aq-card" style="padding: 14px 18px">
+              <b style="font-size: 13px; color: var(--aq)">Startup Fit</b>
+              <p style="font-size: 12px; color: var(--m); margin-top: 4px">
+                No subscription. No vendor trust. No lock-in. Free infra.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 11 — JUDGING ▓▓ -->
+      <div class="sl">
+        <div class="w" style="gap: 20px">
+          <div class="eye" style="justify-content: center">🏆 Judging</div>
+          <div class="h2" style="text-align: center">
+            Built to score <span class="aq">35 / 35.</span>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden; width: 100%">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 26%">Criteria</th>
+                  <th style="width: 7%; text-align: center">Max</th>
+                  <th>Evidence</th>
+                  <th style="width: 7%; text-align: center">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Problem Statement</td>
+                  <td class="sm">10</td>
+                  <td>
+                    Universal dev problem. Backed by breach stats. Clear
+                    villain: centralized trust.
+                  </td>
+                  <td class="sc">10</td>
+                </tr>
+                <tr>
+                  <td>Fhenix FHE Use Case</td>
+                  <td class="sm">10</td>
+                  <td>
+                    FHE is architecturally irreplaceable —
+                    <code style="font-family: var(--fm); color: var(--aq)"
+                      >euint128</code
+                    >,
+                    <code style="font-family: var(--fm); color: var(--aq)"
+                      >FHE.allow()</code
+                    >, Threshold Network. No substitute exists.
+                  </td>
+                  <td class="sc">10</td>
+                </tr>
+                <tr>
+                  <td>MVP / Demo Video</td>
+                  <td class="sm">10</td>
+                  <td>
+                    Live: push → Etherscan shows zero plaintext → wallet B
+                    decrypts → rotation locks out.
+                  </td>
+                  <td class="sc">10</td>
+                </tr>
+                <tr>
+                  <td>E2E Deployment</td>
+                  <td class="sm">5</td>
+                  <td>
+                    Contract on Sepolia. Web app live. CLI on npm. IPFS via
+                    Pinata.
+                  </td>
+                  <td class="sc">5</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content: center">
+            <div
+              style="
+                display: inline-flex;
+                align-items: center;
+                gap: 14px;
+                padding: 12px 32px;
+                background: var(--aq1);
+                border: 1px solid var(--aq2);
+                border-radius: 999px;
+              "
+            >
+              <span
+                style="font-family: var(--fm); font-size: 12px; color: var(--m)"
+                >Total</span
+              >
+              <span
+                style="
+                  font-family: var(--fm);
+                  font-size: 38px;
+                  font-weight: 800;
+                  color: var(--aq);
+                  line-height: 1;
+                "
+                >35</span
+              >
+              <span
+                style="font-family: var(--fm); font-size: 12px; color: var(--d)"
+                >/ 35</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▓▓ 12 — CLOSE ▓▓ -->
+      <div class="sl">
+        <div class="w cen" style="gap: 18px">
+          <div class="eye" style="justify-content: center">
+            🔒 fheENV · FHE BUIDL Mumbai 2026
+          </div>
+          <div
+            style="
+              font-family: var(--fm);
+              font-size: 96px;
+              font-weight: 700;
+              letter-spacing: -0.05em;
+              line-height: 1;
+            "
+          >
+            <span class="aq">fhe</span>ENV
+          </div>
+          <p
+            style="
+              font-size: 17px;
+              color: var(--m);
+              max-width: 500px;
+              line-height: 1.6;
+            "
+          >
+            The Doppler alternative where
+            <b style="color: var(--t)">not even we</b> can see your secrets.
+          </p>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 8px;
+              max-width: 620px;
+              width: 100%;
+            "
+          >
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              ⚙ Fhenix CoFHE
+            </div>
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              📄 Solidity + Hardhat
+            </div>
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              🖥 Next.js + wagmi
+            </div>
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              ⌨ Node.js CLI
+            </div>
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              ☁ IPFS / Pinata
+            </div>
+            <div
+              style="
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--b);
+                border-radius: 7px;
+                font-family: var(--fm);
+                font-size: 11px;
+                color: var(--m);
+              "
+            >
+              🔑 AES-256-GCM
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px">
+            <span class="badge" style="font-size: 11px; padding: 6px 14px"
+              >GitHub: [repo link]</span
+            >
+            <span
+              class="badge aq-badge"
+              style="font-size: 11px; padding: 6px 14px"
+              >Demo: [live URL]</span
+            >
+          </div>
+          <div
+            style="
+              border-left: 3px solid var(--aq);
+              padding: 12px 18px 12px 20px;
+              background: var(--aq0);
+              border-radius: 0 8px 8px 0;
+              max-width: 600px;
+              text-align: left;
+            "
+          >
+            <p
+              style="
+                font-size: 13.5px;
+                font-weight: 600;
+                color: var(--t);
+                line-height: 1.6;
+              "
+            >
+              "Every dev in this room has a secret on Slack right now.<br /><span
+                class="aq"
+                >fheENV means that never has to happen again.</span
+              >"
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- #deck -->
+
+    <script>
+      const slides = document.querySelectorAll(".sl");
+      const total = slides.length;
+      let cur = 0;
+
+      // Build nav dots
+      const nav = document.getElementById("nav");
+      const dots = [];
+      for (let i = 0; i < total; i++) {
+        const d = document.createElement("button");
+        d.className = "dot" + (i === 0 ? " on" : "");
+        d.onclick = () => go(i);
+        nav.appendChild(d);
+        dots.push(d);
+      }
+
+      function go(n) {
+        slides[cur].classList.remove("on");
+        dots[cur].classList.remove("on");
+        cur = ((n % total) + total) % total;
+        slides[cur].classList.add("on");
+        dots[cur].classList.add("on");
+        document.getElementById("bar").style.width =
+          ((cur + 1) / total) * 100 + "%";
+        document.getElementById("ctr").textContent = cur + 1 + " / " + total;
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") {
+          e.preventDefault();
+          go(cur + 1);
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          go(cur - 1);
+        }
+      });
+      document.getElementById("deck").addEventListener("click", (e) => {
+        if (!e.target.closest("#nav")) go(cur + 1);
+      });
+
+      // Scale 1280×720 canvas to fit any viewport
+      function fit() {
+        var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+        var d = document.getElementById("deck");
+        d.style.transform = "scale(" + s + ")";
+        d.style.left = Math.round((window.innerWidth - 1280 * s) / 2) + "px";
+        d.style.top = Math.round((window.innerHeight - 720 * s) / 2) + "px";
+      }
+      window.addEventListener("resize", fit);
+      fit();
+
+      // Init
+      document.getElementById("bar").style.width = (1 / total) * 100 + "%";
+      document.getElementById("ctr").textContent = "1 / " + total;
+    </script>
+  </body>
+</html>
