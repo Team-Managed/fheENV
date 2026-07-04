@@ -8,8 +8,8 @@ import { ChevronRight, Terminal } from "lucide-react";
 
 const ENVIRONMENTS = [
     { name: "development", label: "Development", dot: "#22c55e", badge: "bg-green-500/10 text-green-400 border-green-500/20" },
-    { name: "staging",     label: "Staging",     dot: "#eab308", badge: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
-    { name: "production",  label: "Production",  dot: "#ef4444", badge: "bg-red-500/10 text-red-400 border-red-500/20" },
+    { name: "staging", label: "Staging", dot: "#eab308", badge: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
+    { name: "production", label: "Production", dot: "#ef4444", badge: "bg-red-500/10 text-red-400 border-red-500/20" },
 ] as const;
 
 type Props = { params: Promise<{ id: string }> };

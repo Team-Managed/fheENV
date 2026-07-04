@@ -235,9 +235,9 @@ describe("fheENVRegistry", function () {
     await expect(
       registry.connect(member).grantAccess(0n, "staging", stranger.address),
     ).to.not.be.reverted;
-    expect(
-      await registry.hasAccess(0n, "staging", stranger.address),
-    ).to.equal(true);
+    expect(await registry.hasAccess(0n, "staging", stranger.address)).to.equal(
+      true,
+    );
   });
 
   it("20. grantAccess on uninitialized env reverts", async function () {
@@ -281,7 +281,11 @@ describe("fheENVRegistry", function () {
   it("25. rejects grantAccess with zero address", async function () {
     await setupWithEnv();
     await expect(
-      registry.grantAccess(0n, "production", "0x0000000000000000000000000000000000000000"),
+      registry.grantAccess(
+        0n,
+        "production",
+        "0x0000000000000000000000000000000000000000",
+      ),
     ).to.be.revertedWith("Invalid address");
   });
 
@@ -305,7 +309,10 @@ describe("fheENVRegistry", function () {
   it("28. rejects transferOwnership to zero address", async function () {
     await registry.createProject("MyProject");
     await expect(
-      registry.transferOwnership(0n, "0x0000000000000000000000000000000000000000"),
+      registry.transferOwnership(
+        0n,
+        "0x0000000000000000000000000000000000000000",
+      ),
     ).to.be.revertedWith("Invalid address");
   });
 
@@ -338,8 +345,14 @@ describe("fheENVRegistry", function () {
     await registry.updateEnvironment(0n, "development", hD, lD, "QmDevCID", 0n);
     await registry.updateEnvironment(0n, "production", hP, lP, "QmProdCID", 0n);
 
-    const [, , devCid, devVer] = await registry.getEnvironment(0n, "development");
-    const [, , prodCid, prodVer] = await registry.getEnvironment(0n, "production");
+    const [, , devCid, devVer] = await registry.getEnvironment(
+      0n,
+      "development",
+    );
+    const [, , prodCid, prodVer] = await registry.getEnvironment(
+      0n,
+      "production",
+    );
 
     expect(devCid).to.equal("QmDevCID");
     expect(prodCid).to.equal("QmProdCID");
@@ -348,22 +361,34 @@ describe("fheENVRegistry", function () {
 
     // granting access to dev does not affect prod
     await registry.grantAccess(0n, "development", member.address);
-    expect(await registry.hasAccess(0n, "development", member.address)).to.equal(true);
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(false);
+    expect(
+      await registry.hasAccess(0n, "development", member.address),
+    ).to.equal(true);
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
+      false,
+    );
   });
 
   it("32. revokeAccess emits AccessRevoked event", async function () {
     await setupWithEnv();
     await registry.grantAccess(0n, "production", member.address);
-    await expect(registry.revokeAccess(0n, "production", member.address))
-      .to.emit(registry, "AccessRevoked");
+    await expect(
+      registry.revokeAccess(0n, "production", member.address),
+    ).to.emit(registry, "AccessRevoked");
   });
 
   it("33. version increments correctly through multiple rotations", async function () {
     await registry.createProject("MyProject");
     for (let v = 0n; v < 3n; v++) {
       const { high, low } = await encryptAesKey();
-      await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, v);
+      await registry.updateEnvironment(
+        0n,
+        "production",
+        high,
+        low,
+        BLOB_CID,
+        v,
+      );
     }
     const [, , , version] = await registry.getEnvironment(0n, "production");
     expect(version).to.equal(3n);
