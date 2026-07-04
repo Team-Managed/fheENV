@@ -66,7 +66,9 @@ describe("fheENVRegistry", function () {
 
   it("4. allows adding a co-owner", async function () {
     await registry.createProject("MyProject");
-    await registry.addOwner(0n, member.address);
+    await expect(registry.connect(owner).addOwner(0n, member.address))
+      .to.emit(registry, "OwnerAdded")
+      .withArgs(0n, member.address);
     expect(await registry.owners(0n, member.address)).to.equal(true);
   });
 
@@ -76,9 +78,10 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     const { high, low } = await encryptAesKey();
     await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, 0n);
-    const [, , blobCid, version] = await registry.getEnvironment(0n, "production");
+    const [, , blobCid, version, updatedAt] = await registry.getEnvironment(0n, "production");
     expect(version).to.equal(1n);
     expect(blobCid).to.equal(BLOB_CID);
+    expect(updatedAt).to.be.gt(0n);
   });
 
   it("6. rejects rotation with wrong expectedVersion", async function () {
@@ -148,6 +151,14 @@ describe("fheENVRegistry", function () {
     await registry.transferOwnership(0n, stranger.address);
     expect(await registry.owners(0n, owner.address)).to.equal(false);
     expect(await registry.owners(0n, stranger.address)).to.equal(true);
+  });
+
+  it("14. envNameToHash produces consistent results", async () => {
+    const h1 = await registry.envNameToHash("production");
+    const h2 = await registry.envNameToHash("production");
+    const h3 = await registry.envNameToHash("staging");
+    expect(h1).to.equal(h2);
+    expect(h1).to.not.equal(h3);
   });
 });
 
