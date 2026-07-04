@@ -33,17 +33,27 @@ program
   });
 
 // ── fheenv init ───────────────────────────────────────────────────────────────
+// Defaults: registry + chain baked in for Sepolia deployment.
+// RPC and Pinata JWT fall back to FHEENV_RPC / FHEENV_PINATA_JWT env vars.
+const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
+const SEPOLIA_RPC      = "https://rpc.sepolia.org";
+const SEPOLIA_CHAIN_ID = 11155111;
+
 program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
   .requiredOption("-n, --name <name>", "Project name")
-  .requiredOption("-r, --registry <address>", "Registry contract address")
-  .requiredOption("--rpc <url>", "RPC URL")
-  .requiredOption("--chain-id <id>", "Chain ID", parseInt)
-  .requiredOption("--pinata-jwt <jwt>", "Pinata JWT for IPFS uploads")
+  .option("-r, --registry <address>", "Registry contract address", SEPOLIA_REGISTRY)
+  .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
+  .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
+  .option("--pinata-jwt <jwt>", "Pinata JWT (or set FHEENV_PINATA_JWT)", process.env.FHEENV_PINATA_JWT)
   .option("-e, --env <envName>", "Default environment name", "production")
   .action(async (opts) => {
     try {
+      if (!opts.pinataJwt) {
+        console.error(chalk.red("Error: Pinata JWT is required. Pass --pinata-jwt or set FHEENV_PINATA_JWT."));
+        process.exit(1);
+      }
       await initCommand({
         name: opts.name,
         registry: opts.registry,
