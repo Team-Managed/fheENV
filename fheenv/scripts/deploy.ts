@@ -1,20 +1,19 @@
-import { network } from "hardhat";
-import { formatEther } from "viem";
+import { ethers } from "hardhat";
 
 async function main() {
-  const conn = await network.create();
-  const publicClient = await conn.viem.getPublicClient();
-  const [deployer] = await conn.viem.getWalletClients();
+  const [deployer] = await ethers.getSigners();
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("Deployer:", deployer.address);
+  console.log("Balance:", ethers.formatEther(balance), "ETH");
 
-  const balance = await publicClient.getBalance({ address: deployer.account.address });
-  console.log("Deployer:", deployer.account.address);
-  console.log("Balance:", formatEther(balance), "ETH");
+  const Factory = await ethers.getContractFactory("fheENVRegistry");
+  const registry = await Factory.deploy();
+  await registry.waitForDeployment();
+  const address = await registry.getAddress();
 
-  const registry = await conn.viem.deployContract("fheENVRegistry");
-
-  console.log("\nfheENVRegistry deployed to:", registry.address);
+  console.log("\nfheENVRegistry deployed to:", address);
   console.log("\n--- Add to your .env ---");
-  console.log(`NEXT_PUBLIC_REGISTRY_ADDRESS=${registry.address}`);
+  console.log(`NEXT_PUBLIC_REGISTRY_ADDRESS=${address}`);
 }
 
 main().catch((e) => {
