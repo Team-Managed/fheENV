@@ -32,6 +32,7 @@ export default function EnvPage({ params }: Props) {
     const { data: raw } = useReadContract({
         address: REGISTRY_ADDRESS, abi: REGISTRY_ABI,
         functionName: "projects", args: [projectId],
+        chainId: 11155111,
     });
     const project = raw as unknown as ProjectTuple | undefined;
 

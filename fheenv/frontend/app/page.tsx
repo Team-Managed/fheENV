@@ -13,6 +13,7 @@ export default function Dashboard() {
 
   const { data: nextId } = useReadContract({
     address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "nextProjectId",
+    chainId: 11155111,
   });
 
   const projectIds = Array.from({ length: Number(nextId ?? 0) }, (_, i) => BigInt(i));
@@ -69,6 +70,7 @@ type ProjectTuple = readonly [string, string, bigint, boolean];
 function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () => void }) {
   const { data: raw } = useReadContract({
     address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "projects", args: [projectId],
+    chainId: 11155111,
   });
   const project = raw as unknown as ProjectTuple | undefined;
   if (!project || !project[3]) return null;

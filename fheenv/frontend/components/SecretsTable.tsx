@@ -24,6 +24,7 @@ export function SecretsTable({ projectId, envName }: Props) {
     const { data: rawEnvData, isLoading: envLoading } = useReadContract({
         address: REGISTRY_ADDRESS, abi: REGISTRY_ABI,
         functionName: "getEnvironment", args: [projectId, envName],
+        chainId: 11155111,
     });
     const envData = rawEnvData as unknown as EnvTuple | undefined;
 
