@@ -87,11 +87,12 @@ jobs:
         with:
           path: dist/
 
-      - name: Rename binaries for release
+      - name: Stage binaries for release
         run: |
-          mv dist/fheenv-linux/fheenv   dist/fheenv-linux
-          mv dist/fheenv-macos/fheenv   dist/fheenv-macos
-          mv dist/fheenv-windows/fheenv.exe dist/fheenv-windows.exe
+          mkdir -p dist/release
+          cp dist/fheenv-linux/fheenv       dist/release/fheenv-linux
+          cp dist/fheenv-macos/fheenv       dist/release/fheenv-macos
+          cp dist/fheenv-windows/fheenv.exe dist/release/fheenv-windows.exe
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -112,8 +113,8 @@ jobs:
 
             See the [README](https://github.com/${{ github.repository }}#installation) for full installation instructions.
           files: |
-            dist/fheenv-linux
-            dist/fheenv-macos
-            dist/fheenv-windows.exe
+            dist/release/fheenv-linux
+            dist/release/fheenv-macos
+            dist/release/fheenv-windows.exe
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
