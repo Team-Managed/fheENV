@@ -1,6 +1,6 @@
 {
   "name": "fheenv",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Zero-trust .env secrets manager powered by FHE",
   "type": "commonjs",
   "bin": {
