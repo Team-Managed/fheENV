@@ -69,20 +69,30 @@ const Cursor = () => (
   />
 );
 
+// ─── Typewriter text ──────────────────────────────────────────────────────────
+function TypewriterText({ text, speed = 30 }: { text: string; speed?: number }) {
+  const [displayed, setDisplayed] = useState("");
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayed(text.slice(0, i + 1));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+  return <span>{displayed}</span>;
+}
+
 // ─── Terminal prompt line ─────────────────────────────────────────────────────
 function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boolean }) {
   if (!show) return null;
   return (
     <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>~/project ➜</span>
-      <motion.span
-        initial={{ width: 0 }}
-        animate={{ width: "auto" }}
-        transition={{ duration: 0.35, ease: "linear" }}
-        className="overflow-hidden whitespace-nowrap inline-block text-slate-200"
-      >
-        {cmd}
-      </motion.span>
+      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>~/project {"->"}</span>
+      <span className="text-slate-200">
+        {done ? cmd : <TypewriterText text={cmd} speed={30} />}
+      </span>
       {!done && <Cursor />}
     </div>
   );
@@ -110,20 +120,22 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    if (step !== 0) return;
     let alive = true;
     const wait = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
     (async () => {
-      await wait(400); if (!alive) return; setStep(1);  // type "fheenv create"
-      await wait(700); if (!alive) return; setStep(2);  // create done
-      await wait(800); if (!alive) return; setStep(3);  // type "fheenv push"
-      await wait(800); if (!alive) return; setStep(4);  // encrypting…
-      await wait(1400); if (!alive) return; setStep(5);  // type "fheenv pull"
-      await wait(800); if (!alive) return; setStep(6);  // decrypting…
-      await wait(3500); if (!alive) return; setStep(0);  // reset
+      while (alive) {
+        setStep(0);
+        await wait(400); if (!alive) return; setStep(1);  // type "fheenv create"
+        await wait(600); if (!alive) return; setStep(2);  // create done
+        await wait(800); if (!alive) return; setStep(3);  // type "fheenv push"
+        await wait(1000); if (!alive) return; setStep(4);  // encrypting…
+        await wait(1400); if (!alive) return; setStep(5);  // type "fheenv pull"
+        await wait(600); if (!alive) return; setStep(6);  // decrypting…
+        await wait(3500); if (!alive) return;
+      }
     })();
     return () => { alive = false; };
-  }, [step]);
+  }, []);
 
   return (
     <div className={cn(
@@ -174,29 +186,29 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project ➜</span>
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project {"->"}</span>
                 <Cursor />
               </div>
             )}
 
             {/* ── fheenv create ── */}
             <PromptLine cmd="fheenv create" show={step >= 1} done={step >= 2} />
-            <OutputLine show={step >= 2} delay={0.1}>Initializing zero-trust vault…</OutputLine>
-            <OutputLine show={step >= 2} success delay={0.3}>✔ Vault created · On-chain registry linked.</OutputLine>
+            <OutputLine show={step >= 2} delay={0.1}>Initializing zero-trust vault...</OutputLine>
+            <OutputLine show={step >= 2} success delay={0.3}>✓ Vault created · On-chain registry linked.</OutputLine>
 
             {/* ── fheenv push ── */}
             {step >= 3 && <div className="pt-1.5" />}
             <PromptLine cmd="fheenv push .env.production" show={step >= 3} done={step >= 4} />
-            <OutputLine show={step >= 4} delay={0.1}>Encrypting 14 variables with FHE…</OutputLine>
-            <OutputLine show={step >= 4} delay={0.35}>Syncing with smart contract…</OutputLine>
-            <OutputLine show={step >= 4} success delay={0.6}>✔ Secrets pushed to on-chain registry.</OutputLine>
+            <OutputLine show={step >= 4} delay={0.1}>Encrypting 14 variables with FHE...</OutputLine>
+            <OutputLine show={step >= 4} delay={0.35}>Syncing with smart contract...</OutputLine>
+            <OutputLine show={step >= 4} success delay={0.6}>✓ Secrets pushed to on-chain registry.</OutputLine>
 
             {/* ── fheenv pull ── */}
             {step >= 5 && <div className="pt-1.5" />}
             <PromptLine cmd="fheenv pull" show={step >= 5} done={step >= 6} />
-            <OutputLine show={step >= 6} delay={0.1}>Fetching encrypted vars from registry…</OutputLine>
-            <OutputLine show={step >= 6} delay={0.3}>Decrypting via FHE locally…</OutputLine>
-            <OutputLine show={step >= 6} success delay={0.55}>✔ Variables injected into environment.</OutputLine>
+            <OutputLine show={step >= 6} delay={0.1}>Fetching encrypted vars from registry...</OutputLine>
+            <OutputLine show={step >= 6} delay={0.3}>Decrypting via FHE locally...</OutputLine>
+            <OutputLine show={step >= 6} success delay={0.55}>✓ Variables injected into environment.</OutputLine>
 
             {/* trailing prompt */}
             {step >= 6 && (
@@ -207,7 +219,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
                 className="flex items-center gap-1.5 font-mono text-[11px] pt-1.5"
               >
                 <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project</span>
-                <span className="text-slate-500">➜</span>
+                <span className="text-slate-500">{"->"}</span>
                 <Cursor />
               </motion.div>
             )}

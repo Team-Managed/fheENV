@@ -39,17 +39,17 @@ export function HeroSection() {
   }, []);
 
   return (
-    <div ref={heroRef} className="relative w-full min-h-[92vh] overflow-hidden">
+    <div ref={heroRef} className="relative w-full overflow-hidden pt-8">
       {/* Stronger local dithering glow on hero right side — layered on top of layout's ambient */}
       <div className="absolute right-0 top-0 w-[60%] h-full pointer-events-none z-0">
         <div className="absolute inset-0 bg-gradient-to-l from-aqua/[0.04] via-transparent to-transparent" />
       </div>
 
       {/* Hero grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh]">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-20 grid lg:grid-cols-2 gap-14 items-start">
 
         {/* ── Left: text ── */}
-        <div className="flex flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:pt-24">
 
           <div className="hero-el text-center lg:text-left flex flex-col gap-2 sm:gap-4 pb-4">
             <MorphingText
@@ -117,12 +117,12 @@ export function HeroSection() {
         </div>
 
         {/* ── Right: Arc + Mockup ── */}
-        <div ref={rightColRef} className="hidden lg:flex flex-col items-stretch gap-0 relative">
+        <div ref={rightColRef} className="hidden lg:flex flex-col items-stretch gap-0 relative -mt-4">
           {/* The arc visual sits on top, overlapping the mockup */}
           <HeroArcVisual />
 
           {/* Device mockup — pulled up to overlap arc bottom */}
-          <div className="-mt-8 relative z-10">
+          <div className="-mt-16 relative z-10">
             <HeroDeviceMockup className="w-full" />
           </div>
         </div>
