@@ -5,8 +5,8 @@ import gsap from "gsap";
 
 // ── Arc geometry ──────────────────────────────────────────────────────────────
 // ViewBox: "0 0 600 300" | Container: w-full × CONTAINER_H px
-// Arc center: (300, 420) — below the viewBox, creates an upward dome
-const CX = 300, CY = 420, R = 290;
+// Arc center: (300, 350) — below the viewBox, creates an upward dome
+const CX = 300, CY = 350, R = 270;
 const CONTAINER_H = 240;
 const VB_H = 300;
 
@@ -66,7 +66,7 @@ export function HeroArcVisual() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full select-none overflow-hidden"
+      className="relative w-full select-none"
       style={{ height: CONTAINER_H }}
     >
 
