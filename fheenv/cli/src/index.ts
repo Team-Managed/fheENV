@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name("fheenv")
   .description("Zero-trust .env secrets manager powered by FHE")
-  .version("0.4.0")
+  .version("0.4.1")
   .enablePositionalOptions();
 
 // ── fheenv login ──────────────────────────────────────────────────────────────

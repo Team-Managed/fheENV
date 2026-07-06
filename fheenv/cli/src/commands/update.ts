@@ -8,7 +8,7 @@ import ora from "ora";
 const REPO = "Team-Managed/fheENV";
 
 // Injected at build time — matches package.json version
-const CURRENT_VERSION = "0.4.0";
+const CURRENT_VERSION = "0.4.1";
 
 // ── Platform / arch detection ─────────────────────────────────────────────────
 
@@ -124,8 +124,18 @@ function patchWindowsProfiles(installDir: string): void {
 
   // PowerShell profiles (Windows PowerShell 5 and PowerShell 7)
   const psProfiles = [
-    path.join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1"),
-    path.join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1"),
+    path.join(
+      home,
+      "Documents",
+      "WindowsPowerShell",
+      "Microsoft.PowerShell_profile.ps1",
+    ),
+    path.join(
+      home,
+      "Documents",
+      "PowerShell",
+      "Microsoft.PowerShell_profile.ps1",
+    ),
   ];
 
   for (const prof of psProfiles) {
@@ -262,16 +272,14 @@ export async function updateCommand(): Promise<void> {
     patchWindowsProfiles(path.dirname(process.execPath));
   }
 
-  spinner.succeed(
-    chalk.green(`✓ Updated to ${chalk.bold(latestTag)}!`),
-  );
+  spinner.succeed(chalk.green(`✓ Updated to ${chalk.bold(latestTag)}!`));
 
   if (process.platform === "win32") {
     console.log(
       chalk.yellow(
         "\n⚠  If you're running inside VS Code, close and reopen VS Code\n" +
-        "   to pick up the new binary (VS Code caches its environment at launch).\n" +
-        "   New standalone PowerShell / cmd windows work immediately.",
+          "   to pick up the new binary (VS Code caches its environment at launch).\n" +
+          "   New standalone PowerShell / cmd windows work immediately.",
       ),
     );
   } else {
