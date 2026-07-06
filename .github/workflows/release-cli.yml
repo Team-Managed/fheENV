@@ -15,25 +15,25 @@ jobs:
     strategy:
       matrix:
         include:
-          # ── Linux ────────────────────────────────────────────────────────────
+          # ── Linux ─────────────────────────────────────────────────────────────
           - os: ubuntu-latest
             pkg_target: node22-linux-x64
             artifact: fheenv-linux-x64
             binary: fheenv-linux-x64
 
-          # ── macOS — Apple Silicon (arm64) ────────────────────────────────────
+          # ── macOS (both arm64 + x64 cross-compiled on the same fast runner) ──
+          # @yao-pkg/pkg supports cross-compilation, so we never need macos-13.
           - os: macos-latest
             pkg_target: node22-macos-arm64
             artifact: fheenv-macos-arm64
             binary: fheenv-macos-arm64
 
-          # ── macOS — Intel (x64) ──────────────────────────────────────────────
-          - os: macos-13
+          - os: macos-latest
             pkg_target: node22-macos-x64
             artifact: fheenv-macos-x64
             binary: fheenv-macos-x64
 
-          # ── Windows ──────────────────────────────────────────────────────────
+          # ── Windows ───────────────────────────────────────────────────────────
           - os: windows-latest
             pkg_target: node22-win-x64
             artifact: fheenv-windows-x64
@@ -116,18 +116,51 @@ jobs:
 
             Zero-trust `.env` secrets manager powered by FHE.
 
-            ### Download
+            ---
 
-            | Platform | File |
-            |----------|------|
+            ### ⬆️ Upgrading from an older version
+
+            #### Already on v0.4.0+
+            ```bash
+            fheenv update
+            ```
+
+            #### On an older version (no `update` command / session-only fix)
+            Re-run the one-line installer — it will overwrite the old binary and fix PATH for all terminals:
+
+            **macOS / Linux:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+            ```
+            Then open a **new terminal** (or `source ~/.zshrc`).
+
+            **Windows (PowerShell):**
+            ```powershell
+            irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex
+            ```
+            Then **close and reopen VS Code** if you use the integrated terminal.
+
+            After upgrading, `fheenv update` will work for all future releases.
+
+            ---
+
+            ### 📥 Fresh install
+
+            | Platform | Binary |
+            |----------|--------|
             | macOS — Apple Silicon (M1/M2/M3/M4) | `fheenv-macos-arm64` |
             | macOS — Intel | `fheenv-macos-x64` |
             | Linux x64 | `fheenv-linux-x64` |
             | Windows x64 | `fheenv-windows-x64.exe` |
 
             See the [README](https://github.com/${{ github.repository }}#installation) for full installation instructions.
-
-            > Already installed? Run `fheenv update` to upgrade in-place.
+          files: |
+            dist/release/fheenv-linux-x64
+            dist/release/fheenv-macos-arm64
+            dist/release/fheenv-macos-x64
+            dist/release/fheenv-windows-x64.exe
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             dist/release/fheenv-linux-x64
             dist/release/fheenv-macos-arm64
