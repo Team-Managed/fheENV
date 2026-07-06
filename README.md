@@ -1,5 +1,9 @@
 <div align="center">
-  <img src="fheenv/frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="fheenv/frontend/public/brand/logo-full.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="fheenv/frontend/public/brand/logo-full-light.svg" />
+    <img src="fheenv/frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  </picture>
   <br /><br />
   <p><strong>Your .env, encrypted. Not even us.</strong></p>
   <p>Zero-trust secrets management powered by Fully Homomorphic Encryption on Fhenix.</p>

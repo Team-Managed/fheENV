@@ -65,6 +65,9 @@ jobs:
           }
       - run: pnpm install --frozen-lockfile
         working-directory: fheenv
+      - name: Generate Fumadocs source types
+        run: npx fumadocs-mdx
+        working-directory: fheenv/frontend
       - run: npx tsc --noEmit
         working-directory: fheenv/frontend
       - run: pnpm run build
