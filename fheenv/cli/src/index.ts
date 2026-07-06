@@ -9,6 +9,7 @@ import { runCommand } from "./commands/run";
 import { teamAddCommand } from "./commands/team-add";
 import { teamRemoveCommand } from "./commands/team-remove";
 import { rotateCommand } from "./commands/rotate";
+import { updateCommand } from "./commands/update";
 
 const program = new Command();
 
@@ -170,6 +171,19 @@ program
   .action(async (opts) => {
     try {
       await rotateCommand({ envName: opts.env, envFile: opts.file });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv update ─────────────────────────────────────────────────────────────
+program
+  .command("update")
+  .description("Download and install the latest fheenv release")
+  .action(async () => {
+    try {
+      await updateCommand();
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

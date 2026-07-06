@@ -10,23 +10,34 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.artifact }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
+          # ── Linux ────────────────────────────────────────────────────────────
           - os: ubuntu-latest
-            platform: linux
-            artifact: fheenv-linux
-            binary: fheenv
+            pkg_target: node22-linux-x64
+            artifact: fheenv-linux-x64
+            binary: fheenv-linux-x64
+
+          # ── macOS — Apple Silicon (arm64) ────────────────────────────────────
           - os: macos-latest
-            platform: macos
-            artifact: fheenv-macos
-            binary: fheenv
+            pkg_target: node22-macos-arm64
+            artifact: fheenv-macos-arm64
+            binary: fheenv-macos-arm64
+
+          # ── macOS — Intel (x64) ──────────────────────────────────────────────
+          - os: macos-13
+            pkg_target: node22-macos-x64
+            artifact: fheenv-macos-x64
+            binary: fheenv-macos-x64
+
+          # ── Windows ──────────────────────────────────────────────────────────
           - os: windows-latest
-            platform: windows
-            artifact: fheenv-windows
-            binary: fheenv.exe
+            pkg_target: node22-win-x64
+            artifact: fheenv-windows-x64
+            binary: fheenv-windows-x64.exe
 
     steps:
       - name: Checkout
@@ -51,20 +62,20 @@ jobs:
         run: pnpm run build
 
       - name: Bundle into standalone binary (Linux / macOS)
-        if: matrix.platform != 'windows'
+        if: runner.os != 'Windows'
         working-directory: fheenv/cli
         run: |
           npx @yao-pkg/pkg dist/index.js \
-            --target node22-${{ matrix.platform }}-x64 \
+            --target ${{ matrix.pkg_target }} \
             --output ${{ matrix.binary }}
 
       - name: Bundle into standalone binary (Windows)
-        if: matrix.platform == 'windows'
+        if: runner.os == 'Windows'
         working-directory: fheenv/cli
         shell: pwsh
         run: |
           npx @yao-pkg/pkg dist/index.js `
-            --target node22-win-x64 `
+            --target ${{ matrix.pkg_target }} `
             --output ${{ matrix.binary }}
 
       - name: Upload artifact
@@ -90,9 +101,11 @@ jobs:
       - name: Stage binaries for release
         run: |
           mkdir -p dist/release
-          cp dist/fheenv-linux/fheenv       dist/release/fheenv-linux
-          cp dist/fheenv-macos/fheenv       dist/release/fheenv-macos
-          cp dist/fheenv-windows/fheenv.exe dist/release/fheenv-windows.exe
+          cp dist/fheenv-linux-x64/fheenv-linux-x64         dist/release/fheenv-linux-x64
+          cp dist/fheenv-macos-arm64/fheenv-macos-arm64     dist/release/fheenv-macos-arm64
+          cp dist/fheenv-macos-x64/fheenv-macos-x64         dist/release/fheenv-macos-x64
+          cp dist/fheenv-windows-x64/fheenv-windows-x64.exe dist/release/fheenv-windows-x64.exe
+          chmod +x dist/release/fheenv-linux-x64 dist/release/fheenv-macos-arm64 dist/release/fheenv-macos-x64
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -107,14 +120,18 @@ jobs:
 
             | Platform | File |
             |----------|------|
-            | macOS (Intel + Apple Silicon) | `fheenv-macos` |
-            | Linux x64 | `fheenv-linux` |
-            | Windows x64 | `fheenv-windows.exe` |
+            | macOS — Apple Silicon (M1/M2/M3/M4) | `fheenv-macos-arm64` |
+            | macOS — Intel | `fheenv-macos-x64` |
+            | Linux x64 | `fheenv-linux-x64` |
+            | Windows x64 | `fheenv-windows-x64.exe` |
 
             See the [README](https://github.com/${{ github.repository }}#installation) for full installation instructions.
+
+            > Already installed? Run `fheenv update` to upgrade in-place.
           files: |
-            dist/release/fheenv-linux
-            dist/release/fheenv-macos
-            dist/release/fheenv-windows.exe
+            dist/release/fheenv-linux-x64
+            dist/release/fheenv-macos-arm64
+            dist/release/fheenv-macos-x64
+            dist/release/fheenv-windows-x64.exe
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

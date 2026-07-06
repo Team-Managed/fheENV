@@ -3,14 +3,15 @@
 
 $ErrorActionPreference = "Stop"
 
-$Repo    = "Team-Managed/fheENV"
+$Repo       = "Team-Managed/fheENV"
+$Asset      = "fheenv-windows-x64.exe"
 $InstallDir = Join-Path $env:USERPROFILE ".fheenv\bin"
 $BinaryName = "fheenv.exe"
 
 # ── Fetch latest release tag ─────────────────────────────────────────────────
 Write-Host "Fetching latest fheenv release..." -ForegroundColor Cyan
 
-$ApiUrl = "https://api.github.com/repos/$Repo/releases/latest"
+$ApiUrl  = "https://api.github.com/repos/$Repo/releases/latest"
 $Release = Invoke-RestMethod -Uri $ApiUrl -Headers @{ "User-Agent" = "fheenv-installer" }
 $LatestTag = $Release.tag_name
 
@@ -19,11 +20,11 @@ if (-not $LatestTag) {
     exit 1
 }
 
-Write-Host "Installing fheenv $LatestTag..." -ForegroundColor Cyan
+Write-Host "Installing fheenv $LatestTag ($Asset)..." -ForegroundColor Cyan
 
 # ── Download binary ──────────────────────────────────────────────────────────
-$DownloadUrl = "https://github.com/$Repo/releases/download/$LatestTag/fheenv-windows.exe"
-$TmpFile     = Join-Path $env:TEMP "fheenv-windows.exe"
+$DownloadUrl = "https://github.com/$Repo/releases/download/$LatestTag/$Asset"
+$TmpFile     = Join-Path $env:TEMP "fheenv-install-$LatestTag.exe"
 
 Write-Host "Downloading from $DownloadUrl..."
 Invoke-WebRequest -Uri $DownloadUrl -OutFile $TmpFile -UseBasicParsing
@@ -49,7 +50,7 @@ if ($CurrentPath -notlike "*$InstallDir*") {
     Write-Host "PATH entry already present" -ForegroundColor Yellow
 }
 
-# Refresh PATH in the current session so you can use fheenv immediately
+# Refresh PATH in the current session
 $env:PATH = "$env:PATH;$InstallDir"
 
 # ── Done ─────────────────────────────────────────────────────────────────────
@@ -57,3 +58,4 @@ Write-Host ""
 Write-Host "fheenv $LatestTag installed successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Open a new terminal window and run: fheenv --version"
+Write-Host "To update fheenv in the future, run:  fheenv update"
