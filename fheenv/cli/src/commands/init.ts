@@ -35,10 +35,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
 
   const spinner = ora(`Creating project "${opts.name}" on-chain...`).start();
   try {
-    const { publicClient, walletClient } = createClients(
-      opts.rpcUrl,
-      opts.chainId,
-    );
+    const { publicClient, walletClient } = createClients(opts.rpcUrl, opts.chainId);
 
     const projectId = await createProject(
       opts.registry as Address,

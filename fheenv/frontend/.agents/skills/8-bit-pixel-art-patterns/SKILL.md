@@ -38,17 +38,19 @@ Use 9 div elements to create a pixelated border effect:
 Add depth with pixelated shadows:
 
 ```tsx
-{variant !== "outline" && (
-  <>
-    {/* Top shadow */}
-    <div className="absolute top-0 left-0 w-full h-1.5 bg-foreground/20" />
-    <div className="absolute top-1.5 left-0 w-3 h-1.5 bg-foreground/20" />
+{
+  variant !== "outline" && (
+    <>
+      {/* Top shadow */}
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-foreground/20" />
+      <div className="absolute top-1.5 left-0 w-3 h-1.5 bg-foreground/20" />
 
-    {/* Bottom shadow */}
-    <div className="absolute bottom-0 left-0 w-full h-1.5 bg-foreground/20" />
-    <div className="absolute bottom-1.5 right-0 w-3 h-1.5 bg-foreground/20" />
-  </>
-)}
+      {/* Bottom shadow */}
+      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-foreground/20" />
+      <div className="absolute bottom-1.5 right-0 w-3 h-1.5 bg-foreground/20" />
+    </>
+  );
+}
 ```
 
 ### Icon Button Pattern
@@ -56,19 +58,21 @@ Add depth with pixelated shadows:
 Smaller, self-contained pixel borders for icon buttons:
 
 ```tsx
-{size === "icon" && (
-  <>
-    {/* Top/bottom full bars */}
-    <div className="absolute top-0 left-0 w-full h-1.5 bg-foreground" />
-    <div className="absolute bottom-0 left-0 w-full h-1.5 bg-foreground" />
+{
+  size === "icon" && (
+    <>
+      {/* Top/bottom full bars */}
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-foreground" />
+      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-foreground" />
 
-    {/* Side segments */}
-    <div className="absolute top-1 -left-1 w-1.5 h-1/2 bg-foreground" />
-    <div className="absolute bottom-1 -left-1 w-1.5 h-1/2 bg-foreground" />
-    <div className="absolute top-1 -right-1 w-1.5 h-1/2 bg-foreground" />
-    <div className="absolute bottom-1 -right-1 w-1.5 h-1/2 bg-foreground" />
-  </>
-)}
+      {/* Side segments */}
+      <div className="absolute top-1 -left-1 w-1.5 h-1/2 bg-foreground" />
+      <div className="absolute bottom-1 -left-1 w-1.5 h-1/2 bg-foreground" />
+      <div className="absolute top-1 -right-1 w-1.5 h-1/2 bg-foreground" />
+      <div className="absolute bottom-1 -right-1 w-1.5 h-1/2 bg-foreground" />
+    </>
+  );
+}
 ```
 
 ### Dark Mode Considerations

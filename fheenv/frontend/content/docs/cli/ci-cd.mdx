@@ -8,11 +8,11 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 # CI/CD Integration
 
-fheENV works in CI/CD pipelines via the `FHEENV_PRIVATE_KEY` environment variable. No keyfile needed.
+fheENV works in CI/CD pipelines via the `FHEENV_PRIVATE_KEY` environment variable. No keyfile
+needed.
 
 <Callout type="info">
-  Use a **dedicated wallet** for CI with read-only access. Never reuse your
-  personal key.
+  Use a **dedicated wallet** for CI with read-only access. Never reuse your personal key.
 </Callout>
 
 ## Platform Setup
@@ -25,10 +25,7 @@ on:
   push:
     branches: [main]
 
-jobs:
-deploy:
-runs-on: ubuntu-latest
-steps: - uses: actions/checkout@v4
+jobs: deploy: runs-on: ubuntu-latest steps: - uses: actions/checkout@v4
 
       - name: Install fheENV
         run: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
@@ -80,8 +77,7 @@ docker run -e FHEENV_PRIVATE_KEY=0x... my-app
 4. Commit `.fheenv.json` to your repo (it has no secrets)
 
 <Callout type="warn">
-  Prefer `fheenv run` over `fheenv pull` in CI. It avoids writing secrets to
-  disk entirely.
+  Prefer `fheenv run` over `fheenv pull` in CI. It avoids writing secrets to disk entirely.
 </Callout>
 
 # At runtime, pass FHEENV_PRIVATE_KEY as env var

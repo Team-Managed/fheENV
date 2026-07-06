@@ -7,17 +7,20 @@ const features = [
   {
     icon: <EyeOff className="size-5 text-aqua" />,
     title: "Zero-Trust Architecture",
-    description: "Your environment variables are encrypted client-side. We never see your plaintext data or your keys.",
+    description:
+      "Your environment variables are encrypted client-side. We never see your plaintext data or your keys.",
   },
   {
     icon: <Shield className="size-5 text-aqua" />,
     title: "Fully Homomorphic Encryption",
-    description: "Compute directly on encrypted data. No need to decrypt your secrets to verify them or run secure operations.",
+    description:
+      "Compute directly on encrypted data. No need to decrypt your secrets to verify them or run secure operations.",
   },
   {
     icon: <Zap className="size-5 text-peach" />,
     title: "Web3 Native",
-    description: "Built for decentralized teams. Use your wallet to manage access controls and share secrets securely.",
+    description:
+      "Built for decentralized teams. Use your wallet to manage access controls and share secrets securely.",
   },
 ];
 
@@ -37,11 +40,11 @@ export function FeaturesSection() {
                 Built different
               </p>
               <h2 className="text-4xl font-bold text-slate-100 mb-4 leading-tight">
-                Enterprise-grade security{" "}
-                <span className="text-aqua">for your secrets</span>
+                Enterprise-grade security <span className="text-aqua">for your secrets</span>
               </h2>
               <p className="text-lg text-slate-400">
-                Stop pasting .env files in Slack. Secure your secrets with the next generation of cryptographic privacy.
+                Stop pasting .env files in Slack. Secure your secrets with the next generation of
+                cryptographic privacy.
               </p>
             </div>
 
@@ -57,7 +60,9 @@ export function FeaturesSection() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-100 mb-1">{feature.title}</h3>
-                    <p className="text-sm text-slate-300 leading-relaxed drop-shadow-sm font-medium">{feature.description}</p>
+                    <p className="text-sm text-slate-300 leading-relaxed drop-shadow-sm font-medium">
+                      {feature.description}
+                    </p>
                   </div>
                 </motion.div>
               ))}

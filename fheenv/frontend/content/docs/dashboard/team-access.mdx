@@ -8,18 +8,21 @@ import { Callout } from "fumadocs-ui/components/callout";
 # Team Access
 
 <Callout type="error">
-  **Always rotate after revoking.** Revocation alone only prevents future
-  grants. Run `fheenv rotate` to generate new ciphertexts the removed member
-  cannot decrypt.
+  **Always rotate after revoking.** Revocation alone only prevents future grants. Run `fheenv
+  rotate` to generate new ciphertexts the removed member cannot decrypt.
 </Callout>
 
 ## How Access Works
 
-fheENV uses wallet-based access control. Each environment maintains a list of addresses that can decrypt its secrets.
+fheENV uses wallet-based access control. Each environment maintains a list of addresses that can
+decrypt its secrets.
 
-When you **grant access**, the contract calls `FHE.allow(ciphertext, memberAddress)` — giving that wallet permission to decrypt the AES key handles via the Threshold Network.
+When you **grant access**, the contract calls `FHE.allow(ciphertext, memberAddress)` — giving that
+wallet permission to decrypt the AES key handles via the Threshold Network.
 
-When you **revoke access**, the contract marks the member as inactive. However, because CoFHE's ACL is append-only (no `revokeAllow` primitive), the removed member retains cryptographic access to the **current** ciphertexts until you rotate.
+When you **revoke access**, the contract marks the member as inactive. However, because CoFHE's ACL
+is append-only (no `revokeAllow` primitive), the removed member retains cryptographic access to the
+**current** ciphertexts until you rotate.
 
 ## Grant Access (Dashboard)
 
@@ -51,7 +54,8 @@ fheenv rotate --env production
 
 ## Key Rotation After Revocation
 
-After revoking a member, their wallet still holds a valid FHE permit for the old ciphertext handles. To fully cut access:
+After revoking a member, their wallet still holds a valid FHE permit for the old ciphertext handles.
+To fully cut access:
 
 ```bash
 fheenv rotate --env production
@@ -74,4 +78,5 @@ The revoked member never receives `FHE.allow` on the new handles, so they cannot
 | Project Owner | Yes      | Yes      | Yes              |
 | Team Member   | No       | Yes      | No               |
 
-Only project owners (set via `addOwner`) can push secrets and manage access. Team members can only decrypt/pull.
+Only project owners (set via `addOwner`) can push secrets and manage access. Team members can only
+decrypt/pull.

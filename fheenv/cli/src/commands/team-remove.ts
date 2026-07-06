@@ -10,9 +10,7 @@ export interface TeamRemoveOptions {
   member: string;
 }
 
-export async function teamRemoveCommand(
-  opts: TeamRemoveOptions,
-): Promise<void> {
+export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> {
   const config = readConfig();
   const envName = opts.envName ?? "production";
 
@@ -22,9 +20,7 @@ export async function teamRemoveCommand(
 
   // ⚠️  ROTATION REQUIRED — prominently warn the user
   console.log();
-  console.log(
-    chalk.bgRed.white.bold(" ⚠️  SECURITY NOTICE: KEY ROTATION REQUIRED "),
-  );
+  console.log(chalk.bgRed.white.bold(" ⚠️  SECURITY NOTICE: KEY ROTATION REQUIRED "));
   console.log(
     chalk.red(
       "Revoking access only prevents future FHE decryptions.\n" +
@@ -39,10 +35,7 @@ export async function teamRemoveCommand(
 
   const spinner = ora(`Revoking access for ${opts.member}...`).start();
   try {
-    const { publicClient, walletClient } = createClients(
-      config.rpcUrl,
-      config.chainId,
-    );
+    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
 
     await revokeAccess(
       config.registryAddress as Address,
@@ -53,9 +46,7 @@ export async function teamRemoveCommand(
       publicClient,
     );
 
-    spinner.succeed(
-      chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`),
-    );
+    spinner.succeed(chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`));
     console.log(
       chalk.bgYellow.black.bold(
         " → ACTION REQUIRED: Run `fheenv push` NOW to rotate the AES key. ",

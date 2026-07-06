@@ -15,36 +15,15 @@ Build on the Progress component with game-specific variants:
 import { Progress } from "@/components/ui/8bit/progress";
 
 function HealthBar({ value = 100, ...props }: BitProgressProps) {
-  return (
-    <Progress
-      {...props}
-      value={value}
-      variant="retro"
-      progressBg="bg-red-500"
-    />
-  );
+  return <Progress {...props} value={value} variant="retro" progressBg="bg-red-500" />;
 }
 
 function ManaBar({ value = 100, ...props }: BitProgressProps) {
-  return (
-    <Progress
-      {...props}
-      value={value}
-      variant="retro"
-      progressBg="bg-blue-500"
-    />
-  );
+  return <Progress {...props} value={value} variant="retro" progressBg="bg-blue-500" />;
 }
 
 function XpBar({ value = 0, ...props }: BitProgressProps) {
-  return (
-    <Progress
-      {...props}
-      value={value}
-      variant="retro"
-      progressBg="bg-yellow-500"
-    />
-  );
+  return <Progress {...props} value={value} variant="retro" progressBg="bg-yellow-500" />;
 }
 ```
 
@@ -53,11 +32,7 @@ function XpBar({ value = 0, ...props }: BitProgressProps) {
 Show animated messages when thresholds are reached:
 
 ```tsx
-function XpBar({
-  value,
-  levelUpMessage = "LEVEL UP!",
-  ...props
-}: XpBarProps) {
+function XpBar({ value, levelUpMessage = "LEVEL UP!", ...props }: XpBarProps) {
   const isLevelUp = value === 100;
 
   return (
@@ -77,7 +52,7 @@ function XpBar({
             "text-[0.625rem] text-black",
             "pointer-events-none whitespace-nowrap z-10",
             "drop-shadow-[1px_1px_0_#fff] [text-shadow:1px_1px_0_#fff,-1px_-1px_0_#fff,1px_-1px_0_#fff,-1px_1px_0_#fff]",
-            "animate-[blink_0.5s_step-end_infinite]"
+            "animate-[blink_0.5s_step-end_infinite]",
           )}
         >
           {levelUpMessage}
@@ -97,7 +72,7 @@ Use conditional classes for game state feedback:
   className={cn(
     "transition-colors duration-300",
     health <= 25 ? "animate-pulse bg-red-500/20" : "bg-green-500",
-    health > 25 && health <= 50 && "bg-yellow-500/20"
+    health > 25 && health <= 50 && "bg-yellow-500/20",
   )}
 />
 ```
@@ -114,7 +89,9 @@ function EnemyHealth({ health, maxHealth }: EnemyHealthProps) {
     <div className="retro text-xs">
       <div className="flex justify-between mb-1">
         <span>ENEMY</span>
-        <span>{health}/{maxHealth}</span>
+        <span>
+          {health}/{maxHealth}
+        </span>
       </div>
       <HealthBar value={percentage} className="h-2" />
     </div>

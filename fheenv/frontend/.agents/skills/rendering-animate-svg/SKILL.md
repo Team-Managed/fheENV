@@ -12,13 +12,10 @@ Many browsers don't have hardware acceleration for CSS3 animations on SVG elemen
 ```tsx
 function PixelSpinner() {
   return (
-    <svg
-      className="animate-spin"
-      viewBox="0 0 16 16"
-    >
+    <svg className="animate-spin" viewBox="0 0 16 16">
       <rect x="2" y="2" width="4" height="4" fill="currentColor" />
     </svg>
-  )
+  );
 }
 ```
 
@@ -28,15 +25,11 @@ function PixelSpinner() {
 function PixelSpinner() {
   return (
     <div className="animate-spin">
-      <svg
-        viewBox="0 0 16 16"
-        width="16"
-        height="16"
-      >
+      <svg viewBox="0 0 16 16" width="16" height="16">
         <rect x="2" y="2" width="4" height="4" fill="currentColor" />
       </svg>
     </div>
-  )
+  );
 }
 ```
 
@@ -48,7 +41,7 @@ function RetroIcon({ icon: Icon, className }: RetroIconProps) {
     <div className={cn("transition-transform hover:scale-110", className)}>
       <Icon />
     </div>
-  )
+  );
 }
 ```
 

@@ -1,5 +1,9 @@
 <div align="center">
-  <img src="frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/logo-full.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="frontend/public/brand/logo-full-light.svg" />
+    <img src="frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  </picture>
   <br /><br />
   <a href="https://fheenv.vercel.app"><img src="https://img.shields.io/badge/Web%20App-fheenv.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white" alt="Web App" /></a>
   <a href="https://fheenv.vercel.app/docs"><img src="https://img.shields.io/badge/Docs-fheenv.vercel.app/docs-0EA5E9?style=flat-square" alt="Docs" /></a>

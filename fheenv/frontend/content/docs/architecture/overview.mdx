@@ -65,8 +65,7 @@ import { Mermaid } from "@/components/docs/Mermaid";
       <Step>AES key split: `key[0:16]` = high, `key[16:32]` = low</Step>
       <Step>Each half FHE-encrypted via CoFHE SDK → `InEuint128` structs</Step>
       <Step>
-        Transaction: `updateEnvironment(projectId, envName, encHigh, encLow,
-        cid, version)`
+        Transaction: `updateEnvironment(projectId, envName, encHigh, encLow, cid, version)`
       </Step>
       <Step>Contract stores handles and grants `FHE.allow` to the caller</Step>
     </Steps>
@@ -75,9 +74,7 @@ import { Mermaid } from "@/components/docs/Mermaid";
     <Steps>
       <Step>Read `getEnvironment()` → get ciphertext handles + CID</Step>
       <Step>Create FHE self-permit via CoFHE SDK</Step>
-      <Step>
-        Request decryption of both `euint128` handles from Threshold Network
-      </Step>
+      <Step>Request decryption of both `euint128` handles from Threshold Network</Step>
       <Step>Reassemble: `high || low` → 32-byte AES key</Step>
       <Step>Fetch encrypted blob from IPFS using CID</Step>
       <Step>Decrypt blob with AES-256-GCM → original `.env` plaintext</Step>
@@ -97,7 +94,6 @@ import { Mermaid } from "@/components/docs/Mermaid";
 | fheENV team           | **Zero trust**     | We never see plaintext or keys                 |
 
 <Callout type="info">
-  The core guarantee is mathematical, not policy-based. Even if fheENV is
-  compromised, your secrets remain encrypted. The only trusted component is your
-  own machine.
+  The core guarantee is mathematical, not policy-based. Even if fheENV is compromised, your secrets
+  remain encrypted. The only trusted component is your own machine.
 </Callout>

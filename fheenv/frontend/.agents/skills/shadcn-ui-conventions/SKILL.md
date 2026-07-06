@@ -8,6 +8,7 @@ description: UI component conventions for 8-bit styled components. Use when work
 The `components/ui` directory uses different conventions from the rest of the project. It's excluded from Biome/Ultracite linting to preserve shadcn/ui patterns.
 
 ### When to use this skill
+
 - When creating new UI components
 - When modifying existing shadcn/ui components
 - When implementing 8-bit retro styling
@@ -45,6 +46,7 @@ import "@/components/ui/8bit/styles/retro.css";
 ```
 
 Import order:
+
 1. External libraries (class-variance-authority, @radix-ui)
 2. Internal utils (`@/lib/utils`)
 3. Base component alias (`@/components/ui/component`)
@@ -62,20 +64,19 @@ function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
-  })
+  });
 ```
 
 **8bit components**: Export interface separately
 
 ```tsx
 export interface BitButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   ref?: React.Ref<HTMLButtonElement>;
 }
 
-function Button({ children, asChild, ...props }: BitButtonProps)
+function Button({ children, asChild, ...props }: BitButtonProps);
 ```
 
 ### Ref Handling
@@ -86,22 +87,19 @@ function Button({ children, asChild, ...props }: BitButtonProps)
 const DialogOverlay = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay ref={ref} {...props} />
-));
+>(({ className, ...props }, ref) => <DialogPrimitive.Overlay ref={ref} {...props} />);
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 ```
 
 **8bit components**: Use `ref` prop (React 19 pattern)
 
 ```tsx
-export interface BitButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface BitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: React.Ref<HTMLButtonElement>;
 }
 
 function Button({ ref, ...props }: BitButtonProps) {
-  return <ShadcnButton ref={ref} {...props} />
+  return <ShadcnButton ref={ref} {...props} />;
 }
 ```
 

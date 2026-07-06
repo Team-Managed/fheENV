@@ -75,7 +75,14 @@ export function HeroSection() {
 
     const items = el.querySelectorAll(".hero-el");
     gsap.set(items, { opacity: 0, y: 22 });
-    gsap.to(items, { opacity: 1, y: 0, duration: 0.85, stagger: 0.1, ease: "power3.out", delay: 0.2 });
+    gsap.to(items, {
+      opacity: 1,
+      y: 0,
+      duration: 0.85,
+      stagger: 0.1,
+      ease: "power3.out",
+      delay: 0.2,
+    });
 
     const right = rightColRef.current;
     if (right) {
@@ -103,18 +110,18 @@ export function HeroSection() {
 
       {/* Hero grid */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh]">
-
         {/* ── Left: text ── */}
         <div className="flex flex-col gap-7">
-
           <div className="hero-el text-center lg:text-left flex flex-col gap-2 sm:gap-4 pb-4">
             <MorphingText
               texts={morphTexts}
               className="font-bold tracking-tighter"
-              style={{
-                fontSize: "clamp(42px, 5.5vw, 82px)",
-                color: "#2DD4BF"
-              } as React.CSSProperties}
+              style={
+                {
+                  fontSize: "clamp(42px, 5.5vw, 82px)",
+                  color: "#2DD4BF",
+                } as React.CSSProperties
+              }
             />
             <p
               className="font-bold text-slate-100 leading-[1.1] tracking-tight drop-shadow-sm"
@@ -125,7 +132,12 @@ export function HeroSection() {
           </div>
 
           <p className="hero-el text-center lg:text-left text-[15.5px] text-slate-300 max-w-[440px] mx-auto lg:mx-0 leading-relaxed font-medium drop-shadow-md">
-            Your <code className="font-mono text-aqua bg-aqua/10 px-1 py-0.5 rounded border border-aqua/20">.env</code>, encrypted with FHE. Push, pull, and run secrets without ever exposing plaintext. <span className="text-slate-400">Not even us.</span>
+            Your{" "}
+            <code className="font-mono text-aqua bg-aqua/10 px-1 py-0.5 rounded border border-aqua/20">
+              .env
+            </code>
+            , encrypted with FHE. Push, pull, and run secrets without ever exposing plaintext.{" "}
+            <span className="text-slate-400">Not even us.</span>
           </p>
 
           <div className="hero-el flex flex-wrap gap-3 justify-center lg:justify-start">

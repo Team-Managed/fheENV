@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.next/
+artifacts/
+cache/
+typechain-types/
+coverage/
+pnpm-lock.yaml
+*.min.js

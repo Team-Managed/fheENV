@@ -23,10 +23,7 @@ program
 program
   .command("login")
   .description("Save your Ethereum private key to ~/.fheenv/wallet.json")
-  .option(
-    "-k, --key <privateKey>",
-    "0x-prefixed private key (omit to read from stdin)",
-  )
+  .option("-k, --key <privateKey>", "0x-prefixed private key (omit to read from stdin)")
   .action(async (opts) => {
     try {
       let key = opts.key as string | undefined;
@@ -66,16 +63,8 @@ program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
   .requiredOption("-n, --name <name>", "Project name")
-  .option(
-    "-r, --registry <address>",
-    "Registry contract address",
-    SEPOLIA_REGISTRY,
-  )
-  .option(
-    "--rpc <url>",
-    "RPC URL (or set FHEENV_RPC)",
-    process.env.FHEENV_RPC ?? SEPOLIA_RPC,
-  )
+  .option("-r, --registry <address>", "Registry contract address", SEPOLIA_REGISTRY)
+  .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
   .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
   .option(
     "--pinata-jwt <jwt>",
@@ -166,9 +155,7 @@ team
 // ── fheenv team remove ────────────────────────────────────────────────────────
 team
   .command("remove")
-  .description(
-    "Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)",
-  )
+  .description("Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)")
   .requiredOption("-m, --member <address>", "Ethereum address to revoke")
   .option("-e, --env <envName>", "Environment name", "production")
   .action(async (opts) => {

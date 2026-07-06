@@ -34,34 +34,42 @@ export function HowItWorksSection() {
     const ctx = gsap.context(() => {
       gsap.set(".hiw-step", { opacity: 0, y: 50 });
       gsap.set(".hiw-demo", { opacity: 0, scale: 0.95 });
-      gsap.to(".hiw-step",
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ".hiw-steps-container", start: "top 80%" },
-        }
-      );
-      gsap.to(".hiw-demo",
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 1,
-          stagger: 0.2,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ".hiw-demos-container", start: "top 80%" },
-        }
-      );
+      gsap.to(".hiw-step", {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power3.out",
+        scrollTrigger: { trigger: ".hiw-steps-container", start: "top 80%" },
+      });
+      gsap.to(".hiw-demo", {
+        opacity: 1,
+        scale: 1,
+        duration: 1,
+        stagger: 0.2,
+        ease: "power3.out",
+        scrollTrigger: { trigger: ".hiw-demos-container", start: "top 80%" },
+      });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
 
   const steps = [
-    { num: "01", title: "Connect Wallet", desc: "Sign in with your Ethereum wallet — no emails, no passwords, no trusted third party." },
-    { num: "02", title: "Push Secrets", desc: "Your .env is AES-encrypted locally, stored on IPFS. The key is FHE-encrypted on-chain." },
-    { num: "03", title: "Pull or Run", desc: "Decrypt via threshold network — plaintext stays on your machine. Inject into processes without writing to disk." },
+    {
+      num: "01",
+      title: "Connect Wallet",
+      desc: "Sign in with your Ethereum wallet — no emails, no passwords, no trusted third party.",
+    },
+    {
+      num: "02",
+      title: "Push Secrets",
+      desc: "Your .env is AES-encrypted locally, stored on IPFS. The key is FHE-encrypted on-chain.",
+    },
+    {
+      num: "03",
+      title: "Pull or Run",
+      desc: "Decrypt via threshold network — plaintext stays on your machine. Inject into processes without writing to disk.",
+    },
   ];
 
   return (
@@ -96,7 +104,9 @@ export function HowItWorksSection() {
                 {step.num}
               </div>
               <h3 className="text-lg font-bold mb-2 text-slate-100">{step.title}</h3>
-              <p className="text-slate-300 drop-shadow-sm font-medium text-sm leading-relaxed">{step.desc}</p>
+              <p className="text-slate-300 drop-shadow-sm font-medium text-sm leading-relaxed">
+                {step.desc}
+              </p>
             </div>
           ))}
         </div>
@@ -119,35 +129,58 @@ export function HowItWorksSection() {
             <div className="p-6 font-mono text-[12px] leading-[1.85] text-slate-300 space-y-0.5">
               {/* init */}
               <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>{" "}
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/my-app ➜
+                </span>{" "}
                 <span className="text-slate-200">fheenv init --name my-app</span>
               </div>
-              <div className="text-slate-400 pl-1">Creating project &quot;my-app&quot; on-chain...</div>
+              <div className="text-slate-400 pl-1">
+                Creating project &quot;my-app&quot; on-chain...
+              </div>
               <div className="text-green-400 font-medium pl-1 pb-3">✓ Project created! ID: 0</div>
 
               {/* push */}
               <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>{" "}
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/my-app ➜
+                </span>{" "}
                 <span className="text-slate-200">fheenv push --env production</span>
               </div>
-              <div className="text-slate-400 pl-1">Generating AES key and encrypting env blob...</div>
+              <div className="text-slate-400 pl-1">
+                Generating AES key and encrypting env blob...
+              </div>
               <div className="text-slate-400 pl-1">Uploading encrypted blob to IPFS...</div>
-              <div className="text-slate-400 pl-1">FHE-encrypting AES key via threshold network...</div>
-              <div className="text-green-400 font-medium pl-1 pb-3">✓ Environment pushed! Version: 1</div>
+              <div className="text-slate-400 pl-1">
+                FHE-encrypting AES key via threshold network...
+              </div>
+              <div className="text-green-400 font-medium pl-1 pb-3">
+                ✓ Environment pushed! Version: 1
+              </div>
 
               {/* run */}
               <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>{" "}
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/my-app ➜
+                </span>{" "}
                 <span className="text-slate-200">fheenv run -- node server.js</span>
               </div>
               <div className="text-slate-400 pl-1">Decrypting AES key via threshold network...</div>
-              <div className="text-slate-400 pl-1">Fetching and decrypting env blob from IPFS...</div>
-              <div className="text-green-400 font-medium pl-1 pb-3">✓ 12 vars injected · server.js running (no disk write)</div>
+              <div className="text-slate-400 pl-1">
+                Fetching and decrypting env blob from IPFS...
+              </div>
+              <div className="text-green-400 font-medium pl-1 pb-3">
+                ✓ 12 vars injected · server.js running (no disk write)
+              </div>
 
               {/* trailing prompt */}
               <div className="flex items-center gap-1.5 pt-1">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>
-                <span className="inline-block w-[7px] h-[14px] rounded-sm animate-pulse" style={{ background: "#2DD4BF", opacity: 0.6 }} />
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/my-app ➜
+                </span>
+                <span
+                  className="inline-block w-[7px] h-[14px] rounded-sm animate-pulse"
+                  style={{ background: "#2DD4BF", opacity: 0.6 }}
+                />
               </div>
             </div>
           </div>

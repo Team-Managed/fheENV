@@ -44,8 +44,7 @@ export function FAQSection() {
             Got questions?
           </p>
           <h2 className="text-4xl font-bold text-slate-100">
-            Frequently Asked{" "}
-            <span className="text-peach">Questions</span>
+            Frequently Asked <span className="text-peach">Questions</span>
           </h2>
         </div>
 
@@ -97,8 +96,17 @@ export function FAQSection() {
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <a href="/docs" className="hover:text-aqua transition-colors">Docs</a>
-            <a href="https://github.com/Team-Managed/fheENV" target="_blank" rel="noopener noreferrer" className="hover:text-aqua transition-colors">GitHub</a>
+            <a href="/docs" className="hover:text-aqua transition-colors">
+              Docs
+            </a>
+            <a
+              href="https://github.com/Team-Managed/fheENV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-aqua transition-colors"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </div>
