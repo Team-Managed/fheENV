@@ -197,7 +197,7 @@ export function SecretsTable({ projectId, envName }: Props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await cofheClient.connect(publicClient as any, walletClient as any);
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
-       
+
       const [encHigh, encLow] = (await cofheClient
         .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
         .execute()) as any;
