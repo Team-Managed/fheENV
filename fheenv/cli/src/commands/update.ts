@@ -8,7 +8,7 @@ import ora from "ora";
 const REPO = "Team-Managed/fheENV";
 
 // Injected at build time — matches package.json version
-const CURRENT_VERSION = "0.1.0";
+const CURRENT_VERSION = "0.4.0";
 
 // ── Platform / arch detection ─────────────────────────────────────────────────
 
