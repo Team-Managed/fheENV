@@ -10,6 +10,7 @@ description: Best practices for wrapping shadcn/ui components. Apply when creati
 ### Basic Wrapper Pattern
 
 **Structure:**
+
 1. Import base component with alias
 2. Define variants using class-variance-authority
 3. Export separate interface for props
@@ -39,8 +40,7 @@ export const buttonVariants = cva("", {
 });
 
 export interface BitButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   ref?: React.Ref<HTMLButtonElement>;
 }
@@ -51,10 +51,7 @@ function Button({ children, asChild, ...props }: BitButtonProps) {
   return (
     <ShadcnButton
       {...props}
-      className={cn(
-        "rounded-none active:translate-y-1 transition-transform",
-        className
-      )}
+      className={cn("rounded-none active:translate-y-1 transition-transform", className)}
       size={size}
       variant={variant}
       asChild={asChild}
@@ -98,19 +95,10 @@ Use outer wrapper for pixelated borders while keeping base component:
 ```tsx
 function Card({ className, font, ...props }: BitCardProps) {
   return (
-    <div
-      className={cn(
-        "relative border-y-6 border-foreground dark:border-ring !p-0",
-        className
-      )}
-    >
+    <div className={cn("relative border-y-6 border-foreground dark:border-ring !p-0", className)}>
       <ShadcnCard
         {...props}
-        className={cn(
-          "rounded-none border-0 !w-full",
-          font !== "normal" && "retro",
-          className
-        )}
+        className={cn("rounded-none border-0 !w-full", font !== "normal" && "retro", className)}
       />
 
       {/* Pixelated side borders */}

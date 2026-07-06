@@ -20,10 +20,7 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
 
   const spinner = ora(`Granting access to ${opts.member}...`).start();
   try {
-    const { publicClient, walletClient } = createClients(
-      config.rpcUrl,
-      config.chainId,
-    );
+    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
 
     await grantAccess(
       config.registryAddress as Address,
@@ -34,11 +31,7 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
       publicClient,
     );
 
-    spinner.succeed(
-      chalk.green(
-        `Access granted: ${opts.member} can now pull env "${envName}"`,
-      ),
-    );
+    spinner.succeed(chalk.green(`Access granted: ${opts.member} can now pull env "${envName}"`));
     console.log(
       chalk.dim(
         `  They will need your CID to fetch the blob, and their address must have FHE decryption access.`,

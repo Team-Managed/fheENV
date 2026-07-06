@@ -20,9 +20,7 @@ export function loadAccountKey(): `0x${string}` {
     const keyfile = JSON.parse(fs.readFileSync(KEYFILE_PATH, "utf-8"));
     return keyfile.privateKey as `0x${string}`;
   }
-  throw new Error(
-    "No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY.",
-  );
+  throw new Error("No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY.");
 }
 
 export function saveWallet(privateKey: string): void {

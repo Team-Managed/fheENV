@@ -17,11 +17,13 @@ Use CSS transforms for GPU-accelerated animations:
 ```
 
 **Avoid animating:**
+
 - `width`, `height` (triggers layout)
 - `margin`, `padding` (triggers layout)
 - `top`, `left` (triggers layout)
 
 **Prefer animating:**
+
 - `transform` (GPU accelerated)
 - `opacity` (GPU accelerated)
 - `filter` (GPU accelerated)
@@ -87,7 +89,7 @@ Apply animations based on game state:
   className={cn(
     "transition-all duration-300",
     health <= 25 && "animate-pulse bg-red-500/20",
-    isLevelUp && "animate-bounce"
+    isLevelUp && "animate-bounce",
   )}
 />
 ```

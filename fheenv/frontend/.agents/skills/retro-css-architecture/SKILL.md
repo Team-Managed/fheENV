@@ -21,7 +21,11 @@ Use "Press Start 2P" for authentic 8-bit typography:
 
 ```css
 .retro {
-  font-family: "Press Start 2P", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Press Start 2P",
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
   letter-spacing: 0.5px;
 }
@@ -84,7 +88,11 @@ Keep retro-specific styles in `components/ui/8bit/styles/retro.css`:
 
 /* Font class */
 .retro {
-  font-family: "Press Start 2P", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Press Start 2P",
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
   letter-spacing: 0.5px;
 }
@@ -105,7 +113,7 @@ Use Tailwind utilities for component-specific styling:
   className={cn(
     "relative border-y-6 border-foreground dark:border-ring",
     "rounded-none active:translate-y-1 transition-transform",
-    className
+    className,
   )}
 />
 ```

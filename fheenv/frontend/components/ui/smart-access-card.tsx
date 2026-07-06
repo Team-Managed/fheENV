@@ -1,6 +1,6 @@
-import React from 'react';
-import { User, BadgeCheck } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { User, BadgeCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SmartAccessCardProps {
   className?: string;
@@ -14,7 +14,12 @@ export function SmartAccessCard({ className }: SmartAccessCardProps) {
   ];
 
   return (
-    <div className={cn("relative w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0d1117] p-6 shadow-2xl overflow-hidden", className)}>
+    <div
+      className={cn(
+        "relative w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0d1117] p-6 shadow-2xl overflow-hidden",
+        className,
+      )}
+    >
       {/* Background glow */}
       <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-aqua/10 blur-[50px] pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-peach/10 blur-[50px] pointer-events-none" />
@@ -32,7 +37,9 @@ export function SmartAccessCard({ className }: SmartAccessCardProps) {
 
         {/* User Info */}
         <h3 className="text-xl font-bold text-slate-100 mb-1 tracking-tight">0x12aF...9c4B</h3>
-        <p className="text-sm font-medium text-aqua mb-6 bg-aqua/10 px-3 py-1 rounded-full border border-aqua/20">Project Owner</p>
+        <p className="text-sm font-medium text-aqua mb-6 bg-aqua/10 px-3 py-1 rounded-full border border-aqua/20">
+          Project Owner
+        </p>
 
         {/* Permissions */}
         <div className="w-full space-y-3">
@@ -41,12 +48,17 @@ export function SmartAccessCard({ className }: SmartAccessCardProps) {
             <span>Status</span>
           </div>
           {permissions.map((perm, idx) => (
-            <div key={idx} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3"
+            >
               <span className="text-sm font-medium text-slate-300">{perm.name}</span>
-              <div className={cn(
-                "h-2 w-2 rounded-full",
-                perm.active ? "bg-aqua shadow-[0_0_8px_rgba(45,212,191,0.8)]" : "bg-slate-600"
-              )} />
+              <div
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  perm.active ? "bg-aqua shadow-[0_0_8px_rgba(45,212,191,0.8)]" : "bg-slate-600",
+                )}
+              />
             </div>
           ))}
         </div>

@@ -19,13 +19,11 @@ import { Card, Cards } from "fumadocs-ui/components/card";
 
 <Tabs items={["macOS / Linux", "Windows"]}>
   <Tab value="macOS / Linux">
-    ```bash curl -fsSL
-    https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+    ```bash curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
     ```
   </Tab>
   <Tab value="Windows">
-    ```powershell irm
-    https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex
+    ```powershell irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex
     ```
   </Tab>
 </Tabs>
@@ -106,24 +104,12 @@ Secrets exist only in the child process memory. Nothing touches the filesystem. 
 ## Next Steps
 
 <Cards>
-  <Card
-    title="CLI Commands"
-    description="All flags and options"
-    href="/docs/cli/commands"
-  />
-  <Card
-    title="Web Dashboard"
-    description="Use the browser UI"
-    href="/docs/dashboard/overview"
-  />
+  <Card title="CLI Commands" description="All flags and options" href="/docs/cli/commands" />
+  <Card title="Web Dashboard" description="Use the browser UI" href="/docs/dashboard/overview" />
   <Card
     title="Team Access"
     description="Share secrets with teammates"
     href="/docs/dashboard/team-access"
   />
-  <Card
-    title="CI/CD Integration"
-    description="Use in GitHub Actions"
-    href="/docs/cli/ci-cd"
-  />
+  <Card title="CI/CD Integration" description="Use in GitHub Actions" href="/docs/cli/ci-cd" />
 </Cards>

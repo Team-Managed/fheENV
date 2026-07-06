@@ -1,0 +1,28 @@
+# fheENV Code Owners
+
+# Owners are automatically requested for review on PRs that touch their files.
+
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owner — all files require review from the core team
+
+- @kunalshah017
+
+# Smart contract — extra care required
+
+fheenv/contracts/** @kunalshah017
+fheenv/test/** @kunalshah017
+fheenv/scripts/\*\* @kunalshah017
+
+# CLI — security-sensitive
+
+fheenv/cli/src/lib/** @kunalshah017
+fheenv/cli/src/commands/** @kunalshah017
+
+# GitHub Actions workflows
+
+.github/workflows/\*\* @kunalshah017
+
+# Docs
+
+fheenv/frontend/content/docs/\*\* @kunalshah017

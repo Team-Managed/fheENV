@@ -2,11 +2,7 @@ import chalk from "chalk";
 import ora from "ora";
 import { readConfig } from "../lib/config";
 import { createClients } from "../lib/wallet";
-import {
-  generateAesKeyNode,
-  aesEncryptNode,
-  splitAesKeyToUint128Node,
-} from "../lib/aes-node";
+import { generateAesKeyNode, aesEncryptNode, splitAesKeyToUint128Node } from "../lib/aes-node";
 import { uploadToIPFSNode } from "../lib/ipfs-node";
 import {
   getEnvironment,
@@ -14,11 +10,7 @@ import {
   batchGrantAccess,
   getActiveMembers,
 } from "../lib/contracts-node";
-import {
-  createFheClient,
-  fheEncryptUint128,
-  toInEuint128,
-} from "../lib/fhe-node";
+import { createFheClient, fheEncryptUint128, toInEuint128 } from "../lib/fhe-node";
 import { type Address } from "viem";
 
 export interface RotateOptions {
@@ -45,21 +37,13 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
 
   const spinner = ora(`Rotating AES key for env "${envName}"...`).start();
   try {
-    const { publicClient, walletClient, account } = createClients(
-      config.rpcUrl,
-      config.chainId,
-    );
+    const { publicClient, walletClient, account } = createClients(config.rpcUrl, config.chainId);
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
 
     // 1. Read current env blob from IPFS so we can re-encrypt its content
     spinner.text = "Fetching current environment from chain...";
-    const currentEnv = await getEnvironment(
-      registryAddress,
-      projectId,
-      envName,
-      publicClient,
-    );
+    const currentEnv = await getEnvironment(registryAddress, projectId, envName, publicClient);
     if (!currentEnv.blobCid) {
       throw new Error(
         `Environment "${envName}" has not been pushed yet. Run \`fheenv push\` first.`,
@@ -68,12 +52,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
 
     // 2. Get current active members (will be re-granted after rotation)
     spinner.text = "Reading current member list from chain events...";
-    const activeMembers = await getActiveMembers(
-      registryAddress,
-      projectId,
-      envName,
-      publicClient,
-    );
+    const activeMembers = await getActiveMembers(registryAddress, projectId, envName, publicClient);
 
     // 3. Read the local .env file for re-encryption
     const fs = await import("fs");
@@ -81,8 +60,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
     const envFilePath = path.resolve(process.cwd(), envFile);
     if (!fs.existsSync(envFilePath)) {
       throw new Error(
-        `Env file not found: ${envFilePath}\n` +
-          `  Tip: provide the file path with --file <path>`,
+        `Env file not found: ${envFilePath}\n` + `  Tip: provide the file path with --file <path>`,
       );
     }
     const envContent = fs.readFileSync(envFilePath, "utf-8");
@@ -95,31 +73,13 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
 
     // 5. Upload new blob to IPFS
     spinner.text = "Uploading re-encrypted blob to IPFS...";
-    const blobCid = await uploadToIPFSNode(
-      encryptedBlob,
-      envFile,
-      config.pinataJwt,
-    );
+    const blobCid = await uploadToIPFSNode(encryptedBlob, envFile, config.pinataJwt);
 
     // 6. FHE-encrypt new key halves
     spinner.text = "FHE-encrypting new AES key...";
-    const fheClient = await createFheClient(
-      config.chainId,
-      publicClient,
-      walletClient,
-    );
-    const encHigh = await fheEncryptUint128(
-      fheClient,
-      keyHigh,
-      account.address,
-      config.chainId,
-    );
-    const encLow = await fheEncryptUint128(
-      fheClient,
-      keyLow,
-      account.address,
-      config.chainId,
-    );
+    const fheClient = await createFheClient(config.chainId, publicClient, walletClient);
+    const encHigh = await fheEncryptUint128(fheClient, keyHigh, account.address, config.chainId);
+    const encLow = await fheEncryptUint128(fheClient, keyLow, account.address, config.chainId);
 
     // 7. Write new environment to chain (issues fresh FHE handles)
     spinner.text = "Writing rotated environment to chain...";
@@ -151,16 +111,12 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
     }
 
     spinner.succeed(
-      chalk.green(
-        `Rotation complete for "${envName}" (v${currentEnv.version + 1n})`,
-      ),
+      chalk.green(`Rotation complete for "${envName}" (v${currentEnv.version + 1n})`),
     );
     console.log(chalk.dim(`  New IPFS CID : ${blobCid}`));
     console.log(
       chalk.dim(
-        `  Members re-granted : ${
-          activeMembers.length > 0 ? activeMembers.join(", ") : "none"
-        }`,
+        `  Members re-granted : ${activeMembers.length > 0 ? activeMembers.join(", ") : "none"}`,
       ),
     );
     console.log(

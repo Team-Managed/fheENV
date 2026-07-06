@@ -41,10 +41,7 @@ function fetchJson(url: string): Promise<unknown> {
       url,
       { headers: { "User-Agent": "fheenv-cli", Accept: "application/json" } },
       (res) => {
-        if (
-          (res.statusCode === 301 || res.statusCode === 302) &&
-          res.headers.location
-        ) {
+        if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
           return fetchJson(res.headers.location).then(resolve).catch(reject);
         }
         let buf = "";
@@ -68,10 +65,7 @@ function downloadFile(url: string, dest: string): Promise<void> {
     const follow = (u: string) => {
       https
         .get(u, { headers: { "User-Agent": "fheenv-cli" } }, (res) => {
-          if (
-            (res.statusCode === 301 || res.statusCode === 302) &&
-            res.headers.location
-          ) {
+          if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
             return follow(res.headers.location);
           }
           if (res.statusCode !== 200) {
@@ -124,18 +118,8 @@ function patchWindowsProfiles(installDir: string): void {
 
   // PowerShell profiles (Windows PowerShell 5 and PowerShell 7)
   const psProfiles = [
-    path.join(
-      home,
-      "Documents",
-      "WindowsPowerShell",
-      "Microsoft.PowerShell_profile.ps1",
-    ),
-    path.join(
-      home,
-      "Documents",
-      "PowerShell",
-      "Microsoft.PowerShell_profile.ps1",
-    ),
+    path.join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1"),
+    path.join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1"),
   ];
 
   for (const prof of psProfiles) {
@@ -153,10 +137,7 @@ function patchWindowsProfiles(installDir: string): void {
   // Git Bash / Git-for-Windows: ~ maps to %USERPROFILE%
   const bashLine = `export PATH="$HOME/.fheenv/bin:$PATH"`;
   const bashMarker = "# fheenv";
-  const bashFiles = [
-    path.join(home, ".bashrc"),
-    path.join(home, ".bash_profile"),
-  ];
+  const bashFiles = [path.join(home, ".bashrc"), path.join(home, ".bash_profile")];
 
   for (const f of bashFiles) {
     try {
@@ -195,9 +176,7 @@ export async function updateCommand(): Promise<void> {
       `https://api.github.com/repos/${REPO}/releases/latest`,
     )) as GithubRelease;
   } catch (err) {
-    spinner.fail(
-      chalk.red(`Could not reach GitHub: ${(err as Error).message}`),
-    );
+    spinner.fail(chalk.red(`Could not reach GitHub: ${(err as Error).message}`));
     process.exit(1);
   }
 
@@ -205,9 +184,7 @@ export async function updateCommand(): Promise<void> {
   const latestVersion = latestTag.replace(/^v/, "");
 
   if (latestVersion === CURRENT_VERSION) {
-    spinner.succeed(
-      chalk.green(`Already up to date — ${chalk.bold(latestTag)}`),
-    );
+    spinner.succeed(chalk.green(`Already up to date — ${chalk.bold(latestTag)}`));
     return;
   }
 
@@ -227,9 +204,7 @@ export async function updateCommand(): Promise<void> {
   if (!asset) {
     spinner.fail(
       chalk.red(
-        `No binary found for ${chalk.bold(
-          assetName,
-        )} in release ${latestTag}.\n` +
+        `No binary found for ${chalk.bold(assetName)} in release ${latestTag}.\n` +
           `  Available assets: ${release.assets.map((a) => a.name).join(", ")}`,
       ),
     );
@@ -259,8 +234,7 @@ export async function updateCommand(): Promise<void> {
     }
     spinner.fail(
       chalk.red(
-        `Could not replace binary: ${(err as Error).message}\n` +
-          `  Try: sudo fheenv update`,
+        `Could not replace binary: ${(err as Error).message}\n` + `  Try: sudo fheenv update`,
       ),
     );
     process.exit(1);
