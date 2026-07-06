@@ -111,6 +111,56 @@ function replaceBinary(tmpPath: string, targetPath: string): void {
   }
 }
 
+// ── Windows: patch PowerShell profiles + Git Bash rc ─────────────────────────
+// VS Code's integrated terminal inherits VS Code's environment at launch time.
+// Writing to the Windows User PATH registry doesn't help for already-open VS Code
+// windows. Patching the shell profile files ($PROFILE / .bashrc) makes the PATH
+// available every time those terminals start a new session — including inside VS Code.
+
+function patchWindowsProfiles(installDir: string): void {
+  const home = os.homedir();
+  const psLine = `$env:PATH = "${installDir};$env:PATH"`;
+  const psMarker = "# fheenv";
+
+  // PowerShell profiles (Windows PowerShell 5 and PowerShell 7)
+  const psProfiles = [
+    path.join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1"),
+    path.join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1"),
+  ];
+
+  for (const prof of psProfiles) {
+    try {
+      fs.mkdirSync(path.dirname(prof), { recursive: true });
+      const existing = fs.existsSync(prof) ? fs.readFileSync(prof, "utf8") : "";
+      if (!existing.includes(installDir)) {
+        fs.appendFileSync(prof, `\n${psMarker}\n${psLine}\n`);
+      }
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  // Git Bash / Git-for-Windows: ~ maps to %USERPROFILE%
+  const bashLine = `export PATH="$HOME/.fheenv/bin:$PATH"`;
+  const bashMarker = "# fheenv";
+  const bashFiles = [
+    path.join(home, ".bashrc"),
+    path.join(home, ".bash_profile"),
+  ];
+
+  for (const f of bashFiles) {
+    try {
+      if (!fs.existsSync(f)) continue;
+      const existing = fs.readFileSync(f, "utf8");
+      if (!existing.includes(".fheenv/bin")) {
+        fs.appendFileSync(f, `\n${bashMarker}\n${bashLine}\n`);
+      }
+    } catch {
+      /* non-fatal */
+    }
+  }
+}
+
 // ── Command ───────────────────────────────────────────────────────────────────
 
 export async function updateCommand(): Promise<void> {
@@ -135,7 +185,9 @@ export async function updateCommand(): Promise<void> {
       `https://api.github.com/repos/${REPO}/releases/latest`,
     )) as GithubRelease;
   } catch (err) {
-    spinner.fail(chalk.red(`Could not reach GitHub: ${(err as Error).message}`));
+    spinner.fail(
+      chalk.red(`Could not reach GitHub: ${(err as Error).message}`),
+    );
     process.exit(1);
   }
 
@@ -165,7 +217,9 @@ export async function updateCommand(): Promise<void> {
   if (!asset) {
     spinner.fail(
       chalk.red(
-        `No binary found for ${chalk.bold(assetName)} in release ${latestTag}.\n` +
+        `No binary found for ${chalk.bold(
+          assetName,
+        )} in release ${latestTag}.\n` +
           `  Available assets: ${release.assets.map((a) => a.name).join(", ")}`,
       ),
     );
@@ -202,10 +256,25 @@ export async function updateCommand(): Promise<void> {
     process.exit(1);
   }
 
+  // On Windows, also patch PS profiles + Git Bash rc so VS Code terminals
+  // pick up the PATH without needing a full VS Code restart.
+  if (process.platform === "win32") {
+    patchWindowsProfiles(path.dirname(process.execPath));
+  }
+
   spinner.succeed(
-    chalk.green(
-      `✓ Updated to ${chalk.bold(latestTag)}! ` +
-        `Open a new terminal to use the new version.`,
-    ),
+    chalk.green(`✓ Updated to ${chalk.bold(latestTag)}!`),
   );
+
+  if (process.platform === "win32") {
+    console.log(
+      chalk.yellow(
+        "\n⚠  If you're running inside VS Code, close and reopen VS Code\n" +
+        "   to pick up the new binary (VS Code caches its environment at launch).\n" +
+        "   New standalone PowerShell / cmd windows work immediately.",
+      ),
+    );
+  } else {
+    console.log(chalk.dim("  Open a new terminal to use the new version."));
+  }
 }
