@@ -142,8 +142,6 @@ export function SecretsTable({ projectId, envName }: Props) {
 
             // 3. Upload to IPFS
             setSaveMsg("Uploading to IPFS…");
-            const jwt = process.env.NEXT_PUBLIC_PINATA_JWT;
-            if (!jwt) throw new Error("NEXT_PUBLIC_PINATA_JWT not set");
             const cid = await uploadToIPFS(encryptedBlob, `${projectId}-${envName}`);
 
             // 4. FHE-encrypt new key halves

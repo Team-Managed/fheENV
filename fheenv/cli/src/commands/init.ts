@@ -25,6 +25,14 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   // Validate wallet is loaded
   loadAccountKey();
 
+  if (!opts.pinataJwt) {
+    throw new Error(
+      "Pinata JWT is required.\n" +
+        "  Set FHEENV_PINATA_JWT env var or pass --pinata-jwt <jwt>\n" +
+        "  Get a free JWT at https://app.pinata.cloud/developers/api-keys",
+    );
+  }
+
   const spinner = ora(`Creating project "${opts.name}" on-chain...`).start();
   try {
     const { publicClient, walletClient } = createClients(

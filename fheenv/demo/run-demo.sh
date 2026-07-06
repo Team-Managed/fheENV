@@ -7,7 +7,7 @@
 set -e
 
 REGISTRY="0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2"
-RPC="https://sepolia.infura.io/v3/2f47822adc2844fbae3a6fe15913289f"
+RPC="${FHEENV_RPC:-https://ethereum-sepolia-rpc.publicnode.com}"
 CHAIN_ID=11155111
 CLI="node $(dirname "$0")/../cli/dist/index.js"
 DEMO_DIR="$(dirname "$0")"

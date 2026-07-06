@@ -1,7 +1,7 @@
 {
   "projectId": null,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://sepolia.infura.io/v3/2f47822adc2844fbae3a6fe15913289f",
+  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
   "pinataJwt": "FILL_IN_YOUR_PINATA_JWT"
 }

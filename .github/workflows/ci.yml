@@ -1,0 +1,76 @@
+name: CI
+
+on:
+    pull_request:
+        branches: [main]
+    push:
+        branches: [main]
+
+jobs:
+    contracts:
+        name: Contracts (compile + test)
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with: { version: latest }
+            - uses: actions/setup-node@v4
+              with:
+                  {
+                      node-version: "22",
+                      cache: "pnpm",
+                      cache-dependency-path: fheenv/pnpm-lock.yaml,
+                  }
+            - run: pnpm install --frozen-lockfile
+              working-directory: fheenv
+            - run: pnpm run compile
+              working-directory: fheenv
+            - run: pnpm run test
+              working-directory: fheenv
+
+    cli:
+        name: CLI (typecheck + build)
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with: { version: latest }
+            - uses: actions/setup-node@v4
+              with:
+                  {
+                      node-version: "22",
+                      cache: "pnpm",
+                      cache-dependency-path: fheenv/pnpm-lock.yaml,
+                  }
+            - run: pnpm install --frozen-lockfile
+              working-directory: fheenv
+            - run: npx tsc --noEmit
+              working-directory: fheenv/cli
+            - run: pnpm run build
+              working-directory: fheenv/cli
+
+    frontend:
+        name: Frontend (typecheck + build)
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with: { version: latest }
+            - uses: actions/setup-node@v4
+              with:
+                  {
+                      node-version: "22",
+                      cache: "pnpm",
+                      cache-dependency-path: fheenv/pnpm-lock.yaml,
+                  }
+            - run: pnpm install --frozen-lockfile
+              working-directory: fheenv
+            - run: npx tsc --noEmit
+              working-directory: fheenv/frontend
+            - run: pnpm run build
+              working-directory: fheenv/frontend
+              env:
+                  NEXT_PUBLIC_REGISTRY_ADDRESS: "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2"
+                  NEXT_PUBLIC_CHAIN_ID: "11155111"
+                  NEXT_PUBLIC_SEPOLIA_RPC: "https://ethereum-sepolia-rpc.publicnode.com"
+                  PINATA_JWT: "ci-placeholder"

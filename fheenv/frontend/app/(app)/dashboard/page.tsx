@@ -94,7 +94,7 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projectIds.map((id) => (
-            <ProjectCard key={id.toString()} projectId={id} onClick={() => router.push(`/project/${id}`)} />
+            <ProjectCard key={id.toString()} projectId={id} address={address!} onClick={() => router.push(`/project/${id}`)} />
           ))}
         </div>
       )}
@@ -109,13 +109,18 @@ export default function Dashboard() {
 
 type ProjectTuple = readonly [string, string, bigint, boolean];
 
-function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () => void }) {
+function ProjectCard({ projectId, address, onClick }: { projectId: bigint; address: `0x${string}`; onClick: () => void }) {
   const { data: raw } = useReadContract({
     address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "projects", args: [projectId],
     chainId: 11155111,
   });
+  const { data: isOwner } = useReadContract({
+    address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: "owners", args: [projectId, address],
+    chainId: 11155111,
+  });
   const project = raw as unknown as ProjectTuple | undefined;
-  if (!project || !project[3]) return null;
+  // Only show projects where the connected user is an owner
+  if (!project || !project[3] || !isOwner) return null;
   return (
     <button
       onClick={onClick}

@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# fheENV — Web Dashboard
 
-## Getting Started
+The web UI for fheENV. Built with Next.js 14 (App Router), wagmi v2, and viem.
 
-First, run the development server:
+**Live:** [fheenv.vercel.app](https://fheenv.vercel.app)
+
+## Features
+
+- Connect any EVM wallet (MetaMask, Coinbase, etc.)
+- Create projects on-chain
+- Push encrypted `.env` files (encryption happens in-browser)
+- View & edit secrets with FHE decryption via Threshold Network
+- Grant/revoke team access
+- Full on-chain audit log
+
+## Local Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# From the monorepo root (fheenv/)
+pnpm install
+
+# Start the frontend dev server
+cd frontend
+cp .env.example .env.local  # fill in values (see below)
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable                       | Description                                        |
+| ------------------------------ | -------------------------------------------------- |
+| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Deployed fheENVRegistry contract address           |
+| `NEXT_PUBLIC_CHAIN_ID`         | Chain ID (`11155111` for Sepolia)                  |
+| `NEXT_PUBLIC_SEPOLIA_RPC`      | Sepolia RPC endpoint                               |
+| `PINATA_JWT`                   | Server-side Pinata JWT (used by `/api/ipfs` route) |
 
-## Learn More
+> `PINATA_JWT` is **server-side only** — it's used by the API route at `app/api/ipfs/route.ts` and never exposed to the browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/
+├── (landing)/       Landing page (public)
+├── (app)/           Dashboard (wallet-gated)
+│   ├── dashboard/   Project list
+│   └── project/     Project detail + env management
+├── api/ipfs/        Server-side IPFS upload proxy
+├── layout.tsx       Root layout + fonts
+└── providers.tsx    Wagmi + React Query providers
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+components/
+├── landing/         Landing page sections
+├── ui/              Reusable UI primitives
+├── PushEnvForm.tsx  Push secrets flow
+├── SecretsTable.tsx View/edit/decrypt secrets
+├── TeamManager.tsx  Grant/revoke access
+└── AuditLog.tsx     On-chain event timeline
 
-## Deploy on Vercel
+lib/
+├── aes.ts           AES-256-GCM (Web Crypto)
+├── cofhe.ts         CoFHE SDK client setup
+├── contracts.ts     Registry ABI + address
+├── envParser.ts     .env parser/serializer
+├── ipfs.ts          IPFS upload via /api/ipfs
+└── utils.ts         Tailwind merge helper
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Build
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm run build
+```
+
+Deployed automatically via Vercel on push to `main`.

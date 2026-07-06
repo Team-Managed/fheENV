@@ -28,10 +28,10 @@ Threshold Network decrypts your two `euint128` handles locally → reassemble 32
 
 ## Deployed contract
 
-| | |
-|---|---|
-| **Network** | Ethereum Sepolia (chain ID `11155111`) |
-| **Address** | `0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2` |
+|               |                                                                                 |
+| ------------- | ------------------------------------------------------------------------------- |
+| **Network**   | Ethereum Sepolia (chain ID `11155111`)                                          |
+| **Address**   | `0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`                                    |
 | **Etherscan** | https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 |
 
 ---
@@ -87,7 +87,7 @@ Every command (except `login`) reads this file from the current directory. `fhee
 {
   "projectId": 0,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://sepolia.infura.io/v3/YOUR_KEY",
+  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
   "pinataJwt": "eyJhbGc..."
 }
@@ -107,8 +107,8 @@ Save a private key to the local keyfile.
 fheenv login --key 0xABC123...
 ```
 
-| Flag | Description |
-|---|---|
+| Flag                     | Description                         |
+| ------------------------ | ----------------------------------- |
 | `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
 
 Stores at `~/.fheenv/wallet.json` (permissions `0600`).
@@ -123,18 +123,18 @@ Create a new project on-chain and write `.fheenv.json` to the current directory.
 fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
-  --rpc https://sepolia.infura.io/v3/YOUR_KEY \
+  --rpc https://ethereum-sepolia-rpc.publicnode.com \
   --chain-id 11155111 \
   --pinata-jwt eyJhbGc...
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-n, --name <name>` | required | Project name (1–64 chars) |
+| Flag                       | Default  | Description                     |
+| -------------------------- | -------- | ------------------------------- |
+| `-n, --name <name>`        | required | Project name (1–64 chars)       |
 | `-r, --registry <address>` | required | fheENVRegistry contract address |
-| `--rpc <url>` | required | Sepolia RPC endpoint |
-| `--chain-id <id>` | required | `11155111` for Sepolia |
-| `--pinata-jwt <jwt>` | required | Pinata JWT for IPFS uploads |
+| `--rpc <url>`              | required | Sepolia RPC endpoint            |
+| `--chain-id <id>`          | required | `11155111` for Sepolia          |
+| `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
 
 Creates `.fheenv.json` in the current directory. Run once per project.
 
@@ -150,6 +150,7 @@ fheenv push --env staging --file .env.staging
 ```
 
 What happens step-by-step:
+
 1. Reads your `.env` file from disk
 2. Generates a fresh random 256-bit AES key
 3. Encrypts the entire `.env` content with AES-256-GCM (output: encrypted blob)
@@ -159,10 +160,10 @@ What happens step-by-step:
 7. Submits `updateEnvironment(projectId, envName, encHigh, encLow, cid, version)` to Sepolia
 8. The AES key is now stored on-chain as two `euint128` ciphertexts — unreadable by anyone without your wallet's FHE permit
 
-| Flag | Default | Description |
-|---|---|---|
-| `-e, --env <name>` | `production` | Environment name |
-| `-f, --file <path>` | `.env` | Local file to encrypt |
+| Flag                | Default      | Description           |
+| ------------------- | ------------ | --------------------- |
+| `-e, --env <name>`  | `production` | Environment name      |
+| `-f, --file <path>` | `.env`       | Local file to encrypt |
 
 ---
 
@@ -176,6 +177,7 @@ fheenv pull --env staging --output .env.staging.local
 ```
 
 What happens step-by-step:
+
 1. Reads `projectId` + `registryAddress` from `.fheenv.json`
 2. Calls `getEnvironment()` on Sepolia to get the two `euint128` handles and IPFS CID
 3. Connects to the Fhenix Threshold Network and decrypts both handles using your wallet's FHE permit → reconstructs the 32-byte AES key locally
@@ -183,10 +185,10 @@ What happens step-by-step:
 5. Decrypts the blob with the reconstructed AES key
 6. Writes the plaintext to `.env.local` (permissions `0600`)
 
-| Flag | Default | Description |
-|---|---|---|
-| `-e, --env <name>` | `production` | Environment to pull |
-| `-o, --output <path>` | `.env.local` | Output file path |
+| Flag                  | Default      | Description         |
+| --------------------- | ------------ | ------------------- |
+| `-e, --env <name>`    | `production` | Environment to pull |
+| `-o, --output <path>` | `.env.local` | Output file path    |
 
 ---
 
@@ -202,8 +204,8 @@ fheenv run --env production -- python manage.py runserver
 
 Same decryption flow as `pull`, but secrets are injected into `process.env` of the child process and never written to disk. The child process exits normally; no cleanup needed.
 
-| Flag | Default | Description |
-|---|---|---|
+| Flag               | Default      | Description           |
+| ------------------ | ------------ | --------------------- |
 | `-e, --env <name>` | `production` | Environment to inject |
 
 ---
@@ -218,10 +220,10 @@ fheenv team add --member 0xTeammateAddress --env production
 
 Calls `grantAccess(projectId, envName, memberAddress)` on Sepolia. After this, the teammate can run `fheenv pull` or `fheenv run` with their own wallet.
 
-| Flag | Default | Description |
-|---|---|---|
-| `-m, --member <address>` | required | Ethereum address to grant access |
-| `-e, --env <name>` | `production` | Environment to grant access to |
+| Flag                     | Default      | Description                      |
+| ------------------------ | ------------ | -------------------------------- |
+| `-m, --member <address>` | required     | Ethereum address to grant access |
+| `-e, --env <name>`       | `production` | Environment to grant access to   |
 
 ---
 
@@ -235,10 +237,10 @@ fheenv team remove --member 0xTeammateAddress --env production
 
 > ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
 
-| Flag | Default | Description |
-|---|---|---|
-| `-m, --member <address>` | required | Ethereum address to revoke |
-| `-e, --env <name>` | `production` | Environment |
+| Flag                     | Default      | Description                |
+| ------------------------ | ------------ | -------------------------- |
+| `-m, --member <address>` | required     | Ethereum address to revoke |
+| `-e, --env <name>`       | `production` | Environment                |
 
 ---
 
@@ -252,6 +254,7 @@ fheenv rotate --env staging
 ```
 
 What happens step-by-step:
+
 1. Reads the current environment version from chain (optimistic lock)
 2. Scans all `AccessGranted` / `AccessRevoked` chain events to build the current active member list
 3. Generates a fresh AES-256 key
@@ -262,10 +265,10 @@ What happens step-by-step:
 
 After rotation, any removed members' old FHE permits are worthless — the old ciphertext handles are orphaned and the new ones are only granted to current members.
 
-| Flag | Default | Description |
-|---|---|---|
-| `-e, --env <name>` | `production` | Environment to rotate |
-| `-f, --file <path>` | `.env` | Local .env file to re-encrypt |
+| Flag                | Default      | Description                   |
+| ------------------- | ------------ | ----------------------------- |
+| `-e, --env <name>`  | `production` | Environment to rotate         |
+| `-f, --file <path>` | `.env`       | Local .env file to re-encrypt |
 
 ---
 
@@ -282,7 +285,7 @@ cd my-app
 fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
-  --rpc https://sepolia.infura.io/v3/YOUR_KEY \
+  --rpc https://ethereum-sepolia-rpc.publicnode.com \
   --chain-id 11155111 \
   --pinata-jwt eyJ...
 
@@ -349,25 +352,25 @@ npx hardhat run scripts/deploy.ts --network sepolia
 
 Copy `.env.example` to `.env`:
 
-| Variable | Used by | Description |
-|---|---|---|
-| `SEPOLIA_RPC_URL` | Hardhat deploy | Infura / Alchemy Sepolia endpoint |
-| `PRIVATE_KEY` | Hardhat deploy | Deployer wallet private key |
-| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend | Deployed contract address |
-| `NEXT_PUBLIC_CHAIN_ID` | Frontend | `11155111` (Sepolia) |
-| `NEXT_PUBLIC_PINATA_JWT` | Frontend | Pinata JWT for browser IPFS uploads |
-| `PINATA_JWT` | CLI | Pinata JWT for CLI IPFS uploads (same value) |
+| Variable                       | Used by                 | Description                       |
+| ------------------------------ | ----------------------- | --------------------------------- |
+| `SEPOLIA_RPC_URL`              | Hardhat deploy          | Infura / Alchemy Sepolia endpoint |
+| `PRIVATE_KEY`                  | Hardhat deploy          | Deployer wallet private key       |
+| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend                | Deployed contract address         |
+| `NEXT_PUBLIC_CHAIN_ID`         | Frontend                | `11155111` (Sepolia)              |
+| `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend                | Sepolia RPC endpoint              |
+| `PINATA_JWT`                   | Frontend (server) + CLI | Pinata JWT for IPFS uploads       |
 
 ---
 
 ## Security model
 
-| What's stored | Where | Readable by anyone? |
-|---|---|---|
-| 2× euint128 AES key handles | Sepolia (on-chain) | ❌ FHE ciphertext |
-| Encrypted `.env` blob | IPFS | ❌ Gibberish without AES key |
-| Plaintext secrets | Your device only | ✅ Only you |
-| IPFS CID | Sepolia (on-chain) | ✅ Just a pointer, useless alone |
+| What's stored               | Where              | Readable by anyone?              |
+| --------------------------- | ------------------ | -------------------------------- |
+| 2× euint128 AES key handles | Sepolia (on-chain) | ❌ FHE ciphertext                |
+| Encrypted `.env` blob       | IPFS               | ❌ Gibberish without AES key     |
+| Plaintext secrets           | Your device only   | ✅ Only you                      |
+| IPFS CID                    | Sepolia (on-chain) | ✅ Just a pointer, useless alone |
 
 **Revocation:** CoFHE's ACL is append-only — there is no `revokeAllow`. Cryptographic access is cut by key rotation: `fheenv rotate` issues new ciphertext handles that the removed member never receives `FHE.allow` on. The old handles become orphans on IPFS.
 
@@ -375,14 +378,14 @@ Copy `.env.example` to `.env`:
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Smart contract | Solidity 0.8.25 + `@fhenixprotocol/cofhe-contracts` |
-| FHE | Fhenix CoFHE (Threshold Network, `euint128`) |
-| Contract testing | Hardhat 2 + `@cofhe/hardhat-plugin` (34 tests) |
-| Frontend | Next.js 14 (App Router) + wagmi v2 + viem |
-| FHE client (browser) | `@cofhe/sdk/web` |
-| FHE client (CLI) | `@cofhe/sdk/node` |
-| Encryption | AES-256-GCM — Web Crypto API (browser) / Node.js `crypto` (CLI) |
-| IPFS | Pinata |
-| Package manager | pnpm 11 (workspace) |
+| Layer                | Technology                                                      |
+| -------------------- | --------------------------------------------------------------- |
+| Smart contract       | Solidity 0.8.25 + `@fhenixprotocol/cofhe-contracts`             |
+| FHE                  | Fhenix CoFHE (Threshold Network, `euint128`)                    |
+| Contract testing     | Hardhat 2 + `@cofhe/hardhat-plugin` (34 tests)                  |
+| Frontend             | Next.js 14 (App Router) + wagmi v2 + viem                       |
+| FHE client (browser) | `@cofhe/sdk/web`                                                |
+| FHE client (CLI)     | `@cofhe/sdk/node`                                               |
+| Encryption           | AES-256-GCM — Web Crypto API (browser) / Node.js `crypto` (CLI) |
+| IPFS                 | Pinata                                                          |
+| Package manager      | pnpm 11 (workspace)                                             |
