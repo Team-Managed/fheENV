@@ -161,10 +161,3 @@ jobs:
             dist/release/fheenv-windows-x64.exe
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            dist/release/fheenv-linux-x64
-            dist/release/fheenv-macos-arm64
-            dist/release/fheenv-macos-x64
-            dist/release/fheenv-windows-x64.exe
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
