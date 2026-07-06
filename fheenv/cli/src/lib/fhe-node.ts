@@ -68,10 +68,7 @@ export async function fheDecryptUint128(
 ): Promise<bigint> {
   // getOrCreateSelfPermit uses the already-connected client — no args needed
   await client.permits.getOrCreateSelfPermit();
-  const value = await client
-    .decryptForView(ctHash, FheTypes.Uint128)
-    .setChainId(chainId)
-    .execute();
+  const value = await client.decryptForView(ctHash, FheTypes.Uint128).setChainId(chainId).execute();
   return value as bigint;
 }
 

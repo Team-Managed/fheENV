@@ -22,34 +22,21 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
 
   const spinner = ora(`Pulling env "${envName}"...`).start();
   try {
-    const { publicClient, walletClient } = createClients(
-      config.rpcUrl,
-      config.chainId,
-    );
+    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
 
     // 1. Get ciphertext handles + blob CID from chain
     spinner.text = "Reading environment from chain...";
-    const envData = await getEnvironment(
-      registryAddress,
-      projectId,
-      envName,
-      publicClient,
-    );
+    const envData = await getEnvironment(registryAddress, projectId, envName, publicClient);
 
     if (!envData.blobCid) {
       throw new Error(`Environment "${envName}" has not been pushed yet.`);
     }
 
     // 2. Connect FHE client and decrypt key halves via threshold network
-    spinner.text =
-      "Decrypting AES key via threshold network (requires permit)...";
-    const fheClient = await createFheClient(
-      config.chainId,
-      publicClient,
-      walletClient,
-    );
+    spinner.text = "Decrypting AES key via threshold network (requires permit)...";
+    const fheClient = await createFheClient(config.chainId, publicClient, walletClient);
 
     const keyHigh = await fheDecryptUint128(
       fheClient,
@@ -78,9 +65,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
     const outPath = path.resolve(process.cwd(), outFile);
     fs.writeFileSync(outPath, envContent, { mode: 0o600 });
 
-    spinner.succeed(
-      chalk.green(`Decrypted env written to ${outFile} (permissions: 0600)`),
-    );
+    spinner.succeed(chalk.green(`Decrypted env written to ${outFile} (permissions: 0600)`));
     console.log(
       chalk.dim(
         `  Version: ${envData.version} | Updated: ${new Date(

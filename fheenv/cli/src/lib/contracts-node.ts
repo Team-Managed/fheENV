@@ -1,11 +1,6 @@
 // ABI derived from compiled fheENVRegistry artifact.
 // InEuint128 tuple: (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature)
-import {
-  type PublicClient,
-  type WalletClient,
-  type Address,
-  type Hex,
-} from "viem";
+import { type PublicClient, type WalletClient, type Address, type Hex } from "viem";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

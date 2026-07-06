@@ -9,10 +9,7 @@ const PINATA_API = "https://api.pinata.cloud/pinning/pinFileToIPFS";
 export async function POST(req: NextRequest) {
   const jwt = process.env.PINATA_JWT;
   if (!jwt) {
-    return NextResponse.json(
-      { error: "PINATA_JWT not configured on server" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "PINATA_JWT not configured on server" }, { status: 500 });
   }
 
   try {
@@ -27,10 +24,7 @@ export async function POST(req: NextRequest) {
     // Forward to Pinata
     const pinataForm = new FormData();
     pinataForm.append("file", file, name);
-    pinataForm.append(
-      "pinataMetadata",
-      JSON.stringify({ name: `fheenv-${name}-${Date.now()}` }),
-    );
+    pinataForm.append("pinataMetadata", JSON.stringify({ name: `fheenv-${name}-${Date.now()}` }));
 
     const res = await fetch(PINATA_API, {
       method: "POST",

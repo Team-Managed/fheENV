@@ -13,7 +13,8 @@ description: fheENVRegistry.sol — the on-chain registry for all projects and e
 - Environment storage (FHE-encrypted AES key handles + IPFS CID)
 - Access control (per-environment, per-address)
 
-**Address:** [`0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`](https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2)
+**Address:**
+[`0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`](https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2)
 
 **Solidity version:** 0.8.25
 
@@ -84,7 +85,8 @@ event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
 
 ## Security Properties
 
-1. **Optimistic locking** — `expectedVersion` must match current version, preventing silent overwrites from concurrent pushes
+1. **Optimistic locking** — `expectedVersion` must match current version, preventing silent
+   overwrites from concurrent pushes
 2. **CEI pattern** — state changes happen before external interactions (FHE calls)
 3. **Input validation** — project names 1-64 chars, non-zero addresses, batch max 100
 4. **No plaintext on-chain** — only FHE ciphertext handles and encrypted IPFS CIDs
@@ -93,6 +95,7 @@ event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
 ## Limitations
 
 - **No `removeOwner`** — owners can only be added or transferred. Design choice for simplicity.
-- **Soft revoke only** — `revokeAccess` marks inactive but doesn't revoke FHE permits. Rotation required.
+- **Soft revoke only** — `revokeAccess` marks inactive but doesn't revoke FHE permits. Rotation
+  required.
 - **No proxy/upgrade** — contract is immutable once deployed. Bugs require redeployment.
 - **Sepolia only** — currently deployed on testnet. Mainnet deployment planned.

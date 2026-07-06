@@ -15,15 +15,11 @@ Wrap component examples in ComponentPreview with realistic data:
 <ComponentPreview title="8-bit ComponentName component" name="component-name">
   <div className="md:min-w-[300px] min-w-[200px] flex flex-col gap-8">
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Description of first variant
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Description of first variant</p>
       <ComponentName prop={value} />
     </div>
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Description of second variant
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Description of second variant</p>
       <ComponentName prop={value} variant="retro" />
     </div>
   </div>
@@ -53,9 +49,7 @@ For components with multiple sub-components like Sheet:
     <SheetContent>
       <SheetHeader>
         <SheetTitle>Edit profile</SheetTitle>
-        <SheetDescription className="text-xs">
-          Make changes to your profile here.
-        </SheetDescription>
+        <SheetDescription className="text-xs">Make changes to your profile here.</SheetDescription>
       </SheetHeader>
       <div className="p-4 flex flex-col gap-4">
         <Label>Name</Label>
@@ -75,11 +69,13 @@ For components with multiple sub-components like Sheet:
 
 **Single import** (simple components):
 
-```mdx
+````mdx
 ```tsx
-import { Button } from "@/components/ui/8bit/button"
+import { Button } from "@/components/ui/8bit/button";
 ```
-```
+````
+
+````
 
 **Multiple imports** (complex components):
 
@@ -93,8 +89,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/8bit/sheet"
-```
-```
+````
+
+````
 
 ### Props Documentation
 
@@ -108,7 +105,7 @@ For components with props tables, use tables:
 | variant | `string` | `"default"` | Visual style variant |
 | size | `string` | `"default"` | Size of the button |
 | asChild | `boolean` | `false` | Whether to merge props onto child |
-```
+````
 
 ### Variant Examples
 
@@ -118,15 +115,11 @@ Show multiple variants in preview:
 <ComponentPreview title="8-bit Health Bar component" name="health-bar">
   <div className="md:min-w-[300px] min-w-[200px] flex flex-col gap-8">
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Default health bar
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Default health bar</p>
       <HealthBar value={75} />
     </div>
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Retro health bar
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Retro health bar</p>
       <HealthBar value={45} variant="retro" />
     </div>
   </div>

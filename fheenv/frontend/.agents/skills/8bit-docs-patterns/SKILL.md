@@ -56,14 +56,10 @@ Use realistic health values and context:
 </div>
 <HealthBar value={75} />
 
-<p className="text-sm text-muted-foreground mb-2">
-  Default health bar
-</p>
+<p className="text-sm text-muted-foreground mb-2">Default health bar</p>
 <HealthBar value={75} />
 
-<p className="text-sm text-muted-foreground mb-2">
-  Critical health (25%)
-</p>
+<p className="text-sm text-muted-foreground mb-2">Critical health (25%)</p>
 <HealthBar value={25} variant="retro" />
 ```
 
@@ -99,7 +95,7 @@ All 8-bit components require retro.css:
 import "@/components/ui/8bit/styles/retro.css";
 
 // Documentation shows usage with 8-bit components
-<Button className="retro">START GAME</Button>
+<Button className="retro">START GAME</Button>;
 ```
 
 ### Multiple Variants
@@ -110,15 +106,11 @@ Show default vs retro variants:
 <ComponentPreview title="8-bit Health Bar component" name="health-bar">
   <div className="md:min-w-[300px] min-w-[200px] flex flex-col gap-8">
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Default health bar
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Default health bar</p>
       <HealthBar value={75} />
     </div>
     <div>
-      <p className="text-sm text-muted-foreground mb-2">
-        Retro health bar
-      </p>
+      <p className="text-sm text-muted-foreground mb-2">Retro health bar</p>
       <HealthBar value={45} variant="retro" />
     </div>
   </div>

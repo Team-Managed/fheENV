@@ -1,9 +1,6 @@
 const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs";
 
-export async function uploadToIPFS(
-  content: string,
-  name: string,
-): Promise<string> {
+export async function uploadToIPFS(content: string, name: string): Promise<string> {
   const blob = new Blob([content], { type: "application/octet-stream" });
   const formData = new FormData();
   formData.append("file", blob, name);
@@ -24,7 +21,6 @@ export async function uploadToIPFS(
 
 export async function fetchFromIPFS(cid: string): Promise<string> {
   const res = await fetch(`${PINATA_GATEWAY}/${cid}`);
-  if (!res.ok)
-    throw new Error(`IPFS fetch failed for CID ${cid}: ${res.statusText}`);
+  if (!res.ok) throw new Error(`IPFS fetch failed for CID ${cid}: ${res.statusText}`);
   return res.text();
 }

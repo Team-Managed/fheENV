@@ -11,16 +11,12 @@ export async function uploadToIPFSNode(
   const formData = new FormData();
   formData.append("file", Buffer.from(content), { filename: name });
   formData.append("pinataMetadata", JSON.stringify({ name: `fheenv-${name}` }));
-  const res = await axios.post(
-    "https://api.pinata.cloud/pinning/pinFileToIPFS",
-    formData,
-    {
-      headers: {
-        ...formData.getHeaders(),
-        Authorization: `Bearer ${jwt}`,
-      },
+  const res = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", formData, {
+    headers: {
+      ...formData.getHeaders(),
+      Authorization: `Bearer ${jwt}`,
     },
-  );
+  });
   return res.data.IpfsHash as string;
 }
 

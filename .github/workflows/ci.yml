@@ -7,6 +7,29 @@ on:
     branches: [main, dev]
 
 jobs:
+  lint-format:
+    name: Lint & Format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: latest }
+      - uses: actions/setup-node@v4
+        with:
+          {
+            node-version: "22",
+            cache: "pnpm",
+            cache-dependency-path: fheenv/pnpm-lock.yaml,
+          }
+      - run: pnpm install --frozen-lockfile
+        working-directory: fheenv
+      - name: Prettier check
+        run: pnpm run format:check
+        working-directory: fheenv
+      - name: ESLint check
+        run: pnpm run lint
+        working-directory: fheenv
+
   contracts:
     name: Contracts (compile + test)
     runs-on: ubuntu-latest
