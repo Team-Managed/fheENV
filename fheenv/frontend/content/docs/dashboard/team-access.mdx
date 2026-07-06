@@ -1,0 +1,77 @@
+---
+title: Team Access
+description: Grant, revoke, and manage team member access to encrypted secrets
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Team Access
+
+<Callout type="error">
+  **Always rotate after revoking.** Revocation alone only prevents future
+  grants. Run `fheenv rotate` to generate new ciphertexts the removed member
+  cannot decrypt.
+</Callout>
+
+## How Access Works
+
+fheENV uses wallet-based access control. Each environment maintains a list of addresses that can decrypt its secrets.
+
+When you **grant access**, the contract calls `FHE.allow(ciphertext, memberAddress)` — giving that wallet permission to decrypt the AES key handles via the Threshold Network.
+
+When you **revoke access**, the contract marks the member as inactive. However, because CoFHE's ACL is append-only (no `revokeAllow` primitive), the removed member retains cryptographic access to the **current** ciphertexts until you rotate.
+
+## Grant Access (Dashboard)
+
+1. Go to your project → select an environment
+2. Scroll to **Team Access**
+3. Enter the wallet address and click **Grant**
+
+For multiple addresses, use **Batch Grant** (up to 100 per transaction).
+
+## Revoke Access (Dashboard)
+
+1. Enter the address to revoke and click **Revoke**
+2. **Immediately rotate** the environment to cut cryptographic access
+
+The dashboard shows a warning after revocation reminding you to rotate.
+
+## Grant/Revoke via CLI
+
+```bash
+# Grant
+fheenv team add --member 0xTeammate --env production
+
+# Revoke
+fheenv team remove --member 0xFormer --env production
+
+# Rotate after revoking (critical!)
+fheenv rotate --env production
+```
+
+## Key Rotation After Revocation
+
+After revoking a member, their wallet still holds a valid FHE permit for the old ciphertext handles. To fully cut access:
+
+```bash
+fheenv rotate --env production
+```
+
+This:
+
+1. Generates a brand new AES key
+2. Re-encrypts your secrets with the new key
+3. Uploads a new blob to IPFS
+4. FHE-encrypts new key handles on-chain
+5. Re-grants `FHE.allow` to all **active** members on the new handles
+
+The revoked member never receives `FHE.allow` on the new handles, so they cannot decrypt.
+
+## Access Roles
+
+| Role          | Can Push | Can Pull | Can Grant/Revoke |
+| ------------- | -------- | -------- | ---------------- |
+| Project Owner | Yes      | Yes      | Yes              |
+| Team Member   | No       | Yes      | No               |
+
+Only project owners (set via `addOwner`) can push secrets and manage access. Team members can only decrypt/pull.

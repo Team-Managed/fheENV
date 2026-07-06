@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import Image from "next/image";
 
 export function Navbar() {
   return (
     <nav className="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto w-full z-50 relative">
       <Link href="/" className="flex items-center gap-2">
-        <Lock className="text-aqua size-5" />
+        <Image src="/brand/logo-icon.svg" alt="fheENV Logo" width={24} height={24} className="size-6" />
         <span className="font-mono text-xl font-bold tracking-tight text-slate-100">
           <span className="text-aqua">fhe</span>ENV
         </span>

@@ -1,0 +1,129 @@
+---
+title: Getting Started
+description: Install fheENV and push your first secret in under 2 minutes
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+import { Card, Cards } from "fumadocs-ui/components/card";
+
+# Getting Started
+
+## Prerequisites
+
+- An Ethereum wallet with some Sepolia ETH (for gas)
+- A [Pinata](https://app.pinata.cloud) account (free tier works) for IPFS storage
+
+## Install the CLI
+
+<Tabs items={["macOS / Linux", "Windows"]}>
+  <Tab value="macOS / Linux">
+    ```bash curl -fsSL
+    https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+    ```
+  </Tab>
+  <Tab value="Windows">
+    ```powershell irm
+    https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex
+    ```
+  </Tab>
+</Tabs>
+
+Verify:
+
+```bash
+fheenv --version
+```
+
+## First Push in 4 Steps
+
+<Steps>
+<Step>
+### Authenticate
+
+```bash
+fheenv login
+# Enter private key: 0x...
+```
+
+<Callout type="warn">
+Never pass your key as a CLI flag in production. Use stdin or the `FHEENV_PRIVATE_KEY` env var.
+</Callout>
+</Step>
+
+<Step>
+### Initialize a project
+
+```bash
+cd my-app
+fheenv init --name "my-app" --pinata-jwt YOUR_PINATA_JWT
+```
+
+This creates `.fheenv.json` in your directory. Commit this file — it contains no secrets.
+
+</Step>
+
+<Step>
+### Push your secrets
+
+```bash title=".env"
+DATABASE_URL=postgres://user:pass@host:5432/db
+STRIPE_SECRET_KEY=sk_live_...
+OPENAI_API_KEY=sk-proj-...
+```
+
+```bash
+fheenv push --env production
+```
+
+Your `.env` is AES-encrypted locally, uploaded to IPFS, and the key is FHE-encrypted on-chain.
+
+</Step>
+
+<Step>
+### Pull or run
+
+<Tabs items={['Pull to file', 'Inject into process']}>
+<Tab value="Pull to file">
+```bash
+fheenv pull --env production
+# Writes to .env.local (chmod 600)
+```
+</Tab>
+<Tab value="Inject into process">
+```bash
+fheenv run --env production -- node server.js
+```
+<Callout type="info">
+Secrets exist only in the child process memory. Nothing touches the filesystem. This is the recommended approach.
+</Callout>
+</Tab>
+</Tabs>
+</Step>
+</Steps>
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="CLI Commands"
+    description="All flags and options"
+    href="/docs/cli/commands"
+  />
+  <Card
+    title="Web Dashboard"
+    description="Use the browser UI"
+    href="/docs/dashboard/overview"
+  />
+  <Card
+    title="Team Access"
+    description="Share secrets with teammates"
+    href="/docs/dashboard/team-access"
+  />
+  <Card
+    title="CI/CD Integration"
+    description="Use in GitHub Actions"
+    href="/docs/cli/ci-cd"
+  />
+</Cards>

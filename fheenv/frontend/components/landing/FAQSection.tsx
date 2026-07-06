@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { HelpCircle, Lock, Terminal } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 export function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -9,15 +9,27 @@ export function FAQSection() {
   const faqs = [
     {
       q: "What is Fully Homomorphic Encryption?",
-      a: "FHE is a form of encryption that permits users to perform computations on its encrypted data without first decrypting it. For environment variables, this means we can route and manage your secrets without ever knowing what they are.",
+      a: "FHE allows computations on encrypted data without decrypting it first. Your AES key is stored on-chain as FHE ciphertexts — even blockchain node operators and our servers cannot read your secrets. Only addresses you explicitly grant access to can decrypt via the Threshold Network.",
     },
     {
       q: "Who holds the decryption keys?",
-      a: "Only you and the team members you explicitly grant access to via your wallet. We do not have access to your keys — not during push, pull, or compute.",
+      a: "Only you and the team members you grant access to via your wallet. The AES key is split into two halves, each FHE-encrypted as euint128 on-chain. Decryption happens locally through the Threshold Network — no one else ever sees plaintext.",
     },
     {
       q: "Is there a CLI tool?",
-      a: "Yes, you can push and pull encrypted .env files directly into your local dev environment or CI/CD pipelines with fheenv create, fheenv push, and fheenv pull.",
+      a: "Yes! Install with one command: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash. Then use fheenv push, fheenv pull, fheenv run (inject secrets into processes without writing to disk), and fheenv rotate (re-key after revoking access).",
+    },
+    {
+      q: "Is there a web dashboard?",
+      a: "Yes — connect your wallet at fheenv.vercel.app to create projects, push/pull secrets, view and edit variables, manage team access, and see a full on-chain audit log. All encryption happens in your browser.",
+    },
+    {
+      q: "What happens when someone leaves the team?",
+      a: "Revoke their access with fheenv team remove, then run fheenv rotate to re-encrypt with a fresh AES key. The old ciphertexts become useless to the removed member since they never receive FHE.allow on the new handles.",
+    },
+    {
+      q: "Is this open source?",
+      a: "Yes — licensed under Elastic License 2.0. You can self-host, fork, contribute, and use it freely for your own projects. The only restriction is you cannot resell it as a competing managed service.",
     },
   ];
 
@@ -85,9 +97,8 @@ export function FAQSection() {
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <span className="hover:text-aqua transition-colors cursor-pointer">Docs</span>
-            <span className="hover:text-aqua transition-colors cursor-pointer">GitHub</span>
-            <span className="hover:text-aqua transition-colors cursor-pointer">Discord</span>
+            <a href="/docs" className="hover:text-aqua transition-colors">Docs</a>
+            <a href="https://github.com/Team-Managed/fheENV" target="_blank" rel="noopener noreferrer" className="hover:text-aqua transition-colors">GitHub</a>
           </div>
         </div>
       </div>

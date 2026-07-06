@@ -1,0 +1,22 @@
+{
+  "title": "fheENV",
+  "pages": [
+    "index",
+    "getting-started",
+    "---CLI---",
+    "cli/install",
+    "cli/commands",
+    "cli/ci-cd",
+    "---Dashboard---",
+    "dashboard/overview",
+    "dashboard/push-secrets",
+    "dashboard/team-access",
+    "---Architecture---",
+    "architecture/overview",
+    "architecture/smart-contract",
+    "architecture/encryption-flow",
+    "architecture/security-model",
+    "---",
+    "contributing"
+  ]
+}

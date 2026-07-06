@@ -74,7 +74,7 @@ function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boo
   if (!show) return null;
   return (
     <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>~/project ➜</span>
+      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>
       <motion.span
         initial={{ width: 0 }}
         animate={{ width: "auto" }}
@@ -108,22 +108,26 @@ function OutputLine({ children, show, success, delay = 0 }: {
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
+  const cycleRef = useRef(0);
 
   useEffect(() => {
-    if (step !== 0) return;
     let alive = true;
     const wait = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
-    (async () => {
-      await wait(400); if (!alive) return; setStep(1);  // type "fheenv create"
-      await wait(700); if (!alive) return; setStep(2);  // create done
-      await wait(800); if (!alive) return; setStep(3);  // type "fheenv push"
-      await wait(800); if (!alive) return; setStep(4);  // encrypting…
-      await wait(1400); if (!alive) return; setStep(5);  // type "fheenv pull"
-      await wait(800); if (!alive) return; setStep(6);  // decrypting…
-      await wait(3500); if (!alive) return; setStep(0);  // reset
-    })();
+    const run = async () => {
+      while (alive) {
+        setStep(0);
+        await wait(600); if (!alive) return; setStep(1);  // type "fheenv init"
+        await wait(800); if (!alive) return; setStep(2);  // init done
+        await wait(900); if (!alive) return; setStep(3);  // type "fheenv push"
+        await wait(800); if (!alive) return; setStep(4);  // push output
+        await wait(1500); if (!alive) return; setStep(5); // type "fheenv run"
+        await wait(800); if (!alive) return; setStep(6);  // run output
+        await wait(3500); if (!alive) return;             // pause then loop
+      }
+    };
+    run();
     return () => { alive = false; };
-  }, [step]);
+  }, []);
 
   return (
     <div className={cn(
@@ -174,29 +178,29 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project ➜</span>
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app ➜</span>
                 <Cursor />
               </div>
             )}
 
-            {/* ── fheenv create ── */}
-            <PromptLine cmd="fheenv create" show={step >= 1} done={step >= 2} />
-            <OutputLine show={step >= 2} delay={0.1}>Initializing zero-trust vault…</OutputLine>
-            <OutputLine show={step >= 2} success delay={0.3}>✔ Vault created · On-chain registry linked.</OutputLine>
+            {/* ── fheenv init ── */}
+            <PromptLine cmd="fheenv init --name my-app" show={step >= 1} done={step >= 2} />
+            <OutputLine show={step >= 2} delay={0.1}>Creating project &quot;my-app&quot; on-chain...</OutputLine>
+            <OutputLine show={step >= 2} success delay={0.3}>✓ Project created! ID: 0</OutputLine>
 
             {/* ── fheenv push ── */}
             {step >= 3 && <div className="pt-1.5" />}
-            <PromptLine cmd="fheenv push .env.production" show={step >= 3} done={step >= 4} />
-            <OutputLine show={step >= 4} delay={0.1}>Encrypting 14 variables with FHE…</OutputLine>
-            <OutputLine show={step >= 4} delay={0.35}>Syncing with smart contract…</OutputLine>
-            <OutputLine show={step >= 4} success delay={0.6}>✔ Secrets pushed to on-chain registry.</OutputLine>
+            <PromptLine cmd="fheenv push --env production" show={step >= 3} done={step >= 4} />
+            <OutputLine show={step >= 4} delay={0.1}>Encrypting env blob with AES-256-GCM...</OutputLine>
+            <OutputLine show={step >= 4} delay={0.35}>FHE-encrypting AES key via threshold network...</OutputLine>
+            <OutputLine show={step >= 4} success delay={0.6}>✓ Environment pushed! Version: 1</OutputLine>
 
-            {/* ── fheenv pull ── */}
+            {/* ── fheenv run ── */}
             {step >= 5 && <div className="pt-1.5" />}
-            <PromptLine cmd="fheenv pull" show={step >= 5} done={step >= 6} />
-            <OutputLine show={step >= 6} delay={0.1}>Fetching encrypted vars from registry…</OutputLine>
-            <OutputLine show={step >= 6} delay={0.3}>Decrypting via FHE locally…</OutputLine>
-            <OutputLine show={step >= 6} success delay={0.55}>✔ Variables injected into environment.</OutputLine>
+            <PromptLine cmd="fheenv run -- node server.js" show={step >= 5} done={step >= 6} />
+            <OutputLine show={step >= 6} delay={0.1}>Decrypting AES key via threshold network...</OutputLine>
+            <OutputLine show={step >= 6} delay={0.3}>Fetching and decrypting env blob from IPFS...</OutputLine>
+            <OutputLine show={step >= 6} success delay={0.55}>✓ 12 vars injected · server.js running</OutputLine>
 
             {/* trailing prompt */}
             {step >= 6 && (
@@ -206,7 +210,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
                 transition={{ delay: 1 }}
                 className="flex items-center gap-1.5 font-mono text-[11px] pt-1.5"
               >
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project</span>
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/my-app</span>
                 <span className="text-slate-500">➜</span>
                 <Cursor />
               </motion.div>

@@ -18,6 +18,7 @@ shamefullyHoist: true
 allowBuilds:
   "@fhenixprotocol/cofhe-contracts": true
   bufferutil: true
+  esbuild: true
   keccak: true
   secp256k1: true
   sharp: false

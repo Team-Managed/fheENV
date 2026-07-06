@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "skills": {
+    "8-bit-pixel-art-patterns": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/8-bit-pixel-art-patterns/SKILL.md",
+      "computedHash": "f10de184d10cb8e460350eeaa694669a78737af92a900e4a5e4729302bba58c2"
+    },
+    "8bit-docs-patterns": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/8bit-docs-patterns/SKILL.md",
+      "computedHash": "b4624bd82c8e5f2d14dfd22ecbfa25efedba71d31d55d51cfb92b84336db1db8"
+    },
+    "animation-performance-retro": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/animation-performance-retro/SKILL.md",
+      "computedHash": "7b8bb894267b832156d0720cd18135dc879879f8a589ce7a0a8743b2890cdbcd"
+    },
+    "bundle-barrel-imports": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/bundle-barrel-imports/SKILL.md",
+      "computedHash": "227029c4c51d4673d14d0b1ad8279044bf2333e4cae3af9cb565207bfd36e1d6"
+    },
+    "bundle-dynamic-imports": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/bundle-dynamic-imports/SKILL.md",
+      "computedHash": "b6e95cc137099dd9c8dcd4ec882123af10c6ed85d1ed9708802c555c1c19f2f3"
+    },
+    "component-wrapper-architecture": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/component-wrapper-architecture/SKILL.md",
+      "computedHash": "6fec41149f29e8f4d4f7008b405a9d2ff2606e28a3bb1f7f6890c72ca01b92d0"
+    },
+    "fumadocs-component-docs": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-component-docs/SKILL.md",
+      "computedHash": "8befadc63bd40f7d955d5e3c8484095eab59cd8fece3bb3d3e3cc4754a0b563d"
+    },
+    "fumadocs-mdx-structure": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-mdx-structure/SKILL.md",
+      "computedHash": "b390c16c1316f3f97a94155c8b9c4fb81ef62026978d6d45f806642edcd6f212"
+    },
+    "fumadocs-registry-integration": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-registry-integration/SKILL.md",
+      "computedHash": "80d9ae8911f386ce5b9b47e6c98abb6e71f8ef1989743b9518cd21ff04d0cc80"
+    },
+    "gaming-ui-state-management": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/gaming-ui-state-management/SKILL.md",
+      "computedHash": "c1d133020b3dec4718da2916022df652daabc7fdb13d8939b044b5d227aee27a"
+    },
+    "js-early-exit": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/js-early-exit/SKILL.md",
+      "computedHash": "edbbc0bfb21b491e2de6606d2d687e181d445489f2107400d5815abc7f83c74a"
+    },
+    "js-hoist-regexp": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/js-hoist-regexp/SKILL.md",
+      "computedHash": "c640527742c3d1f34849eb573fb0ad2c0afd8c7e027b6bedbc45cf2f5787ee1d"
+    },
+    "js-set-map-lookups": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/js-set-map-lookups/SKILL.md",
+      "computedHash": "825f6b3293dbdd50ee1c7ad39340a8c30e4bd068a34877ce0e77b90ff08a52c2"
+    },
+    "js-tosorted-immutable": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/js-tosorted-immutable/SKILL.md",
+      "computedHash": "20ea045ce61d131baa911dfd6f0b9ff759adf26cfe404b46b1e48a8268db5488"
+    },
+    "registry-component-patterns": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/registry-component-patterns/SKILL.md",
+      "computedHash": "e4c91d52a8a01560e605a41a2c2a7315571954d9998966638fbe32f320ab0fd3"
+    },
+    "rendering-animate-svg": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rendering-animate-svg/SKILL.md",
+      "computedHash": "3d0bd410188a9f529f2302e28398083828794f800eccb3d91d8cc0ac94b01283"
+    },
+    "rendering-conditional-render": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rendering-conditional-render/SKILL.md",
+      "computedHash": "d657db5860bdc5abcf909f36269430ee14c4631a25ffab0a6f92e1e79a3fbac4"
+    },
+    "rendering-hoist-jsx": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rendering-hoist-jsx/SKILL.md",
+      "computedHash": "152e7d017258305040c9e9324b077444e90d187cd2c9da8f2b29791688f90d56"
+    },
+    "rerender-functional-setstate": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rerender-functional-setstate/SKILL.md",
+      "computedHash": "a2bfd6ef5821c9994a2a9f051c339752669fea0110f37d8c6ee530f61b0792ae"
+    },
+    "rerender-lazy-state": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rerender-lazy-state/SKILL.md",
+      "computedHash": "01f56f79c58afad504014678500583068d6e9a63dfe82060375371767930ac21"
+    },
+    "rerender-memo": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/rerender-memo/SKILL.md",
+      "computedHash": "95ec80fc18ab04a9a92e4cb31a200254009cc0e2802f90a316b0a8f094799548"
+    },
+    "retro-css-architecture": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/retro-css-architecture/SKILL.md",
+      "computedHash": "3baf146e198370600f08aaf25bed7b5859d4aa08c5dc18322c4af8c73dc5c855"
+    },
+    "shadcn-ui-conventions": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/shadcn-ui-conventions/SKILL.md",
+      "computedHash": "ffdf148f1ab45f966ba273467ac450d782add9790911c8c1195092fc57457a0e"
+    }
+  }
+}

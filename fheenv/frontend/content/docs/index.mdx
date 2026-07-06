@@ -1,0 +1,101 @@
+---
+title: Introduction
+description: Zero-trust secrets management powered by Fully Homomorphic Encryption
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+# fheENV
+
+**Your .env, encrypted. Not even us.**
+
+fheENV is a zero-trust secrets manager that uses Fully Homomorphic Encryption (FHE) to store your environment variables on-chain. No server, no operator, no one can read your secrets — it's mathematically impossible.
+
+## How it works
+
+<Steps>
+  <Step>
+    ### Encrypt locally Your `.env` is encrypted with a random AES-256-GCM key.
+    The key never leaves your machine.
+  </Step>
+  <Step>
+    ### Store on IPFS The encrypted blob is uploaded to IPFS. Without the AES
+    key, it's gibberish.
+  </Step>
+  <Step>
+    ### FHE on-chain The AES key is split into two 128-bit halves, each
+    FHE-encrypted as `euint128` and stored on Sepolia. Even node operators can't
+    read them.
+  </Step>
+  <Step>
+    ### Decrypt via Threshold Network Only permitted wallets can request
+    decryption. The key is reassembled locally, the blob fetched from IPFS, and
+    decrypted on your machine.
+  </Step>
+</Steps>
+
+## Key Features
+
+<Cards>
+  <Card
+    title="Zero-Trust"
+    description="No server ever sees your plaintext secrets. Encryption is client-side."
+  />
+  <Card
+    title="FHE On-Chain"
+    description="AES keys stored as encrypted ciphertexts. Mathematically unreadable."
+  />
+  <Card
+    title="Team Access"
+    description="Grant/revoke wallet addresses per environment with on-chain ACL."
+  />
+  <Card
+    title="CLI + Dashboard"
+    description="Push, pull, run, rotate from terminal or browser."
+  />
+  <Card
+    title="Key Rotation"
+    description="One command re-encrypts everything after revoking access."
+  />
+  <Card
+    title="CI/CD Ready"
+    description="Inject secrets into pipelines without writing to disk."
+  />
+</Cards>
+
+## Quick Start
+
+```bash title="Install & use in 60 seconds"
+# Install
+curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+
+# Login with your wallet
+fheenv login
+
+# Initialize a project
+fheenv init --name my-app
+
+# Push secrets
+fheenv push --env production
+
+# Pull secrets
+fheenv pull --env production
+
+# Or inject directly into a process (no disk write)
+fheenv run --env production -- node server.js
+```
+
+<Callout type="info">
+  `fheenv run` is the safest option — secrets exist only in the child process
+  memory. Nothing touches the filesystem.
+</Callout>
+
+## Deployed Contract
+
+|              |                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| **Network**  | Ethereum Sepolia (chain ID `11155111`)                                                               |
+| **Address**  | `0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`                                                         |
+| **Explorer** | [View on Etherscan](https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2) |

@@ -1,0 +1,139 @@
+---
+title: Encryption Flow
+description: Step-by-step walkthrough of the cryptographic operations in fheENV
+---
+
+# Encryption Flow
+
+## Cryptographic Primitives Used
+
+| Primitive                | Purpose                                       | Implementation                                    |
+| ------------------------ | --------------------------------------------- | ------------------------------------------------- |
+| AES-256-GCM              | Encrypt `.env` content                        | Web Crypto API (browser) / Node.js `crypto` (CLI) |
+| FHE (euint128)           | Encrypt AES key halves on-chain               | Fhenix CoFHE via `@cofhe/sdk`                     |
+| Threshold Decryption     | Decrypt FHE ciphertexts for permitted wallets | Fhenix Threshold Network                          |
+| IPFS (content-addressed) | Store encrypted blobs immutably               | Pinata                                            |
+
+## Push Flow (Encryption)
+
+### Step 1: Generate AES Key
+
+```typescript
+// Browser
+const key = await crypto.subtle.generateKey(
+  { name: "AES-GCM", length: 256 },
+  true,
+  ["encrypt", "decrypt"],
+);
+const rawKey = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+
+// CLI (Node.js)
+const key = crypto.randomBytes(32);
+```
+
+A fresh 256-bit key is generated for **every push**. Keys are never reused.
+
+### Step 2: Encrypt Content
+
+```typescript
+const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV
+const ciphertext = await crypto.subtle.encrypt(
+  { name: "AES-GCM", iv },
+  cryptoKey,
+  plaintext,
+);
+// Output: iv || ciphertext || authTag (base64 encoded)
+```
+
+AES-256-GCM provides authenticated encryption — any tampering is detected on decrypt.
+
+### Step 3: Upload to IPFS
+
+The base64-encoded `iv + ciphertext + authTag` is uploaded to IPFS. The returned CID is content-addressed — the same encrypted content always produces the same CID.
+
+### Step 4: Split AES Key
+
+```typescript
+const keyHigh = rawKey.slice(0, 16); // bytes 0-15 → uint128
+const keyLow = rawKey.slice(16, 32); // bytes 16-31 → uint128
+```
+
+### Step 5: FHE Encrypt
+
+```typescript
+const [encHigh, encLow] = await cofheClient
+  .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
+  .execute();
+```
+
+Each half is encrypted as a `euint128` via the CoFHE SDK. The SDK generates a ZK proof locally and sends the ciphertext to the Threshold Network for storage.
+
+### Step 6: Write to Chain
+
+```solidity
+updateEnvironment(projectId, envName, encHigh, encLow, cid, expectedVersion)
+```
+
+The contract stores the ciphertext handles and grants `FHE.allow` to the caller.
+
+## Pull Flow (Decryption)
+
+### Step 1: Read from Chain
+
+```typescript
+const { aesKeyHigh, aesKeyLow, blobCid } = await getEnvironment(
+  projectId,
+  envName,
+);
+```
+
+### Step 2: Create Permit
+
+```typescript
+await cofheClient.permits.getOrCreateSelfPermit();
+```
+
+The wallet signs a permit proving ownership, allowing the Threshold Network to release decrypted values.
+
+### Step 3: Threshold Decrypt
+
+```typescript
+const high = await cofheClient
+  .decryptForView(aesKeyHigh, FheTypes.Uint128)
+  .execute();
+const low = await cofheClient
+  .decryptForView(aesKeyLow, FheTypes.Uint128)
+  .execute();
+```
+
+The Threshold Network verifies the wallet has `FHE.allow` permission, then returns the plaintext `uint128` values.
+
+### Step 4: Reassemble Key
+
+```typescript
+const aesKey = new Uint8Array(32);
+aesKey.set(toBytes(high), 0); // bytes 0-15
+aesKey.set(toBytes(low), 16); // bytes 16-31
+```
+
+### Step 5: Fetch and Decrypt
+
+```typescript
+const encryptedBlob = await fetchFromIPFS(blobCid);
+const plaintext = await aesDecrypt(encryptedBlob, aesKey);
+```
+
+The full `.env` content is recovered locally. It never touched any server in plaintext form.
+
+## Key Rotation Flow
+
+Rotation is a push with re-granting:
+
+1. Generate new AES key
+2. Encrypt `.env` with new key
+3. Upload new blob to IPFS (new CID)
+4. FHE-encrypt new key halves (new ciphertext handles)
+5. Write to chain (old handles become orphans)
+6. `batchGrantAccess` for all active members on new handles
+
+Revoked members never receive `FHE.allow` on the new handles.

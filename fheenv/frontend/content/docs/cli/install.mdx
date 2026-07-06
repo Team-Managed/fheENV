@@ -1,0 +1,67 @@
+---
+title: Installation
+description: Install the fheENV CLI on macOS, Linux, or Windows
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+# Installation
+
+## One-Line Install (Recommended)
+
+<Tabs items={['macOS / Linux', 'Windows (PowerShell)']}>
+<Tab value="macOS / Linux">
+```bash
+curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+```
+
+The script detects your OS/architecture, downloads the binary, installs to `~/.fheenv/bin/`, and configures PATH automatically.
+
+```bash
+source ~/.zshrc    # or open a new terminal
+fheenv --version
+```
+
+</Tab>
+<Tab value="Windows (PowerShell)">
+```powershell
+irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex
+```
+
+Downloads `fheenv-windows-x64.exe`, installs to `%USERPROFILE%\.fheenv\bin\`, and adds to User PATH permanently.
+
+</Tab>
+</Tabs>
+
+## Manual Download
+
+Download binaries from [GitHub Releases](https://github.com/Team-Managed/fheENV/releases/latest):
+
+| Platform              | Binary                   |
+| --------------------- | ------------------------ |
+| macOS (Apple Silicon) | `fheenv-macos-arm64`     |
+| macOS (Intel)         | `fheenv-macos-x64`       |
+| Linux x64             | `fheenv-linux-x64`       |
+| Linux arm64           | `fheenv-linux-arm64`     |
+| Windows x64           | `fheenv-windows-x64.exe` |
+
+## Build from Source
+
+```bash
+git clone https://github.com/Team-Managed/fheENV.git
+cd fheENV/fheenv/cli
+pnpm install
+pnpm run build
+npm link  # makes `fheenv` available globally
+```
+
+<Callout type="info">Requires Node.js 22+ and pnpm 9+.</Callout>
+
+## Update
+
+```bash
+fheenv update
+```
+
+Downloads the latest release and replaces the current binary. Available since v0.4.0.

@@ -1,3 +1,13 @@
+<div align="center">
+  <img src="frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  <br /><br />
+  <a href="https://fheenv.vercel.app"><img src="https://img.shields.io/badge/Web%20App-fheenv.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white" alt="Web App" /></a>
+  <a href="https://fheenv.vercel.app/docs"><img src="https://img.shields.io/badge/Docs-fheenv.vercel.app/docs-0EA5E9?style=flat-square" alt="Docs" /></a>
+  <a href="https://github.com/Team-Managed/fheENV/releases/latest"><img src="https://img.shields.io/github/v/release/Team-Managed/fheENV?style=flat-square&color=2DD4BF&label=CLI" alt="CLI Release" /></a>
+</div>
+
+---
+
 # fheENV
 
 > **Your .env, encrypted. Not even us.**

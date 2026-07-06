@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import Image from "next/image";
 import { WalletButton } from "@/components/WalletButton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b" style={{ borderColor: "var(--surface-border)", background: "rgba(3,7,18,0.85)", backdropFilter: "blur(12px)" }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Lock className="size-4" style={{ color: "var(--aqua)" }} />
+            <Image src="/brand/logo-icon.svg" alt="fheENV Logo" width={20} height={20} className="size-5" />
             <span className="font-mono font-bold tracking-tight text-slate-100">
               <span style={{ color: "var(--aqua)" }}>fhe</span>ENV
             </span>

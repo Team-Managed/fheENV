@@ -1,0 +1,177 @@
+---
+title: CLI Commands
+description: Complete reference for all fheENV CLI commands
+---
+
+# CLI Commands
+
+## `fheenv login`
+
+Save your wallet private key to the local keyfile.
+
+```bash
+fheenv login                    # prompts via stdin
+fheenv login --key 0xABC123... # direct (visible in history)
+echo "0x..." | fheenv login    # pipe from secret manager
+```
+
+| Flag                     | Description                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| `-k, --key <privateKey>` | 0x-prefixed private key (optional, reads stdin if omitted) |
+
+Stores at `~/.fheenv/wallet.json` with permissions `0600`.
+
+---
+
+## `fheenv init`
+
+Create a new project on-chain and write `.fheenv.json`.
+
+```bash
+fheenv init --name "my-app" --pinata-jwt eyJ...
+```
+
+| Flag                       | Default              | Description               |
+| -------------------------- | -------------------- | ------------------------- |
+| `-n, --name <name>`        | required             | Project name (1–64 chars) |
+| `-r, --registry <address>` | Sepolia registry     | Contract address          |
+| `--rpc <url>`              | PublicNode Sepolia   | RPC endpoint              |
+| `--chain-id <id>`          | `11155111`           | Chain ID                  |
+| `--pinata-jwt <jwt>`       | `$FHEENV_PINATA_JWT` | Pinata JWT for IPFS       |
+| `-e, --env <name>`         | `production`         | Default environment       |
+
+---
+
+## `fheenv push`
+
+Encrypt and upload your `.env` file.
+
+```bash
+fheenv push
+fheenv push --env staging --file .env.staging
+```
+
+| Flag                | Default      | Description            |
+| ------------------- | ------------ | ---------------------- |
+| `-e, --env <name>`  | `production` | Environment name       |
+| `-f, --file <path>` | `.env`       | Source file to encrypt |
+
+**What happens:**
+
+1. Generates a random AES-256 key
+2. Encrypts file content with AES-256-GCM
+3. Uploads encrypted blob to IPFS
+4. FHE-encrypts both key halves via Threshold Network
+5. Writes handles + CID to the on-chain registry
+
+---
+
+## `fheenv pull`
+
+Decrypt and write secrets to a local file.
+
+```bash
+fheenv pull
+fheenv pull --env staging --output .env.staging.local
+```
+
+| Flag                  | Default      | Description                       |
+| --------------------- | ------------ | --------------------------------- |
+| `-e, --env <name>`    | `production` | Environment to pull               |
+| `-o, --output <path>` | `.env.local` | Output file (written with `0600`) |
+
+---
+
+## `fheenv run`
+
+Decrypt and inject secrets into a child process. **Nothing written to disk.**
+
+```bash
+fheenv run -- node server.js
+fheenv run --env staging -- npm start
+fheenv run --env production -- python manage.py runserver
+```
+
+| Flag               | Default      | Description           |
+| ------------------ | ------------ | --------------------- |
+| `-e, --env <name>` | `production` | Environment to inject |
+
+The child process inherits all current env vars plus the decrypted secrets.
+
+---
+
+## `fheenv team add`
+
+Grant decrypt access to another wallet.
+
+```bash
+fheenv team add --member 0xTeammate --env production
+```
+
+| Flag                     | Default      | Description             |
+| ------------------------ | ------------ | ----------------------- |
+| `-m, --member <address>` | required     | Wallet address to grant |
+| `-e, --env <name>`       | `production` | Environment             |
+
+---
+
+## `fheenv team remove`
+
+Revoke access from a wallet.
+
+```bash
+fheenv team remove --member 0xFormer --env production
+```
+
+| Flag                     | Default      | Description              |
+| ------------------------ | ------------ | ------------------------ |
+| `-m, --member <address>` | required     | Wallet address to revoke |
+| `-e, --env <name>`       | `production` | Environment              |
+
+> **Important:** After revoking, run `fheenv rotate` to re-encrypt with a fresh key. The removed member can still decrypt old ciphertexts until rotation.
+
+---
+
+## `fheenv rotate`
+
+Re-encrypt everything with a fresh AES key and re-grant to active members.
+
+```bash
+fheenv rotate
+fheenv rotate --env staging --file .env.staging
+```
+
+| Flag                | Default      | Description               |
+| ------------------- | ------------ | ------------------------- |
+| `-e, --env <name>`  | `production` | Environment to rotate     |
+| `-f, --file <path>` | `.env`       | Source file to re-encrypt |
+
+**What happens:**
+
+1. Reads current active members from chain events
+2. Generates a new AES-256 key
+3. Re-encrypts and re-uploads to IPFS
+4. FHE-encrypts new key halves
+5. Calls `batchGrantAccess` for all active members
+
+---
+
+## `fheenv update`
+
+Self-update to the latest version.
+
+```bash
+fheenv update
+```
+
+Downloads the latest release from GitHub and replaces the current binary.
+
+---
+
+## Environment Variables
+
+| Variable             | Description                                              |
+| -------------------- | -------------------------------------------------------- |
+| `FHEENV_PRIVATE_KEY` | Wallet key (overrides keyfile)                           |
+| `FHEENV_PINATA_JWT`  | Pinata JWT (used by `init` if `--pinata-jwt` not passed) |
+| `FHEENV_RPC`         | RPC URL override                                         |
