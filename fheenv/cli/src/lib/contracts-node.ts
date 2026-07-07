@@ -155,6 +155,24 @@ const REGISTRY_ABI = [
       { name: "member", type: "address", indexed: true },
     ],
   },
+  {
+    inputs: [
+      { internalType: "uint256", name: "projectId", type: "uint256" },
+      { internalType: "address", name: "ownerToRemove", type: "address" },
+    ],
+    name: "removeOwner",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    name: "OwnerRemoved",
+    type: "event",
+    inputs: [
+      { name: "projectId", type: "uint256", indexed: true },
+      { name: "removedOwner", type: "address", indexed: true },
+    ],
+  },
 ] as const;
 
 // ── Read helpers ───────────────────────────────────────────────────────────────
@@ -295,6 +313,27 @@ export async function revokeAccess(
     abi: REGISTRY_ABI,
     functionName: "revokeAccess",
     args: [projectId, envName, member],
+    account,
+    chain: walletClient.chain ?? null,
+  });
+  await publicClient.waitForTransactionReceipt({ hash });
+}
+
+export async function removeOwner(
+  registryAddress: Address,
+  projectId: bigint,
+  ownerToRemove: Address,
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+): Promise<void> {
+  const account = walletClient.account;
+  if (!account) throw new Error("WalletClient has no account");
+
+  const hash = await walletClient.writeContract({
+    address: registryAddress,
+    abi: REGISTRY_ABI,
+    functionName: "removeOwner",
+    args: [projectId, ownerToRemove],
     account,
     chain: walletClient.chain ?? null,
   });
