@@ -420,4 +420,54 @@ describe("fheENVRegistry", function () {
     await registry.transferOwnership(member.address);
     expect(await registry.owner()).to.equal(member.address);
   });
+
+  // ─── removeOwner ─────────────────────────────────────────────────────────────
+
+  it("40. primary owner can remove a co-owner", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    expect(await registry.owners(0n, member.address)).to.equal(true);
+
+    await registry.removeOwner(0n, member.address);
+    expect(await registry.owners(0n, member.address)).to.equal(false);
+  });
+
+  it("41. removeOwner emits OwnerRemoved event", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    await expect(registry.removeOwner(0n, member.address))
+      .to.emit(registry, "OwnerRemoved")
+      .withArgs(0n, member.address);
+  });
+
+  it("42. non-primary co-owner cannot remove another co-owner", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    await registry.addOwner(0n, member2.address);
+    await expect(registry.connect(member).removeOwner(0n, member2.address)).to.be.revertedWith(
+      "Only primary owner can remove co-owners",
+    );
+  });
+
+  it("43. cannot remove the primary owner", async function () {
+    await registry.createProject("MyProject");
+    // Even the primary owner cannot remove themselves via removeOwner
+    await expect(registry.removeOwner(0n, owner.address)).to.be.revertedWith(
+      "Cannot remove primary owner",
+    );
+  });
+
+  it("44. cannot remove an address that is not an owner", async function () {
+    await registry.createProject("MyProject");
+    await expect(registry.removeOwner(0n, stranger.address)).to.be.revertedWith(
+      "Address is not an owner",
+    );
+  });
+
+  it("45. removeOwner with zero address reverts", async function () {
+    await registry.createProject("MyProject");
+    await expect(
+      registry.removeOwner(0n, "0x0000000000000000000000000000000000000000"),
+    ).to.be.revertedWith("Invalid address");
+  });
 });
