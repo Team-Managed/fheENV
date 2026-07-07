@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { HelpCircle } from "lucide-react";
 
@@ -96,9 +97,9 @@ export function FAQSection() {
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <a href="/docs" className="hover:text-aqua transition-colors">
+            <Link href="/docs" className="hover:text-aqua transition-colors">
               Docs
-            </a>
+            </Link>
             <a
               href="https://github.com/Team-Managed/fheENV"
               target="_blank"

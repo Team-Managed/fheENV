@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
