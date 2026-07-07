@@ -16,6 +16,7 @@ function HeroInstallCommand() {
 
   useEffect(() => {
     if (typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("win")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsWindows(true);
     }
   }, []);

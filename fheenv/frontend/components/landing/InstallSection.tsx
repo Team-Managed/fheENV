@@ -41,6 +41,7 @@ export function InstallSection() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(detectPlatform());
   }, []);
 

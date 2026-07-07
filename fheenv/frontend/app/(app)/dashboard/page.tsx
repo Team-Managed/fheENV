@@ -11,6 +11,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
 
