@@ -28,8 +28,8 @@ const useMorphingText = (texts: string[]) => {
       current1.style.filter = `blur(${Math.min(8 / invertedFraction - 8, 100)}px)`;
       current1.style.opacity = `${Math.pow(invertedFraction, 0.4) * 100}%`;
 
-      current1.textContent = texts[textIndexRef.current % texts.length];
-      current2.textContent = texts[(textIndexRef.current + 1) % texts.length];
+      current1.textContent = texts[textIndexRef.current % texts.length] ?? null;
+      current2.textContent = texts[(textIndexRef.current + 1) % texts.length] ?? null;
     },
     [texts],
   );
