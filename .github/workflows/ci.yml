@@ -7,6 +7,37 @@ on:
     branches: [main, dev]
 
 jobs:
+  branch-name:
+    name: Branch name check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch naming convention
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          PATTERN="^(feat|fix|chore|docs|refactor|ci|test|hotfix|release)/.+"
+          if [[ "$BRANCH" =~ $PATTERN ]]; then
+            echo "✅ Branch name '$BRANCH' follows naming conventions."
+          else
+            echo "❌ Branch name '$BRANCH' does not follow naming conventions."
+            echo ""
+            echo "Branch names must follow the pattern: <type>/<description>"
+            echo ""
+            echo "Allowed types:"
+            echo "  feat/     → new feature"
+            echo "  fix/      → bug fix"
+            echo "  chore/    → maintenance, tooling, config"
+            echo "  docs/     → documentation only"
+            echo "  refactor/ → code change with no feature/fix"
+            echo "  ci/       → CI/CD changes"
+            echo "  test/     → adding or updating tests"
+            echo "  hotfix/   → urgent production fix"
+            echo "  release/  → release preparation"
+            echo ""
+            echo "Examples: feat/add-remove-owner, fix/cli-key-exposure, docs/update-readme"
+            exit 1
+          fi
+
   guard-main:
     name: Only dev can target main
     if: github.base_ref == 'main'
