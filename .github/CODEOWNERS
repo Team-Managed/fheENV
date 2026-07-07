@@ -6,23 +6,23 @@
 
 # Global owner — all files require review from the core team
 
-- @kunalshah017
+* @kunalshah017 @tyraakj
 
 # Smart contract — extra care required
 
-fheenv/contracts/** @kunalshah017
-fheenv/test/** @kunalshah017
-fheenv/scripts/\*\* @kunalshah017
+fheenv/contracts/** @kunalshah017 @tyraakj
+fheenv/test/** @kunalshah017 @tyraakj
+fheenv/scripts/** @kunalshah017 @tyraakj
 
 # CLI — security-sensitive
 
-fheenv/cli/src/lib/** @kunalshah017
-fheenv/cli/src/commands/** @kunalshah017
+fheenv/cli/src/lib/** @kunalshah017 @tyraakj
+fheenv/cli/src/commands/** @kunalshah017 @tyraakj
 
 # GitHub Actions workflows
 
-.github/workflows/\*\* @kunalshah017
+.github/workflows/** @kunalshah017 @tyraakj
 
 # Docs
 
-fheenv/frontend/content/docs/\*\* @kunalshah017
+fheenv/frontend/content/docs/** @kunalshah017 @tyraakj
