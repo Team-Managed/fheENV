@@ -59,6 +59,7 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
+    event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -122,6 +123,20 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(newOwner != address(0), "Invalid address");
         owners[projectId][newOwner] = true;
         emit OwnerAdded(projectId, newOwner);
+    }
+
+    /// @notice Remove a co-owner. Only the primary owner can call this.
+    /// @dev    The primary owner cannot be removed; use transferOwnership to replace them.
+    function removeOwner(uint256 projectId, address ownerToRemove)
+        external
+        projectExists(projectId)
+    {
+        require(projects[projectId].primaryOwner == msg.sender, "Only primary owner can remove co-owners");
+        require(ownerToRemove != address(0), "Invalid address");
+        require(ownerToRemove != projects[projectId].primaryOwner, "Cannot remove primary owner");
+        require(owners[projectId][ownerToRemove], "Address is not an owner");
+        owners[projectId][ownerToRemove] = false;
+        emit OwnerRemoved(projectId, ownerToRemove);
     }
 
     /// @notice Transfer primary ownership to a new address. Revokes the caller's owner status.

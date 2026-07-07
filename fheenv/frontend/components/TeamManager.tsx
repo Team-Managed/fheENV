@@ -39,6 +39,11 @@ export function TeamManager({ projectId, envName }: Props) {
   const [revokeError, setRevokeError] = useState<string | null>(null);
   const [revokeSuccess, setRevokeSuccess] = useState(false);
 
+  const [removeOwnerAddr, setRemoveOwnerAddr] = useState("");
+  const [removeOwnerLoading, setRemoveOwnerLoading] = useState(false);
+  const [removeOwnerError, setRemoveOwnerError] = useState<string | null>(null);
+  const [removeOwnerSuccess, setRemoveOwnerSuccess] = useState(false);
+
   async function handleGrant() {
     if (!walletClient || !publicClient || !address) return;
     const target = grantAddr.trim();
@@ -133,6 +138,36 @@ export function TeamManager({ projectId, envName }: Props) {
       setRevokeError(e instanceof Error ? e.message : String(e));
     } finally {
       setRevokeLoading(false);
+    }
+  }
+
+  async function handleRemoveOwner() {
+    if (!walletClient || !publicClient || !address) return;
+    const target = removeOwnerAddr.trim();
+    if (!target || !target.startsWith("0x")) {
+      setRemoveOwnerError("Enter a valid 0x address");
+      return;
+    }
+    setRemoveOwnerLoading(true);
+    setRemoveOwnerError(null);
+    setRemoveOwnerSuccess(false);
+    try {
+      const { request } = await publicClient.simulateContract({
+        address: REGISTRY_ADDRESS,
+        abi: REGISTRY_ABI,
+        functionName: "removeOwner",
+        args: [projectId, target as `0x${string}`],
+        account: address,
+      });
+      await publicClient.waitForTransactionReceipt({
+        hash: await walletClient.writeContract(request),
+      });
+      setRemoveOwnerSuccess(true);
+      setRemoveOwnerAddr("");
+    } catch (e: unknown) {
+      setRemoveOwnerError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRemoveOwnerLoading(false);
     }
   }
 
@@ -297,6 +332,53 @@ export function TeamManager({ projectId, envName }: Props) {
                 </p>
               </div>
             </div>
+          )}
+        </section>
+
+        {/* Remove co-owner */}
+        <section style={{ paddingTop: "1.5rem", borderTop: "1px solid var(--surface-border)" }}>
+          <label
+            className="text-xs font-semibold uppercase tracking-wider mb-2 block"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Remove co-owner <span className="normal-case font-normal">(primary owner only)</span>
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="0xabc…def"
+              value={removeOwnerAddr}
+              onChange={(e) => {
+                setRemoveOwnerAddr(e.target.value);
+                setRemoveOwnerError(null);
+                setRemoveOwnerSuccess(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleRemoveOwner()}
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderColor = "#f87171")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
+            />
+            <button
+              onClick={handleRemoveOwner}
+              disabled={removeOwnerLoading}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all disabled:opacity-40"
+              style={{
+                background: "rgba(239,68,68,0.15)",
+                border: "1px solid rgba(239,68,68,0.3)",
+                color: "#f87171",
+              }}
+            >
+              {removeOwnerLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              {removeOwnerLoading ? "…" : "Remove"}
+            </button>
+          </div>
+          {removeOwnerError && (
+            <p className="text-xs text-red-400 mt-1.5 font-mono">{removeOwnerError}</p>
+          )}
+          {removeOwnerSuccess && (
+            <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--aqua)" }}>
+              Co-owner removed ✓
+            </p>
           )}
         </section>
       </div>
