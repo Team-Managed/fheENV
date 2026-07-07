@@ -1,0 +1,59 @@
+---
+title: Contributing
+description: How to contribute to fheENV
+---
+
+# Contributing
+
+We welcome contributions! fheENV is open source under the
+[Elastic License 2.0](https://github.com/Team-Managed/fheENV/blob/main/LICENSE).
+
+## Quick Setup
+
+```bash
+git clone https://github.com/Team-Managed/fheENV.git
+cd fheENV/fheenv
+pnpm install
+pnpm run compile   # compile smart contracts
+pnpm run test      # run test suite
+```
+
+### Frontend
+
+```bash
+cd frontend
+pnpm dev
+```
+
+### CLI
+
+```bash
+cd cli
+pnpm run build
+pnpm run dev   # run from source
+```
+
+## Areas for Contribution
+
+- **Smart contract** — gas optimization, new access patterns
+- **CLI** — new commands, better error messages, shell completions
+- **Frontend** — responsive design, accessibility, new views
+- **Documentation** — guides, examples, translations
+- **Testing** — more edge cases, integration tests
+- **Security** — audit findings, hardening
+
+## Pull Request Process
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feat/my-feature`
+3. Make changes and test
+4. Push and open a PR against `main`
+
+See [CONTRIBUTING.md](https://github.com/Team-Managed/fheENV/blob/main/CONTRIBUTING.md) for full
+guidelines.
+
+## Security Issues
+
+Found a vulnerability? **Do not open a public issue.** See
+[SECURITY.md](https://github.com/Team-Managed/fheENV/blob/main/SECURITY.md) for responsible
+disclosure.

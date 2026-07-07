@@ -1,0 +1,40 @@
+---
+title: Dashboard Overview
+description: Manage secrets through the fheENV web interface
+---
+
+# Web Dashboard
+
+The fheENV dashboard at [fheenv.vercel.app](https://fheenv.vercel.app) provides a visual interface
+for managing your encrypted secrets.
+
+## Features
+
+- **Create projects** on-chain with one click
+- **Push secrets** — encryption happens entirely in your browser
+- **View & edit** decrypted secrets (FHE decryption via Threshold Network)
+- **Team access** — grant/revoke wallet addresses
+- **Audit log** — full on-chain event history
+- **Multiple environments** — production, staging, development
+
+## Connect Wallet
+
+Click "Connect Wallet" and approve with MetaMask, Coinbase Wallet, or any injected EVM wallet. The
+dashboard operates on **Ethereum Sepolia** testnet.
+
+If you're on the wrong network, the app will prompt you to switch.
+
+## Project List
+
+After connecting, you'll see all projects where your wallet is an owner. Click any project to manage
+its environments.
+
+## Environments
+
+Each project has three default environments:
+
+- **Production** — live application secrets
+- **Staging** — pre-production testing
+- **Development** — local development
+
+Each environment has its own AES key and access list.

@@ -9,23 +9,45 @@ import { runCommand } from "./commands/run";
 import { teamAddCommand } from "./commands/team-add";
 import { teamRemoveCommand } from "./commands/team-remove";
 import { rotateCommand } from "./commands/rotate";
+import { updateCommand } from "./commands/update";
 
 const program = new Command();
 
 program
   .name("fheenv")
   .description("Zero-trust .env secrets manager powered by FHE")
-  .version("0.1.0")
+  .version("0.5.0")
   .enablePositionalOptions();
 
 // ── fheenv login ──────────────────────────────────────────────────────────────
 program
   .command("login")
   .description("Save your Ethereum private key to ~/.fheenv/wallet.json")
-  .requiredOption("-k, --key <privateKey>", "0x-prefixed private key")
+  .option("-k, --key <privateKey>", "0x-prefixed private key (omit to read from stdin)")
   .action(async (opts) => {
     try {
-      await loginCommand(opts.key);
+      let key = opts.key as string | undefined;
+      if (!key) {
+        // Read from stdin (supports piping or interactive prompt)
+        if (process.stdin.isTTY) {
+          process.stdout.write(chalk.cyan("Enter private key: "));
+        }
+        key = await new Promise<string>((resolve) => {
+          let data = "";
+          process.stdin.setEncoding("utf-8");
+          process.stdin.on("data", (chunk) => (data += chunk));
+          process.stdin.on("end", () => resolve(data.trim()));
+          if (process.stdin.isTTY) {
+            process.stdin.once("data", (chunk) => {
+              resolve((data + chunk).trim());
+              process.stdin.pause();
+            });
+          } else {
+            process.stdin.resume();
+          }
+        });
+      }
+      await loginCommand(key);
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
@@ -33,33 +55,21 @@ program
   });
 
 // ── fheenv init ───────────────────────────────────────────────────────────────
-// All network values baked in — only --name is required.
 const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
-const SEPOLIA_RPC =
-  "https://sepolia.infura.io/v3/2f47822adc2844fbae3a6fe15913289f";
+const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 const SEPOLIA_CHAIN_ID = 11155111;
-const DEFAULT_PINATA_JWT =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIwODI3NGZlZS1kNTFmLTQ2NzQtOTEwZS0wOGNmMGFhNGJkMjkiLCJlbWFpbCI6Imt1bmFsbWFuaXNoc2hhaEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNDliMTYzZDUxMjU1MjY1MDY2MDQiLCJzY29wZWRLZXlTZWNyZXQiOiI2ODE1ODQ1NDEzNGNiNTliZTE1NTNiMjkxYmIyMGM0ODFkZjJmMjdmM2RhNjYwMDA2Y2JhMDdhMDE5NzIwNjUyIiwiZXhwIjoxODE0Njk1MjQ1fQ.UpixYrkIJsvFW-xWwzXd22aW2pzZDh7aKy-TR54fCOU";
 
 program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
   .requiredOption("-n, --name <name>", "Project name")
-  .option(
-    "-r, --registry <address>",
-    "Registry contract address",
-    SEPOLIA_REGISTRY,
-  )
-  .option(
-    "--rpc <url>",
-    "RPC URL (or set FHEENV_RPC)",
-    process.env.FHEENV_RPC ?? SEPOLIA_RPC,
-  )
+  .option("-r, --registry <address>", "Registry contract address", SEPOLIA_REGISTRY)
+  .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
   .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
   .option(
     "--pinata-jwt <jwt>",
-    "Pinata JWT for IPFS uploads",
-    process.env.FHEENV_PINATA_JWT ?? DEFAULT_PINATA_JWT,
+    "Pinata JWT for IPFS uploads (or set FHEENV_PINATA_JWT)",
+    process.env.FHEENV_PINATA_JWT,
   )
   .option("-e, --env <envName>", "Default environment name", "production")
   .action(async (opts) => {
@@ -145,9 +155,7 @@ team
 // ── fheenv team remove ────────────────────────────────────────────────────────
 team
   .command("remove")
-  .description(
-    "Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)",
-  )
+  .description("Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)")
   .requiredOption("-m, --member <address>", "Ethereum address to revoke")
   .option("-e, --env <envName>", "Environment name", "production")
   .action(async (opts) => {
@@ -170,6 +178,19 @@ program
   .action(async (opts) => {
     try {
       await rotateCommand({ envName: opts.env, envFile: opts.file });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv update ─────────────────────────────────────────────────────────────
+program
+  .command("update")
+  .description("Download and install the latest fheenv release")
+  .action(async () => {
+    try {
+      await updateCommand();
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

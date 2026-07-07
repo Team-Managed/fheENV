@@ -1,3 +1,21 @@
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="fheenv/frontend/public/brand/logo-full.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="fheenv/frontend/public/brand/logo-full-light.svg" />
+    <img src="fheenv/frontend/public/brand/logo-full.svg" alt="fheENV" width="380" />
+  </picture>
+  <br /><br />
+  <p><strong>Your .env, encrypted. Not even us.</strong></p>
+  <p>Zero-trust secrets management powered by Fully Homomorphic Encryption on Fhenix.</p>
+  <br />
+  <a href="https://fheenv.vercel.app"><img src="https://img.shields.io/badge/Web%20App-fheenv.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white" alt="Web App" /></a>
+  <a href="https://fheenv.vercel.app/docs"><img src="https://img.shields.io/badge/Docs-fheenv.vercel.app/docs-0EA5E9?style=flat-square" alt="Docs" /></a>
+  <a href="https://github.com/Team-Managed/fheENV/releases/latest"><img src="https://img.shields.io/github/v/release/Team-Managed/fheENV?style=flat-square&color=2DD4BF&label=CLI" alt="CLI Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Elastic%20v2-94A3B8?style=flat-square" alt="License" /></a>
+</div>
+
+---
+
 # fheENV
 
 > **Your .env, encrypted. Not even us.**
@@ -185,7 +203,7 @@ Every command (except `login`) reads this file from the current directory. `fhee
 {
   "projectId": 0,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://sepolia.infura.io/v3/YOUR_KEY",
+  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
   "pinataJwt": "eyJhbGc..."
 }
@@ -403,3 +421,33 @@ fheenv rotate --env production
 FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv pull --env production
 FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv run --env production -- npm start
 ```
+
+---
+
+## Web Dashboard
+
+The web UI at [fheenv.vercel.app](https://fheenv.vercel.app) provides the same functionality as the CLI with a visual interface:
+
+- Create projects on-chain
+- Push/pull encrypted environments
+- View & edit secrets (decrypted in-browser)
+- Manage team access (grant/revoke)
+- Audit log of all on-chain events
+
+Connect any EVM wallet (MetaMask, Coinbase Wallet, etc.) on Sepolia to get started.
+
+---
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions and guidelines.
+
+## Security
+
+Found a vulnerability? Please report it privately. See [SECURITY.md](./SECURITY.md).
+
+## License
+
+This project is licensed under the [Elastic License 2.0](./LICENSE).
+
+You are free to use, modify, self-host, and contribute. You may **not** offer fheENV as a competing managed service or resell it.

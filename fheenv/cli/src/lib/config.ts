@@ -20,8 +20,5 @@ export function readConfig(): FheEnvConfig {
 }
 
 export function writeConfig(config: FheEnvConfig): void {
-  fs.writeFileSync(
-    path.resolve(process.cwd(), CONFIG_FILE),
-    JSON.stringify(config, null, 2),
-  );
+  fs.writeFileSync(path.resolve(process.cwd(), CONFIG_FILE), JSON.stringify(config, null, 2));
 }

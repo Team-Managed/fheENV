@@ -1,0 +1,93 @@
+---
+title: CI/CD Integration
+description: Use fheENV in GitHub Actions, GitLab CI, and other pipelines
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+# CI/CD Integration
+
+fheENV works in CI/CD pipelines via the `FHEENV_PRIVATE_KEY` environment variable. No keyfile
+needed.
+
+<Callout type="info">
+  Use a **dedicated wallet** for CI with read-only access. Never reuse your personal key.
+</Callout>
+
+## Platform Setup
+
+<Tabs items={['GitHub Actions', 'GitLab CI', 'Docker']}>
+<Tab value="GitHub Actions">
+```yaml title=".github/workflows/deploy.yml"
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs: deploy: runs-on: ubuntu-latest steps: - uses: actions/checkout@v4
+
+      - name: Install fheENV
+        run: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+
+      - name: Start app with secrets
+        env:
+          FHEENV_PRIVATE_KEY: ${{ secrets.FHEENV_PRIVATE_KEY }}
+        run: |
+          source ~/.bashrc
+          fheenv run --env production -- npm start
+
+````
+</Tab>
+<Tab value="GitLab CI">
+```yaml title=".gitlab-ci.yml"
+deploy:
+  script:
+    - curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+    - source ~/.bashrc
+    - fheenv run --env production -- npm start
+  variables:
+    FHEENV_PRIVATE_KEY: $FHEENV_PRIVATE_KEY
+````
+
+</Tab>
+<Tab value="Docker">
+```dockerfile title="Dockerfile"
+RUN curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+ENV PATH="/root/.fheenv/bin:$PATH"
+
+# At runtime, pass FHEENV_PRIVATE_KEY as env var
+
+CMD ["fheenv", "run", "--env", "production", "--", "node", "server.js"]
+
+````
+
+```bash
+docker run -e FHEENV_PRIVATE_KEY=0x... my-app
+````
+
+</Tab>
+</Tabs>
+
+## Required Setup
+
+1. Create a **dedicated wallet** for CI (not your personal key)
+2. Grant it access: `fheenv team add --member 0xCI_WALLET`
+3. Add the private key as a repository secret: `FHEENV_PRIVATE_KEY`
+4. Commit `.fheenv.json` to your repo (it has no secrets)
+
+<Callout type="warn">
+  Prefer `fheenv run` over `fheenv pull` in CI. It avoids writing secrets to disk entirely.
+</Callout>
+
+# At runtime, pass FHEENV_PRIVATE_KEY as env var
+
+CMD ["fheenv", "run", "--env", "production", "--", "node", "server.js"]
+
+````
+
+Run with:
+
+```bash
+docker run -e FHEENV_PRIVATE_KEY=0x... my-app
+````

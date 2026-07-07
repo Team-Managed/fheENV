@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "SVG Logo Designer": {
+      "source": "rknall/claude-skills",
+      "sourceType": "github",
+      "skillPath": "svg-logo-designer/SKILL.md",
+      "computedHash": "c591208a052cc9f7deb77be1183e4627daf54dbf575ea2653f519f29fe3bd4c8"
+    },
+    "fumadocs-component-docs": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-component-docs/SKILL.md",
+      "computedHash": "8befadc63bd40f7d955d5e3c8484095eab59cd8fece3bb3d3e3cc4754a0b563d"
+    },
+    "fumadocs-mdx-structure": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-mdx-structure/SKILL.md",
+      "computedHash": "b390c16c1316f3f97a94155c8b9c4fb81ef62026978d6d45f806642edcd6f212"
+    },
+    "fumadocs-registry-integration": {
+      "source": "theorcdev/8bitcn-ui",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/fumadocs-registry-integration/SKILL.md",
+      "computedHash": "80d9ae8911f386ce5b9b47e6c98abb6e71f8ef1989743b9518cd21ff04d0cc80"
+    },
+    "logo-generator": {
+      "source": "op7418/logo-generator-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "9c64396422f9fa6ee95d6ea1dc27e61cb7a99417fd96ff34bd248be45c8ee6be"
+    }
+  }
+}

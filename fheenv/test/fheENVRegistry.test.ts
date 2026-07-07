@@ -21,10 +21,7 @@ describe("fheENVRegistry", function () {
 
   async function encryptAesKey() {
     const [high, low] = await cofheClient
-      .encryptInputs([
-        Encryptable.uint128(AES_KEY_HIGH),
-        Encryptable.uint128(AES_KEY_LOW),
-      ])
+      .encryptInputs([Encryptable.uint128(AES_KEY_HIGH), Encryptable.uint128(AES_KEY_LOW)])
       .execute();
     return { high, low };
   }
@@ -63,9 +60,7 @@ describe("fheENVRegistry", function () {
   });
 
   it("3. rejects empty project name", async function () {
-    await expect(registry.createProject("")).to.be.revertedWith(
-      "Name: 1-64 chars",
-    );
+    await expect(registry.createProject("")).to.be.revertedWith("Name: 1-64 chars");
   });
 
   it("4. allows adding a co-owner", async function () {
@@ -82,10 +77,7 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     const { high, low } = await encryptAesKey();
     await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, 0n);
-    const [, , blobCid, version, updatedAt] = await registry.getEnvironment(
-      0n,
-      "production",
-    );
+    const [, , blobCid, version, updatedAt] = await registry.getEnvironment(0n, "production");
     expect(version).to.equal(1n);
     expect(blobCid).to.equal(BLOB_CID);
     expect(updatedAt).to.be.gt(0n);
@@ -106,9 +98,7 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     const { high, low } = await encryptAesKey();
     await expect(
-      registry
-        .connect(stranger)
-        .updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
+      registry.connect(stranger).updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
     ).to.be.revertedWith("Not a project owner");
   });
 
@@ -117,9 +107,7 @@ describe("fheENVRegistry", function () {
   it("8. grants access to a member", async function () {
     await setupWithEnv();
     await registry.grantAccess(0n, "production", member.address);
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
-      true,
-    );
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(true);
   });
 
   it("9. batch grants access to multiple members", async function () {
@@ -137,9 +125,7 @@ describe("fheENVRegistry", function () {
     await registry.revokeAccess(0n, "production", member.address);
     // hasAccess returns false — FHE cryptographic access on old ciphertext
     // persists until rotation (intended behavior per contract comments)
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
-      false,
-    );
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(false);
   });
 
   it("11. rejects access grant by non-owner", async function () {
@@ -155,9 +141,9 @@ describe("fheENVRegistry", function () {
       { length: 101 },
       (_, i) => `0x${(i + 1).toString(16).padStart(40, "0")}`,
     );
-    await expect(
-      registry.batchGrantAccess(0n, "production", addrs),
-    ).to.be.revertedWith("Max 100 members per batch");
+    await expect(registry.batchGrantAccess(0n, "production", addrs)).to.be.revertedWith(
+      "Max 100 members per batch",
+    );
   });
 
   it("13. transferOwnership works", async function () {
@@ -179,9 +165,7 @@ describe("fheENVRegistry", function () {
 
   it("15. rejects project name longer than 64 chars", async function () {
     const longName = "a".repeat(65);
-    await expect(registry.createProject(longName)).to.be.revertedWith(
-      "Name: 1-64 chars",
-    );
+    await expect(registry.createProject(longName)).to.be.revertedWith("Name: 1-64 chars");
   });
 
   it("16. rejects operations on non-existent project", async function () {
@@ -189,19 +173,19 @@ describe("fheENVRegistry", function () {
     await expect(
       registry.updateEnvironment(99n, "production", high, low, BLOB_CID, 0n),
     ).to.be.revertedWith("Project does not exist");
-    await expect(
-      registry.grantAccess(99n, "production", member.address),
-    ).to.be.revertedWith("Project does not exist");
-    await expect(
-      registry.revokeAccess(99n, "production", member.address),
-    ).to.be.revertedWith("Project does not exist");
+    await expect(registry.grantAccess(99n, "production", member.address)).to.be.revertedWith(
+      "Project does not exist",
+    );
+    await expect(registry.revokeAccess(99n, "production", member.address)).to.be.revertedWith(
+      "Project does not exist",
+    );
   });
 
   it("17. rejects addOwner by non-owner", async function () {
     await registry.createProject("MyProject");
-    await expect(
-      registry.connect(stranger).addOwner(0n, member.address),
-    ).to.be.revertedWith("Not a project owner");
+    await expect(registry.connect(stranger).addOwner(0n, member.address)).to.be.revertedWith(
+      "Not a project owner",
+    );
   });
 
   it("18. rejects addOwner with zero address", async function () {
@@ -218,47 +202,38 @@ describe("fheENVRegistry", function () {
 
     // Encrypt inputs using member's own cofheClient (inputs are account-bound)
     const [high, low] = await memberCofheClient
-      .encryptInputs([
-        Encryptable.uint128(AES_KEY_HIGH),
-        Encryptable.uint128(AES_KEY_LOW),
-      ])
+      .encryptInputs([Encryptable.uint128(AES_KEY_HIGH), Encryptable.uint128(AES_KEY_LOW)])
       .execute();
 
     // co-owner pushes env — must succeed
-    await expect(
-      registry
-        .connect(member)
-        .updateEnvironment(0n, "staging", high, low, BLOB_CID, 0n),
-    ).to.not.be.reverted;
+    await expect(registry.connect(member).updateEnvironment(0n, "staging", high, low, BLOB_CID, 0n))
+      .to.not.be.reverted;
 
     // co-owner grants to stranger — must succeed
-    await expect(
-      registry.connect(member).grantAccess(0n, "staging", stranger.address),
-    ).to.not.be.reverted;
-    expect(await registry.hasAccess(0n, "staging", stranger.address)).to.equal(
-      true,
-    );
+    await expect(registry.connect(member).grantAccess(0n, "staging", stranger.address)).to.not.be
+      .reverted;
+    expect(await registry.hasAccess(0n, "staging", stranger.address)).to.equal(true);
   });
 
   it("20. grantAccess on uninitialized env reverts", async function () {
     await registry.createProject("MyProject");
-    await expect(
-      registry.grantAccess(0n, "never-pushed", member.address),
-    ).to.be.revertedWith("Environment not initialized");
+    await expect(registry.grantAccess(0n, "never-pushed", member.address)).to.be.revertedWith(
+      "Environment not initialized",
+    );
   });
 
   it("21. revokeAccess on uninitialized env reverts", async function () {
     await registry.createProject("MyProject");
-    await expect(
-      registry.revokeAccess(0n, "never-pushed", member.address),
-    ).to.be.revertedWith("Environment not initialized");
+    await expect(registry.revokeAccess(0n, "never-pushed", member.address)).to.be.revertedWith(
+      "Environment not initialized",
+    );
   });
 
   it("22. getEnvironment on uninitialized env reverts", async function () {
     await registry.createProject("MyProject");
-    await expect(
-      registry.getEnvironment(0n, "never-pushed"),
-    ).to.be.revertedWith("Environment not initialized");
+    await expect(registry.getEnvironment(0n, "never-pushed")).to.be.revertedWith(
+      "Environment not initialized",
+    );
   });
 
   it("23. rejects empty blobCid", async function () {
@@ -281,11 +256,7 @@ describe("fheENVRegistry", function () {
   it("25. rejects grantAccess with zero address", async function () {
     await setupWithEnv();
     await expect(
-      registry.grantAccess(
-        0n,
-        "production",
-        "0x0000000000000000000000000000000000000000",
-      ),
+      registry.grantAccess(0n, "production", "0x0000000000000000000000000000000000000000"),
     ).to.be.revertedWith("Invalid address");
   });
 
@@ -301,18 +272,13 @@ describe("fheENVRegistry", function () {
 
   it("27. rejects transferOwnership to self", async function () {
     await registry.createProject("MyProject");
-    await expect(
-      registry.transferOwnership(0n, owner.address),
-    ).to.be.revertedWith("Already owner");
+    await expect(registry.transferOwnership(0n, owner.address)).to.be.revertedWith("Already owner");
   });
 
   it("28. rejects transferOwnership to zero address", async function () {
     await registry.createProject("MyProject");
     await expect(
-      registry.transferOwnership(
-        0n,
-        "0x0000000000000000000000000000000000000000",
-      ),
+      registry.transferOwnership(0n, "0x0000000000000000000000000000000000000000"),
     ).to.be.revertedWith("Invalid address");
   });
 
@@ -345,14 +311,8 @@ describe("fheENVRegistry", function () {
     await registry.updateEnvironment(0n, "development", hD, lD, "QmDevCID", 0n);
     await registry.updateEnvironment(0n, "production", hP, lP, "QmProdCID", 0n);
 
-    const [, , devCid, devVer] = await registry.getEnvironment(
-      0n,
-      "development",
-    );
-    const [, , prodCid, prodVer] = await registry.getEnvironment(
-      0n,
-      "production",
-    );
+    const [, , devCid, devVer] = await registry.getEnvironment(0n, "development");
+    const [, , prodCid, prodVer] = await registry.getEnvironment(0n, "production");
 
     expect(devCid).to.equal("QmDevCID");
     expect(prodCid).to.equal("QmProdCID");
@@ -361,34 +321,24 @@ describe("fheENVRegistry", function () {
 
     // granting access to dev does not affect prod
     await registry.grantAccess(0n, "development", member.address);
-    expect(
-      await registry.hasAccess(0n, "development", member.address),
-    ).to.equal(true);
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(
-      false,
-    );
+    expect(await registry.hasAccess(0n, "development", member.address)).to.equal(true);
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(false);
   });
 
   it("32. revokeAccess emits AccessRevoked event", async function () {
     await setupWithEnv();
     await registry.grantAccess(0n, "production", member.address);
-    await expect(
-      registry.revokeAccess(0n, "production", member.address),
-    ).to.emit(registry, "AccessRevoked");
+    await expect(registry.revokeAccess(0n, "production", member.address)).to.emit(
+      registry,
+      "AccessRevoked",
+    );
   });
 
   it("33. version increments correctly through multiple rotations", async function () {
     await registry.createProject("MyProject");
     for (let v = 0n; v < 3n; v++) {
       const { high, low } = await encryptAesKey();
-      await registry.updateEnvironment(
-        0n,
-        "production",
-        high,
-        low,
-        BLOB_CID,
-        v,
-      );
+      await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, v);
     }
     const [, , , version] = await registry.getEnvironment(0n, "production");
     expect(version).to.equal(3n);

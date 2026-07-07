@@ -40,7 +40,9 @@ const EncryptedEnv = () => (
     transition={{ duration: 0.7 }}
     className="font-mono text-[11px] sm:text-xs leading-[1.9] select-none"
   >
-    <div className="text-slate-600 mb-3 font-medium"># .env.production — FHE Encrypted Vault 🔒</div>
+    <div className="text-slate-600 mb-3 font-medium">
+      # .env.production — FHE Encrypted Vault 🔒
+    </div>
     {[
       { key: "DATABASE_URL", val: "0x8f2a4b9c7d3e1f5a…" },
       { key: "NEXT_PUBLIC_API_KEY", val: "0x1a2b3c4d5e6f7a8b…" },
@@ -89,18 +91,33 @@ function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boo
   if (!show) return null;
   return (
     <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>~/project {"->"}</span>
-      <span className="text-slate-200">
-        {done ? cmd : <TypewriterText text={cmd} speed={30} />}
+      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>
+        ~/project ➜
       </span>
+      <motion.span
+        initial={{ width: 0 }}
+        animate={{ width: "auto" }}
+        transition={{ duration: 0.35, ease: "linear" }}
+        className="overflow-hidden whitespace-nowrap inline-block text-slate-200"
+      >
+        {cmd}
+      </motion.span>
       {!done && <Cursor />}
     </div>
   );
 }
 
 // ─── Output lines ─────────────────────────────────────────────────────────────
-function OutputLine({ children, show, success, delay = 0 }: {
-  children: React.ReactNode; show: boolean; success?: boolean; delay?: number;
+function OutputLine({
+  children,
+  show,
+  success,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  show: boolean;
+  success?: boolean;
+  delay?: number;
 }) {
   if (!show) return null;
   return (
@@ -108,7 +125,10 @@ function OutputLine({ children, show, success, delay = 0 }: {
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay, duration: 0.2 }}
-      className={cn("font-mono text-[11px] sm:text-xs pl-1", success ? "text-green-400 font-medium" : "text-slate-400")}
+      className={cn(
+        "font-mono text-[11px] sm:text-xs pl-1",
+        success ? "text-green-400 font-medium" : "text-slate-400",
+      )}
     >
       {children}
     </motion.div>
@@ -118,33 +138,49 @@ function OutputLine({ children, show, success, delay = 0 }: {
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
+  const cycleRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
-    const wait = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
     (async () => {
-      while (alive) {
-        setStep(0);
-        await wait(400); if (!alive) return; setStep(1);  // type "fheenv create"
-        await wait(600); if (!alive) return; setStep(2);  // create done
-        await wait(800); if (!alive) return; setStep(3);  // type "fheenv push"
-        await wait(1000); if (!alive) return; setStep(4);  // encrypting…
-        await wait(1400); if (!alive) return; setStep(5);  // type "fheenv pull"
-        await wait(600); if (!alive) return; setStep(6);  // decrypting…
-        await wait(3500); if (!alive) return;
-      }
+      await wait(400);
+      if (!alive) return;
+      setStep(1); // type "fheenv create"
+      await wait(700);
+      if (!alive) return;
+      setStep(2); // create done
+      await wait(800);
+      if (!alive) return;
+      setStep(3); // type "fheenv push"
+      await wait(800);
+      if (!alive) return;
+      setStep(4); // encrypting…
+      await wait(1400);
+      if (!alive) return;
+      setStep(5); // type "fheenv pull"
+      await wait(800);
+      if (!alive) return;
+      setStep(6); // decrypting…
+      await wait(3500);
+      if (!alive) return;
+      setStep(0); // reset
     })();
-    return () => { alive = false; };
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [step]);
 
   return (
-    <div className={cn(
-      "relative w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col",
-      "border border-white/[0.06] bg-[#0d1117]",
-      "shadow-[0_32px_64px_-16px_rgba(45,212,191,0.12),0_0_0_1px_rgba(45,212,191,0.06)]",
-      "hover:border-aqua/25 transition-colors duration-500",
-      className
-    )}>
+    <div
+      className={cn(
+        "relative w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col",
+        "border border-white/[0.06] bg-[#0d1117]",
+        "shadow-[0_32px_64px_-16px_rgba(45,212,191,0.12),0_0_0_1px_rgba(45,212,191,0.06)]",
+        "hover:border-aqua/25 transition-colors duration-500",
+        className,
+      )}
+    >
       {/* macOS titlebar */}
       <div className="flex items-center px-4 py-3 bg-[#161b22] border-b border-white/[0.06] shrink-0 relative">
         <div className="flex gap-2 absolute">
@@ -160,7 +196,6 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
 
       {/* Split body */}
       <div className="flex flex-col md:flex-row h-[500px] md:h-[440px]">
-
         {/* ── Left: .env file pane ── */}
         <div className="w-full md:w-[42%] bg-[#0d1117] border-b md:border-b-0 md:border-r border-white/[0.06] flex flex-col shrink-0">
           <div className="px-4 py-2 border-b border-white/[0.06] flex items-center gap-2">
@@ -168,10 +203,11 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
           </div>
           <div className="p-4 overflow-hidden">
             <AnimatePresence mode="wait">
-              {step < 4 || step >= 6
-                ? <PlaintextEnv key="plain" />
-                : <EncryptedEnv key="encrypted" />
-              }
+              {step < 4 || step >= 6 ? (
+                <PlaintextEnv key="plain" />
+              ) : (
+                <EncryptedEnv key="encrypted" />
+              )}
             </AnimatePresence>
           </div>
         </div>
@@ -182,33 +218,50 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
             <span className="text-[10px] font-mono text-slate-500">bash</span>
           </div>
           <div className="p-4 flex flex-col gap-1.5 overflow-y-auto">
-
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project {"->"}</span>
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/project ➜
+                </span>
                 <Cursor />
               </div>
             )}
 
             {/* ── fheenv create ── */}
             <PromptLine cmd="fheenv create" show={step >= 1} done={step >= 2} />
-            <OutputLine show={step >= 2} delay={0.1}>Initializing zero-trust vault...</OutputLine>
-            <OutputLine show={step >= 2} success delay={0.3}>✓ Vault created · On-chain registry linked.</OutputLine>
+            <OutputLine show={step >= 2} delay={0.1}>
+              Initializing zero-trust vault…
+            </OutputLine>
+            <OutputLine show={step >= 2} success delay={0.3}>
+              ✔ Vault created · On-chain registry linked.
+            </OutputLine>
 
             {/* ── fheenv push ── */}
             {step >= 3 && <div className="pt-1.5" />}
             <PromptLine cmd="fheenv push .env.production" show={step >= 3} done={step >= 4} />
-            <OutputLine show={step >= 4} delay={0.1}>Encrypting 14 variables with FHE...</OutputLine>
-            <OutputLine show={step >= 4} delay={0.35}>Syncing with smart contract...</OutputLine>
-            <OutputLine show={step >= 4} success delay={0.6}>✓ Secrets pushed to on-chain registry.</OutputLine>
+            <OutputLine show={step >= 4} delay={0.1}>
+              Encrypting 14 variables with FHE…
+            </OutputLine>
+            <OutputLine show={step >= 4} delay={0.35}>
+              Syncing with smart contract…
+            </OutputLine>
+            <OutputLine show={step >= 4} success delay={0.6}>
+              ✔ Secrets pushed to on-chain registry.
+            </OutputLine>
 
-            {/* ── fheenv pull ── */}
+            {/* ── fheenv run ── */}
             {step >= 5 && <div className="pt-1.5" />}
             <PromptLine cmd="fheenv pull" show={step >= 5} done={step >= 6} />
-            <OutputLine show={step >= 6} delay={0.1}>Fetching encrypted vars from registry...</OutputLine>
-            <OutputLine show={step >= 6} delay={0.3}>Decrypting via FHE locally...</OutputLine>
-            <OutputLine show={step >= 6} success delay={0.55}>✓ Variables injected into environment.</OutputLine>
+            <OutputLine show={step >= 6} delay={0.1}>
+              Fetching encrypted vars from registry…
+            </OutputLine>
+            <OutputLine show={step >= 6} delay={0.3}>
+              Decrypting via FHE locally…
+            </OutputLine>
+            <OutputLine show={step >= 6} success delay={0.55}>
+              ✔ Variables injected into environment.
+            </OutputLine>
 
             {/* trailing prompt */}
             {step >= 6 && (
@@ -218,8 +271,10 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
                 transition={{ delay: 1 }}
                 className="flex items-center gap-1.5 font-mono text-[11px] pt-1.5"
               >
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>~/project</span>
-                <span className="text-slate-500">{"->"}</span>
+                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                  ~/project
+                </span>
+                <span className="text-slate-500">➜</span>
                 <Cursor />
               </motion.div>
             )}

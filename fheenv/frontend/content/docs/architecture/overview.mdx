@@ -1,0 +1,99 @@
+---
+title: Architecture Overview
+description: Technical deep-dive into how fheENV works end-to-end
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Mermaid } from "@/components/docs/Mermaid";
+
+# Architecture Overview
+
+## System Diagram
+
+<Mermaid
+  chart={`graph TD
+    A[".env plaintext"] -->|AES-256-GCM| B["Encrypted Blob"]
+    B -->|Upload| C["IPFS"]
+    A -->|Generate key| D["AES-256 Key"]
+    D -->|Split 16B + 16B| E["Key High / Key Low"]
+    E -->|FHE.asEuint128 x2| F["On-chain Ciphertexts"]
+    F -->|FHE.allow| G["Threshold Network"]
+    G -->|Decrypt for wallet| H["Reassembled AES Key"]
+    C -->|Fetch blob| I["Encrypted Blob"]
+    H -->|AES-GCM decrypt| J[".env plaintext"]
+    I --> J
+    style A fill:#2dd4bf,color:#030712,stroke:#14b8a6
+    style J fill:#2dd4bf,color:#030712,stroke:#14b8a6
+    style F fill:#1e293b,color:#f1f5f9,stroke:#2dd4bf
+    style C fill:#1e293b,color:#f1f5f9,stroke:#94a3b8
+    style G fill:#1e293b,color:#f1f5f9,stroke:#2dd4bf`}
+/>
+
+## Components
+
+### 1. Client Layer (Browser and CLI)
+
+- **AES-256-GCM encryption** — standard symmetric encryption for the actual secrets
+- **Key splitting** — 32-byte AES key split into two 16-byte halves for storage as `euint128`
+- **CoFHE SDK** — handles FHE encryption/decryption via the Threshold Network
+- **IPFS upload** — encrypted blob stored on Pinata's IPFS infrastructure
+
+### 2. Smart Contract Layer
+
+- **fheENVRegistry.sol** — single contract managing all projects, environments, and access
+- **Optimistic locking** — version numbers prevent concurrent push conflicts
+- **FHE permission management** — `FHE.allow()` grants decrypt access per address
+- **Event-based audit trail** — all actions emit indexed events for transparency
+
+### 3. Threshold Network Layer
+
+- **Distributed key management** — no single party holds the full FHE key
+- **Permit system** — wallets must have `FHE.allow` on a ciphertext to request decryption
+- **On-chain verification** — the network validates permits before decrypting
+
+## Data Flow
+
+<Tabs items={["Push (Encrypt)", "Pull (Decrypt)"]}>
+  <Tab value="Push (Encrypt)">
+    <Steps>
+      <Step>User provides `.env` plaintext (client-side only)</Step>
+      <Step>Random AES-256 key generated via `crypto.getRandomValues`</Step>
+      <Step>Plaintext encrypted with AES-256-GCM → encrypted blob</Step>
+      <Step>Blob uploaded to IPFS → returns content-addressed CID</Step>
+      <Step>AES key split: `key[0:16]` = high, `key[16:32]` = low</Step>
+      <Step>Each half FHE-encrypted via CoFHE SDK → `InEuint128` structs</Step>
+      <Step>
+        Transaction: `updateEnvironment(projectId, envName, encHigh, encLow, cid, version)`
+      </Step>
+      <Step>Contract stores handles and grants `FHE.allow` to the caller</Step>
+    </Steps>
+  </Tab>
+  <Tab value="Pull (Decrypt)">
+    <Steps>
+      <Step>Read `getEnvironment()` → get ciphertext handles + CID</Step>
+      <Step>Create FHE self-permit via CoFHE SDK</Step>
+      <Step>Request decryption of both `euint128` handles from Threshold Network</Step>
+      <Step>Reassemble: `high || low` → 32-byte AES key</Step>
+      <Step>Fetch encrypted blob from IPFS using CID</Step>
+      <Step>Decrypt blob with AES-256-GCM → original `.env` plaintext</Step>
+      <Step>Write to `.env.local` or inject into process memory</Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Trust Assumptions
+
+| Component             | Trust Required     | Failure Mode                                   |
+| --------------------- | ------------------ | ---------------------------------------------- |
+| Client (your machine) | Full trust         | If compromised, secrets are exposed in memory  |
+| IPFS (Pinata)         | Availability only  | Blob is encrypted; Pinata sees gibberish       |
+| Ethereum Sepolia      | Consensus liveness | Contract data is public but encrypted          |
+| Threshold Network     | Threshold honesty  | Requires majority of nodes to collude to break |
+| fheENV team           | **Zero trust**     | We never see plaintext or keys                 |
+
+<Callout type="info">
+  The core guarantee is mathematical, not policy-based. Even if fheENV is compromised, your secrets
+  remain encrypted. The only trusted component is your own machine.
+</Callout>

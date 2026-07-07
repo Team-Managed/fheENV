@@ -5,8 +5,10 @@ import gsap from "gsap";
 
 // ── Arc geometry ──────────────────────────────────────────────────────────────
 // ViewBox: "0 0 600 300" | Container: w-full × CONTAINER_H px
-// Arc center: (300, 350) — below the viewBox, creates an upward dome
-const CX = 300, CY = 350, R = 270;
+// Arc center: (300, 420) — below the viewBox, creates an upward dome
+const CX = 300,
+  CY = 420,
+  R = 290;
 const CONTAINER_H = 240;
 const VB_H = 300;
 
@@ -26,13 +28,15 @@ const ICONS = [
 
 const ARC_START = polar(152);
 const ARC_END = polar(28);
-const ARC_D = `M ${ARC_START.x.toFixed(1)},${ARC_START.y.toFixed(1)} A ${R},${R} 0 0,1 ${ARC_END.x.toFixed(1)},${ARC_END.y.toFixed(1)}`;
+const ARC_D = `M ${ARC_START.x.toFixed(1)},${ARC_START.y.toFixed(
+  1,
+)} A ${R},${R} 0 0,1 ${ARC_END.x.toFixed(1)},${ARC_END.y.toFixed(1)}`;
 
 // Radial mask that carves a dome shape matching the arc geometry.
 // Arc center is at CY/VB_H = 420/300 = 140% down from top of container.
 const DOME_MASK = [
   "radial-gradient(",
-  "ellipse 92% 108% at 50% 142%,",   // ellipse centered where arc center is
+  "ellipse 92% 108% at 50% 142%,", // ellipse centered where arc center is
   "rgba(0,0,0,0.85) 0%,",
   "rgba(0,0,0,0.75) 40%,",
   "rgba(0,0,0,0.3)  62%,",
@@ -57,19 +61,14 @@ export function HeroArcVisual() {
       gsap.fromTo(
         ".arc-icon-card",
         { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.45, stagger: 0.12, delay: 1.5, ease: "back.out(2.2)" }
+        { scale: 1, opacity: 1, duration: 0.45, stagger: 0.12, delay: 1.5, ease: "back.out(2.2)" },
       );
     }, containerRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full select-none"
-      style={{ height: CONTAINER_H }}
-    >
-
+    <div ref={containerRef} className="relative w-full select-none" style={{ height: CONTAINER_H }}>
       {/* ── SVG: glow, arc path, connecting lines, anchor dots ── */}
       <svg
         viewBox={`0 0 600 ${VB_H}`}
@@ -95,7 +94,7 @@ export function HeroArcVisual() {
         />
 
         {/* Radial dashed lines from arc to icon centers */}
-        {ICONS.map(ic => {
+        {ICONS.map((ic) => {
           const p = polar(ic.angle);
           const outer = polar(ic.angle + 0); // same point — line goes inward from icon
           const inner = {
@@ -105,7 +104,10 @@ export function HeroArcVisual() {
           return (
             <line
               key={ic.label}
-              x1={p.x} y1={p.y} x2={inner.x} y2={inner.y}
+              x1={p.x}
+              y1={p.y}
+              x2={inner.x}
+              y2={inner.y}
               stroke="rgba(45,212,191,0.18)"
               strokeWidth={1}
               strokeDasharray="2 3"
@@ -114,7 +116,7 @@ export function HeroArcVisual() {
         })}
 
         {/* Anchor dots on the arc */}
-        {ICONS.map(ic => {
+        {ICONS.map((ic) => {
           const p = polar(ic.angle);
           return (
             <g key={ic.label}>

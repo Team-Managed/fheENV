@@ -1,0 +1,101 @@
+---
+title: Smart Contract
+description: fheENVRegistry.sol — the on-chain registry for all projects and environments
+---
+
+# Smart Contract
+
+## Overview
+
+`fheENVRegistry.sol` is a single Solidity contract deployed on Ethereum Sepolia that manages:
+
+- Project creation and ownership
+- Environment storage (FHE-encrypted AES key handles + IPFS CID)
+- Access control (per-environment, per-address)
+
+**Address:**
+[`0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`](https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2)
+
+**Solidity version:** 0.8.25
+
+**Dependencies:** `@fhenixprotocol/cofhe-contracts/FHE.sol`
+
+## Data Structures
+
+### Project
+
+```solidity
+struct Project {
+    string   name;          // 1-64 characters
+    address  primaryOwner;  // can transfer ownership
+    uint256  createdAt;
+    bool     exists;
+}
+```
+
+### Environment
+
+```solidity
+struct Environment {
+    euint128 aesKeyHigh;   // upper 16 bytes of AES-256 key (FHE encrypted)
+    euint128 aesKeyLow;    // lower 16 bytes of AES-256 key (FHE encrypted)
+    string   blobCid;      // IPFS CID of AES-GCM encrypted .env blob
+    uint256  version;      // optimistic locking counter
+    uint256  updatedAt;
+    bool     initialized;
+}
+```
+
+## Functions
+
+### Project Management
+
+| Function                                | Access | Description                             |
+| --------------------------------------- | ------ | --------------------------------------- |
+| `createProject(name)`                   | Anyone | Creates project, caller becomes owner   |
+| `addOwner(projectId, address)`          | Owner  | Add a co-owner                          |
+| `transferOwnership(projectId, address)` | Owner  | Transfer primary ownership, revoke self |
+
+### Environment Management
+
+| Function                                                                               | Access | Description                          |
+| -------------------------------------------------------------------------------------- | ------ | ------------------------------------ |
+| `updateEnvironment(projectId, envName, inKeyHigh, inKeyLow, blobCid, expectedVersion)` | Owner  | Push new encrypted environment       |
+| `getEnvironment(projectId, envName)`                                                   | Anyone | Read handles + CID (still encrypted) |
+| `envNameToHash(envName)`                                                               | Anyone | Get keccak256 hash of env name       |
+
+### Access Control
+
+| Function                                          | Access | Description                         |
+| ------------------------------------------------- | ------ | ----------------------------------- |
+| `grantAccess(projectId, envName, member)`         | Owner  | Grant single address decrypt access |
+| `batchGrantAccess(projectId, envName, members[])` | Owner  | Grant up to 100 addresses at once   |
+| `revokeAccess(projectId, envName, member)`        | Owner  | Mark member inactive (soft revoke)  |
+| `hasAccess(projectId, envName, member)`           | Anyone | Check if address has access         |
+
+## Events
+
+```solidity
+event ProjectCreated(uint256 indexed projectId, address indexed owner, string name);
+event EnvironmentUpdated(uint256 indexed projectId, bytes32 indexed envHash, string blobCid, uint256 version);
+event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
+event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
+event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
+```
+
+## Security Properties
+
+1. **Optimistic locking** — `expectedVersion` must match current version, preventing silent
+   overwrites from concurrent pushes
+2. **CEI pattern** — state changes happen before external interactions (FHE calls)
+3. **Input validation** — project names 1-64 chars, non-zero addresses, batch max 100
+4. **No plaintext on-chain** — only FHE ciphertext handles and encrypted IPFS CIDs
+5. **No admin backdoor** — no pause, no upgrade, no special access for deployer
+
+## Limitations
+
+- **No `removeOwner`** — owners can only be added or transferred. Design choice for simplicity.
+- **Soft revoke only** — `revokeAccess` marks inactive but doesn't revoke FHE permits. Rotation
+  required.
+- **No proxy/upgrade** — contract is immutable once deployed. Bugs require redeployment.
+- **Sepolia only** — currently deployed on testnet. Mainnet deployment planned.

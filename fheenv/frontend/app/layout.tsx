@@ -19,11 +19,18 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "fheENV — Zero-Trust Secrets Management",
   description: "Your .env, encrypted. Not even us.",
+  icons: {
+    icon: "/brand/favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn(spaceGrotesk.variable, jetbrainsMono.variable)}>
+    <html
+      lang="en"
+      className={cn(spaceGrotesk.variable, jetbrainsMono.variable, "dark")}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-[#030712] text-slate-100 font-sans antialiased">
         <Providers>{children}</Providers>
       </body>

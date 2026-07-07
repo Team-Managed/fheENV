@@ -28,7 +28,7 @@ export function DisplayCard({
       whileHover={{ scale: 1.02 }}
       className={cn(
         "relative flex h-36 w-[22rem] -skew-y-[8deg] select-none flex-col justify-between rounded-xl border border-slate-200/50 bg-white/80 shadow-2xl shadow-indigo-100/50 backdrop-blur-md px-4 py-3 transition-all duration-700 after:absolute after:-right-1 after:top-[-5%] after:h-[110%] after:w-[20rem] after:bg-gradient-to-l after:from-slate-50 after:to-transparent after:content-[''] hover:border-indigo-300 hover:bg-white [&>*]:flex [&>*]:items-center [&>*]:gap-2",
-        className
+        className,
       )}
     >
       <div>
@@ -67,8 +67,7 @@ export default function DisplayCards({ cards }: DisplayCardsProps) {
       title: "Fully Homomorphic",
       description: "Compute on encrypted data",
       date: "State-of-art",
-      className:
-        "[grid-area:stack] translate-x-24 translate-y-20 hover:translate-y-10",
+      className: "[grid-area:stack] translate-x-24 translate-y-20 hover:translate-y-10",
     },
   ];
 

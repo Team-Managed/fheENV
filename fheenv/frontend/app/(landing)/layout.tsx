@@ -22,9 +22,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
       </div>
 
       {/* Page content sits above the shader */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
 
 :root {
   --bg: #030712;
@@ -6,9 +8,9 @@
   --surface-border: rgba(255, 255, 255, 0.08);
   --surface-hover: rgba(51, 65, 85, 0.5);
 
-  --aqua: #2DD4BF;
+  --aqua: #2dd4bf;
   --aqua-glow: rgba(45, 212, 191, 0.2);
-  --peach: #FFB5A7;
+  --peach: #ffb5a7;
   --peach-glow: rgba(255, 181, 167, 0.2);
 
   --text-main: #f8fafc;
@@ -19,14 +21,14 @@
 }
 
 @theme inline {
-  --color-aqua: #2DD4BF;
-  --color-peach: #FFB5A7;
+  --color-aqua: #2dd4bf;
+  --color-peach: #ffb5a7;
   --color-bg-dark: #030712;
   --color-surface: rgba(30, 41, 59, 0.4);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 body {

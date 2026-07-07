@@ -16,9 +16,7 @@ export interface RunOptions {
 
 export async function runCommand(opts: RunOptions): Promise<void> {
   if (opts.command.length === 0) {
-    throw new Error(
-      "No command provided. Usage: fheenv run -- <command> [args...]",
-    );
+    throw new Error("No command provided. Usage: fheenv run -- <command> [args...]");
   }
 
   const config = readConfig();
@@ -26,31 +24,19 @@ export async function runCommand(opts: RunOptions): Promise<void> {
 
   const spinner = ora(`Fetching env "${envName}" for run...`).start();
   try {
-    const { publicClient, walletClient } = createClients(
-      config.rpcUrl,
-      config.chainId,
-    );
+    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
 
     spinner.text = "Reading environment from chain...";
-    const envData = await getEnvironment(
-      registryAddress,
-      projectId,
-      envName,
-      publicClient,
-    );
+    const envData = await getEnvironment(registryAddress, projectId, envName, publicClient);
 
     if (!envData.blobCid) {
       throw new Error(`Environment "${envName}" has not been pushed yet.`);
     }
 
     spinner.text = "Decrypting AES key via threshold network...";
-    const fheClient = await createFheClient(
-      config.chainId,
-      publicClient,
-      walletClient,
-    );
+    const fheClient = await createFheClient(config.chainId, publicClient, walletClient);
 
     const keyHigh = await fheDecryptUint128(
       fheClient,
@@ -81,6 +67,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     // Inject vars into child process env
     const childEnv = { ...process.env, ...envVars };
     const [cmd, ...args] = opts.command;
+    if (!cmd) throw new Error("fheenv run: no command specified");
 
     const child = spawn(cmd, args, {
       env: childEnv,
@@ -89,9 +76,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     });
 
     child.on("error", (err) => {
-      process.stderr.write(
-        `fheenv run: failed to start process: ${err.message}\n`,
-      );
+      process.stderr.write(`fheenv run: failed to start process: ${err.message}\n`);
       process.exit(1);
     });
 

@@ -5,14 +5,26 @@ REPO="Team-Managed/fheENV"
 INSTALL_DIR="$HOME/.fheenv/bin"
 BINARY_NAME="fheenv"
 
-# ── Detect platform ──────────────────────────────────────────────────────────
+# ── Detect platform + architecture ───────────────────────────────────────────
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 case "$OS" in
-  Darwin)  ASSET="fheenv-macos" ;;
-  Linux)   ASSET="fheenv-linux" ;;
-  *)       echo "Unsupported OS: $OS"; exit 1 ;;
+  Darwin)
+    case "$ARCH" in
+      arm64)        ASSET="fheenv-macos-arm64" ;;   # Apple Silicon (M1/M2/M3/M4)
+      x86_64)       ASSET="fheenv-macos-x64"   ;;   # Intel Mac
+      *)            echo "Unsupported macOS arch: $ARCH"; exit 1 ;;
+    esac
+    ;;
+  Linux)
+    case "$ARCH" in
+      x86_64)               ASSET="fheenv-linux-x64"   ;;
+      aarch64 | arm64)      ASSET="fheenv-linux-arm64"  ;;
+      *)                    echo "Unsupported Linux arch: $ARCH"; exit 1 ;;
+    esac
+    ;;
+  *) echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
 # ── Fetch latest release tag ─────────────────────────────────────────────────
@@ -26,7 +38,7 @@ if [ -z "$LATEST_TAG" ]; then
   exit 1
 fi
 
-echo "Installing fheenv ${LATEST_TAG}..."
+echo "Installing fheenv ${LATEST_TAG} (${ASSET})..."
 
 # ── Download binary ──────────────────────────────────────────────────────────
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_TAG}/${ASSET}"
@@ -34,6 +46,11 @@ TMP_FILE="$(mktemp)"
 
 curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"
 chmod +x "$TMP_FILE"
+
+# Remove macOS quarantine so Gatekeeper doesn't block the binary after restart
+if [ "$OS" = "Darwin" ]; then
+  xattr -d com.apple.quarantine "$TMP_FILE" 2>/dev/null || true
+fi
 
 # ── Install binary ───────────────────────────────────────────────────────────
 mkdir -p "$INSTALL_DIR"
@@ -60,6 +77,7 @@ add_to_shell_config() {
 add_to_shell_config "$HOME/.bashrc"
 add_to_shell_config "$HOME/.bash_profile"
 add_to_shell_config "$HOME/.zshrc"
+add_to_shell_config "$HOME/.zprofile"
 
 # ── Also export for the current session ──────────────────────────────────────
 export PATH="${INSTALL_DIR}:$PATH"
@@ -75,3 +93,5 @@ echo "    source ~/.bashrc   # bash"
 echo ""
 echo "Or open a new terminal window."
 echo "Then run: fheenv --version"
+echo ""
+echo "To update fheenv in the future, run:  fheenv update"

@@ -1,34 +1,26 @@
 const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs";
 
-export async function uploadToIPFS(
-  content: string,
-  name: string,
-): Promise<string> {
-  const jwt = process.env.NEXT_PUBLIC_PINATA_JWT;
-  if (!jwt) throw new Error("NEXT_PUBLIC_PINATA_JWT not set");
-
+export async function uploadToIPFS(content: string, name: string): Promise<string> {
   const blob = new Blob([content], { type: "application/octet-stream" });
   const formData = new FormData();
   formData.append("file", blob, name);
-  formData.append(
-    "pinataMetadata",
-    JSON.stringify({ name: `fheenv-${name}-${Date.now()}` }),
-  );
+  formData.append("name", name);
 
-  const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+  const res = await fetch("/api/ipfs", {
     method: "POST",
-    headers: { Authorization: `Bearer ${jwt}` },
     body: formData,
   });
 
-  if (!res.ok) throw new Error(`Pinata upload failed: ${res.statusText}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(`IPFS upload failed: ${err.error || res.statusText}`);
+  }
   const data = await res.json();
-  return data.IpfsHash as string;
+  return data.cid as string;
 }
 
 export async function fetchFromIPFS(cid: string): Promise<string> {
   const res = await fetch(`${PINATA_GATEWAY}/${cid}`);
-  if (!res.ok)
-    throw new Error(`IPFS fetch failed for CID ${cid}: ${res.statusText}`);
+  if (!res.ok) throw new Error(`IPFS fetch failed for CID ${cid}: ${res.statusText}`);
   return res.text();
 }
