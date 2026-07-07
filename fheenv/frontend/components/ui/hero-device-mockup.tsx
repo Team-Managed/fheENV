@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Terminal } from "lucide-react";
@@ -71,21 +71,6 @@ const Cursor = () => (
   />
 );
 
-// ─── Typewriter text ──────────────────────────────────────────────────────────
-function TypewriterText({ text, speed = 30 }: { text: string; speed?: number }) {
-  const [displayed, setDisplayed] = useState("");
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayed(text.slice(0, i + 1));
-      i++;
-      if (i >= text.length) clearInterval(interval);
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text, speed]);
-  return <span>{displayed}</span>;
-}
-
 // ─── Terminal prompt line ─────────────────────────────────────────────────────
 function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boolean }) {
   if (!show) return null;
@@ -138,7 +123,6 @@ function OutputLine({
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
-  const cycleRef = useRef(0);
 
   useEffect(() => {
     let alive = true;

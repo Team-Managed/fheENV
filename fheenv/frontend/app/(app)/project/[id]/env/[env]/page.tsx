@@ -119,9 +119,3 @@ export default function EnvPage({ params }: Props) {
     </>
   );
 }
-
-const ENV_INDICATORS: Record<string, string> = {
-  development: "🟢",
-  staging: "🟡",
-  production: "🔴",
-};

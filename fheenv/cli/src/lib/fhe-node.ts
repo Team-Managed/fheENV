@@ -56,8 +56,8 @@ export async function fheDecryptUint128(
   client: CofheClient,
   ctHash: bigint,
   chainId: number,
-  publicClient: PublicClient,
-  walletClient: WalletClient,
+  _publicClient: PublicClient,
+  _walletClient: WalletClient,
 ): Promise<bigint> {
   // getOrCreateSelfPermit uses the already-connected client — no args needed
   await client.permits.getOrCreateSelfPermit();

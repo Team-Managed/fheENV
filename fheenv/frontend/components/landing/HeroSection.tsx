@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { MorphingText } from "@/components/ui/morphing-text";
 import { HeroDeviceMockup } from "@/components/ui/hero-device-mockup";
 import { HeroArcVisual } from "@/components/ui/hero-arc-visual";
-import { Globe, Lock, Shield, Terminal, Copy, Check } from "lucide-react";
+import { Globe, Lock, Terminal, Copy, Check } from "lucide-react";
 import Link from "next/link";
 
 const morphTexts = ["Zero-Trust", "Encrypted", "On-Chain", "Secure"];
