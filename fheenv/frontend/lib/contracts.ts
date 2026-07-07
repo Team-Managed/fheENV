@@ -27,3 +27,7 @@ export const REGISTRY_ABI = parseAbi([
 ]);
 
 export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "") as `0x${string}`;
+
+// Block the registry contract was deployed at. Set NEXT_PUBLIC_DEPLOY_BLOCK to narrow
+// the getLogs range and avoid slow/rate-limited full-history queries on the RPC.
+export const DEPLOY_BLOCK = BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? "0");
