@@ -1,4 +1,3 @@
-// @ts-ignore — @cofhe/sdk/node provides Node.js-specific FHE client
 import { createCofheConfig, createCofheClient } from "@cofhe/sdk/node";
 import { getChainById, chains } from "@cofhe/sdk/chains";
 import { Encryptable, FheTypes, type CofheClient } from "@cofhe/sdk";
@@ -24,11 +23,8 @@ export async function createFheClient(
   if (!chain) {
     throw new Error(`Unsupported chain ${chainId}. Supported: ${Object.keys(chains).join(", ")}`);
   }
-  // @ts-ignore
   const config = createCofheConfig({ supportedChains: [chain] });
-  // @ts-ignore
   const client = createCofheClient(config);
-  // @ts-ignore — viem version mismatch between CLI and @cofhe/sdk
   await client.connect(publicClient, walletClient);
   return client;
 }
