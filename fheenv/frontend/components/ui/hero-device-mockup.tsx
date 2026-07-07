@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Terminal } from "lucide-react";
@@ -123,7 +123,6 @@ function OutputLine({
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
-  const cycleRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
