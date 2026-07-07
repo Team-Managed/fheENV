@@ -7,6 +7,21 @@ on:
     branches: [main, dev]
 
 jobs:
+  guard-main:
+    name: Only dev can target main
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject non-dev source branches
+        run: |
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "❌ PRs to main must come from the dev branch."
+            echo "   Source branch detected: ${{ github.head_ref }}"
+            echo "   Please retarget your PR to the dev branch."
+            exit 1
+          fi
+          echo "✅ Source branch is dev — OK to proceed."
+
   lint-format:
     name: Lint & Format check
     runs-on: ubuntu-latest
