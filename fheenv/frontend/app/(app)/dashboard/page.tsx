@@ -185,13 +185,7 @@ export default function Dashboard() {
 
 type ProjectTuple = readonly [string, string, bigint, boolean];
 
-function ProjectCard({
-  projectId,
-  onClick,
-}: {
-  projectId: bigint;
-  onClick: () => void;
-}) {
+function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () => void }) {
   const { data: raw } = useReadContract({
     address: REGISTRY_ADDRESS,
     abi: REGISTRY_ABI,
