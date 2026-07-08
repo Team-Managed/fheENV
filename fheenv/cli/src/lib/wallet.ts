@@ -7,10 +7,12 @@ import {
   type Chain,
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
+import type { LocalAccount } from "viem/accounts";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import { scryptSync, randomBytes, createCipheriv, createDecipheriv } from "crypto";
+import { getLitActionAddress, createLitAccount } from "./lit-signer";
 
 const KEYFILE_PATH = path.join(os.homedir(), ".fheenv", "wallet.json");
 
@@ -116,12 +118,43 @@ export function saveWallet(privateKey: string, passphrase?: string): void {
 export interface ViemClients {
   publicClient: PublicClient;
   walletClient: WalletClient;
-  account: PrivateKeyAccount;
+  account: PrivateKeyAccount | LocalAccount;
 }
 
 export function createClients(rpcUrl: string, chainId: number): ViemClients {
+  const chain: Chain = {
+    id: chainId,
+    name: `chain-${chainId}`,
+    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  };
+
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(rpcUrl),
+  }) as PublicClient;
+
   const pk = loadAccountKey();
   const account = privateKeyToAccount(pk);
+
+  const walletClient = createWalletClient({
+    account,
+    chain,
+    transport: http(rpcUrl),
+  }) as WalletClient;
+
+  return { publicClient, walletClient, account };
+}
+
+/**
+ * Create viem clients backed by the Lit Protocol signer (Finding F-01).
+ * Called when FHEENV_LIT_ACTION_CID + FHEENV_LIT_API_KEY + GITHUB_OIDC_JWT
+ * are all set — the Rotator private key never leaves the Lit TEE.
+ */
+export async function createLitClients(rpcUrl: string, chainId: number): Promise<ViemClients> {
+  const actionCid = process.env.FHEENV_LIT_ACTION_CID!;
+  const apiKey = process.env.FHEENV_LIT_API_KEY!;
+  const oidcJwt = process.env.GITHUB_OIDC_JWT!;
 
   const chain: Chain = {
     id: chainId,
@@ -135,6 +168,9 @@ export function createClients(rpcUrl: string, chainId: number): ViemClients {
     transport: http(rpcUrl),
   }) as PublicClient;
 
+  const address = await getLitActionAddress(actionCid, apiKey);
+  const account = createLitAccount(address, actionCid, apiKey, oidcJwt);
+
   const walletClient = createWalletClient({
     account,
     chain,
@@ -142,4 +178,16 @@ export function createClients(rpcUrl: string, chainId: number): ViemClients {
   }) as WalletClient;
 
   return { publicClient, walletClient, account };
+}
+
+/**
+ * Returns true when all three Lit env vars are present — the rotate-check
+ * command uses this to choose the Lit signer path over the private key path.
+ */
+export function isLitSigningConfigured(): boolean {
+  return !!(
+    process.env.FHEENV_LIT_ACTION_CID &&
+    process.env.FHEENV_LIT_API_KEY &&
+    process.env.GITHUB_OIDC_JWT
+  );
 }
