@@ -1,4 +1,5 @@
 packages:
+  - "core"
   - "frontend"
   - "cli"
 
@@ -18,6 +19,7 @@ shamefullyHoist: true
 allowBuilds:
   "@fhenixprotocol/cofhe-contracts": true
   bufferutil: true
+  core-js: false
   esbuild: true
   keccak: true
   secp256k1: true
