@@ -26,111 +26,91 @@ The following controls are **complete** on the current branch and do not need re
 
 ## Remaining Gaps — Implementation Phases
 
-### Phase 1 — Extract `@fheenv/core` Shared Rotation Library
+### Phase 1 — Extract `@fheenv/core` Shared Rotation Library ✅
 
-**Why first:** Every subsequent phase (auto-trigger on remove, scheduled worker, frontend button) needs the same rotation logic. Extracting it now prevents three divergent implementations that an auditor's sampling would catch as inconsistent.
+**Why first:** Every subsequent phase (auto-trigger on remove, scheduled worker) needs the same rotation logic. Extracting it now prevents divergent implementations.
 
-**Files to create:**
+**Files created:**
 
-- `fheenv/packages/core/package.json`
-- `fheenv/packages/core/tsconfig.json`
-- `fheenv/packages/core/src/rotate.ts` — pure rotation logic (no chalk/ora/CLI concerns)
-- `fheenv/packages/core/src/index.ts`
+- `fheenv/core/package.json`
+- `fheenv/core/tsconfig.json`
+- `fheenv/core/src/aes.ts`, `ipfs.ts`, `contracts.ts`, `fhe.ts`, `env-parser.ts`, `audit.ts`
+- `fheenv/core/src/rotate.ts` — `rotateEnvironment(params): Promise<RotateResult>`
+- `fheenv/core/src/index.ts`
 
-**Files to modify:**
+**Files modified:**
 
-- `fheenv/pnpm-workspace.yaml` — add `packages/*` to workspace
-- `fheenv/cli/package.json` — add `"@fheenv/core": "workspace:*"` dependency
-- `fheenv/cli/src/commands/rotate.ts` — replace inline rotation logic with import from `@fheenv/core`
+- `fheenv/pnpm-workspace.yaml` — added `core`
+- `fheenv/cli/package.json` — added `"@fheenv/core": "workspace:*"`
+- `fheenv/cli/src/commands/rotate.ts` — calls `rotateEnvironment()` from `@fheenv/core`
+- `fheenv/cli/src/lib/aes-node.ts`, `ipfs-node.ts`, `contracts-node.ts`, `fhe-node.ts`, `env-parser-node.ts`, `audit.ts` — re-export shims pointing to `@fheenv/core`
 
-**Tasks:**
-
-- [ ] Create `fheenv/packages/core/` workspace package with `package.json` (`"name": "@fheenv/core"`, `"main": "dist/index.js"`) and `tsconfig.json`
-- [ ] Extract the pure rotation logic from `cli/src/commands/rotate.ts` into `packages/core/src/rotate.ts` as an exported `rotateEnvironment(params: RotateParams): Promise<RotateResult>` function — no chalk, no ora, no filesystem reads. Accept `envContent: string` as a parameter instead of reading the file internally; callers are responsible for providing plaintext
-- [ ] `RotateParams` must include: `registryAddress`, `projectId`, `envName`, `envContent`, `pinataJwt`, `rpcUrl`, `chainId`, `walletClient`, `publicClient`, `expectedVersion`
-- [ ] `RotateResult` must return: `newCid: string`, `previousCid: string`, `newVersion: bigint`, `membersRegranted: Address[]`
-- [ ] Export `rotateEnvironment` from `packages/core/src/index.ts`
-- [ ] Update `pnpm-workspace.yaml` to include `packages/*`
-- [ ] Add `@fheenv/core` to `cli/package.json` dependencies
-- [ ] Refactor `cli/src/commands/rotate.ts` to call `rotateEnvironment()` from `@fheenv/core` — keep spinner/chalk around the call, pass `envContent` from the local file read that stays in the command
-- [ ] Run `pnpm install` and `pnpm build` to verify the package resolves
+- [x] Create `fheenv/core/` workspace package
+- [x] Extract rotation logic into `core/src/rotate.ts` as `rotateEnvironment()`
+- [x] `RotateResult` returns `newCid`, `previousCid`, `newVersion`, `membersRegranted`
+- [x] Update `pnpm-workspace.yaml`, `cli/package.json`
+- [x] Refactor `cli/src/commands/rotate.ts` to call `rotateEnvironment()`
+- [x] `pnpm build` passes
 
 ---
 
-### Phase 2 — Rotator Contract Role
+### Phase 2 — Rotator Contract Role ✅
 
-**Why:** The automation credential that runs scheduled rotation needs to call `updateEnvironment()` and `batchGrantAccess()` without having team-management or ownership-transfer privileges. Giving it the same role as a project owner violates CC6.1 least-privilege and is worse than the manual process it replaces. See spec §4.5 for the full rationale — including the important caveat that a Rotator key is still a high-value credential because it holds live decrypt access to every environment in scope.
+**Why:** The automation credential that runs scheduled rotation needs to call `updateEnvironment()` and `batchGrantAccess()` without team-management or ownership-transfer privileges. See spec §4.5 for the full rationale.
 
-**Files to modify:**
+**Files modified:**
 
 - `fheenv/contracts/fheENVRegistry.sol`
-- `fheenv/cli/src/lib/contracts-node.ts`
+- `fheenv/core/src/contracts.ts` (ABI + `addRotator`, `removeRotator`, `isRotator` helpers)
+- `fheenv/cli/src/lib/contracts-node.ts` (re-export shim updated)
 - `fheenv/cli/src/index.ts`
 
-**Files to create:**
+**Files created:**
 
 - `fheenv/cli/src/commands/rotator.ts`
 
-**Tasks:**
-
-- [ ] Add `mapping(uint256 => mapping(address => bool)) public rotators` to `fheENVRegistry.sol` state section
-- [ ] Add events: `event RotatorAdded(uint256 indexed projectId, address indexed rotator)` and `event RotatorRemoved(uint256 indexed projectId, address indexed rotator)`
-- [ ] Add `modifier onlyRotatorOrOwner(uint256 projectId)` — passes if `owners[projectId][msg.sender] || rotators[projectId][msg.sender]`
-- [ ] Add `function addRotator(uint256 projectId, address rotator) external projectExists(projectId) onlyProjectOwner(projectId)` — sets `rotators[projectId][rotator] = true`, emits `RotatorAdded`
-- [ ] Add `function removeRotator(uint256 projectId, address rotator) external projectExists(projectId) onlyProjectOwner(projectId)` — sets `rotators[projectId][rotator] = false`, emits `RotatorRemoved`
-- [ ] Change `updateEnvironment()` modifier from `onlyProjectOwner` to `onlyRotatorOrOwner`
-- [ ] Change `batchGrantAccess()` modifier from `onlyProjectOwner` to `onlyRotatorOrOwner`
-- [ ] Leave `grantAccess()`, `revokeAccess()`, `addOwner()`, `transferOwnership()` gated to `onlyProjectOwner` — a Rotator cannot manage team membership or ownership
-- [ ] Add ABI entries for `addRotator`, `removeRotator`, `rotators` (view), `RotatorAdded`, `RotatorRemoved` to `cli/src/lib/contracts-node.ts`
-- [ ] Export `addRotator()` and `removeRotator()` TypeScript helpers from `contracts-node.ts`
-- [ ] Create `cli/src/commands/rotator.ts` with `rotatorAddCommand(opts)` and `rotatorRemoveCommand(opts)` — both log to audit with action `rotator_added` / `rotator_removed`
-- [ ] Add `rotator_added` and `rotator_removed` to `AuditAction` type in `cli/src/lib/audit.ts`
-- [ ] Register `fheenv rotator add` and `fheenv rotator remove` sub-commands in `cli/src/index.ts`
-- [ ] Update `fheenv/test/fheENVRegistry.test.ts` — add tests for Rotator role: Rotator can call `updateEnvironment`/`batchGrantAccess`, cannot call `revokeAccess`/`addOwner`, non-rotator is rejected
+- [x] Add `rotators` mapping to contract
+- [x] Add `onlyProjectOwnerOrRotator` modifier
+- [x] Add `addRotator()` / `removeRotator()` (owner-only)
+- [x] Add `RotatorGranted` / `RotatorRevoked` events
+- [x] `updateEnvironment()` and `batchGrantAccess()` accept Rotator callers
+- [x] `revokeAccess()`, `grantAccess()`, `addOwner()`, `transferOwnership()` remain owner-only
+- [x] ABI + helpers in `@fheenv/core`
+- [x] `fheenv rotator add / remove` CLI commands
+- [x] 11 new contract tests (35–45), all passing
 
 ---
 
-### Phase 3 — Auto-Trigger Rotation on `team remove` + IPFS Unpin
+### Phase 3 — Auto-Trigger Rotation on `team remove` + IPFS Unpin ✅
 
-**Why:** This is the primary CC6.3 control. Currently `team-remove.ts` and `TeamManager.tsx` both stop at `revokeAccess()` and only print a warning. The gap: the removed member retains FHE decrypt access to the current handles indefinitely unless a human remembers to rotate. This phase closes that gap by making rotation the default, not the exception.
+**Why:** Primary CC6.3 control. `team-remove.ts` stopped at `revokeAccess()` + warning banner; the removed member retained FHE decrypt access until a human remembered to rotate. This phase makes rotation the default.
 
-**Key constraint from spec §4.2:** `revokeAccess()` and `updateEnvironment()` are separate transactions. If `revokeAccess()` succeeds but the follow-on rotation fails, the member is logistically revoked but cryptographically still live — this partial-failure state must surface loudly and be retried, not silently swallowed.
+**Key constraint (spec §4.2):** If `revokeAccess()` succeeds but rotation fails, surface loudly — partial failure means CC6.3 is not met.
 
-**Files to modify:**
+**Files modified:**
 
-- `fheenv/cli/src/commands/team-remove.ts`
-- `fheenv/cli/src/lib/ipfs-node.ts`
-- `fheenv/cli/src/lib/audit.ts`
-- `fheenv/cli/src/commands/rotate.ts`
-- `fheenv/cli/src/index.ts`
-- `fheenv/frontend/components/TeamManager.tsx`
+- `fheenv/cli/src/commands/team-remove.ts` — full rewrite with auto-rotate + unpin
+- `fheenv/cli/src/lib/config.ts` — added `RotationPolicyEntry` (`expireInDays`, `graceMinutes`) and `rotationPolicy` to `FheEnvConfig`
+- `fheenv/cli/src/index.ts` — `team remove` gains `--no-rotate` and `--file` options
 
-**Files to create:**
-
-- `fheenv/frontend/app/api/revoke-and-rotate/route.ts`
-
-**Tasks:**
-
-- [ ] Add `trigger` field to `AuditEvent` in `cli/src/lib/audit.ts`: `trigger?: "team_remove" | "scheduled" | "manual_cli" | "manual_frontend"`; add `previousCid?: string` and `unpinStatus?: "success" | "pending" | "failed"` fields
-- [ ] Add `unpinFromIPFS(cid: string, jwt: string): Promise<void>` to `cli/src/lib/ipfs-node.ts` using `axios.delete("https://api.pinata.cloud/pinning/unpin/" + cid)` with Bearer JWT auth
-- [ ] Modify `cli/src/commands/team-remove.ts`: after `revokeAccess()` succeeds, call `rotateEnvironment()` from `@fheenv/core`; pass `trigger: "team_remove"` to the audit event; if rotation throws, re-throw with a clear message: `"PARTIAL FAILURE: member revoked but rotation failed — run 'fheenv rotate' immediately. Member still has FHE decrypt access to current handles."` — do NOT silently continue
-- [ ] Add `--no-rotate` flag to `team remove` in `cli/src/commands/team-remove.ts` and wire it in `cli/src/index.ts` — when set, retain the current warn-only behavior for edge cases (batch multi-remove then single rotate)
-- [ ] After successful rotation in `team-remove.ts`, call `unpinFromIPFS(previousCid, config.pinataJwt)` with a 15-second grace delay (configurable via `FHEENV_UNPIN_GRACE_SECONDS`); log `unpinStatus` to audit; on unpin failure, log as `"pending"` and print a warning with the CID so it can be retried — do NOT fail the overall command
-- [ ] Pass `trigger: "manual_cli"` in `cli/src/commands/rotate.ts` audit log call; return `previousCid` from the core and pass it through for unpin
-- [ ] Create `frontend/app/api/revoke-and-rotate/route.ts` as a Next.js POST route — accepts `{ projectId, envName, member, walletClient serialized }` — calls `@fheenv/core` rotation server-side after the client-side `revokeAccess()` transaction confirms; returns `{ success, newCid, error? }`
-- [ ] Modify `frontend/components/TeamManager.tsx` `handleRevoke()`: after `revokeAccess()` transaction confirms on-chain, POST to `/api/revoke-and-rotate`; show a spinner during rotation (not just after revoke); update success message to confirm rotation completed; update warning banner to only appear if the API call returned an error (not as the default success state); pass `trigger: "manual_frontend"` through to audit
+- [x] `team-remove.ts`: after `revokeAccess()`, call `rotateEnvironment()` with `excludeMembers: [revokedMember]`
+- [x] Partial failure surfaces as a `PARTIAL FAILURE` banner with exact retry command
+- [x] `--no-rotate` escape hatch with prominent warning
+- [x] `unpinFromIPFSNode(previousCid)` attempted after rotation confirms
+- [x] Full `key_rotated` audit event with `triggerSource`, `removedMember`, `previousCid`, `newCid`, `unpinStatus`
+- [x] `RotationPolicyEntry` added to config (`expireInDays`, `graceMinutes` — no `cronSchedule`, schedule lives in the GitHub Actions workflow YAML)
 
 ---
 
 ### Phase 4 — Scheduled Rotation Worker (GitHub Actions Cron)
 
-**Why:** CC6.3 also requires time-based rotation independent of team changes. A 90-day max cadence is the common SOC 2 auditor expectation. Phase 3 handles revocation-triggered rotation; this phase handles the calendar-triggered case.
+**Why:** CC6.3 also requires time-based rotation independent of team changes. 90-day max cadence is the common SOC 2 auditor expectation.
 
-**Implementation choice from spec §4.1:** GitHub Actions scheduled workflow, not a persistent server process — fheENV has no existing server infra, and Actions run logs are a first-order audit artifact.
+**Implementation (spec §4.1):** GitHub Actions scheduled workflow — no persistent server, Actions run logs are a first-order audit artifact.
 
 **Files to modify:**
 
-- `fheenv/cli/src/lib/config.ts`
+- `fheenv/cli/src/lib/config.ts` — `rotationPolicy` already added in Phase 3 (`expireInDays`, `graceMinutes`)
 - `fheenv/cli/src/index.ts`
 
 **Files to create:**
@@ -140,22 +120,16 @@ The following controls are **complete** on the current branch and do not need re
 
 **Tasks:**
 
-- [ ] Add `rotationPolicy?: Record<string, { cronSchedule: string; expireInDays: number; graceMinutes: number }>` to `FheEnvConfig` interface in `cli/src/lib/config.ts`
-- [ ] Create `cli/src/commands/rotate-check.ts` — reads `rotationPolicy` from `.fheenv.json`, calls `getEnvironment()` to read `updatedAt` for each configured env, rotates if `now - updatedAt > expireInDays * 86400 - graceMinutes * 60`; pass `trigger: "scheduled"` to audit; exits with code 1 and logs error if any rotation fails (so Actions marks the run as failed)
-- [ ] Register `fheenv rotate-check` in `cli/src/index.ts` with description `"Check rotation policy and rotate overdue environments (for use in CI/scheduled workflows)"`
-- [ ] Create `.github/workflows/rotate-scheduled.yml` with:
-  - `schedule: [{cron: "0 3 * * 0"}]` (weekly Sunday 03:00 UTC, overridden by per-env `cronSchedule`)
-  - `workflow_dispatch` trigger for manual runs
-  - Steps: checkout → install fheenv CLI → run `fheenv rotate-check` → on failure: send notification (GitHub Actions step summary + optional Slack webhook via `FHEENV_NOTIFY_WEBHOOK` secret)
-  - Secrets used: `FHEENV_PRIVATE_KEY` (Rotator key — interim; replaced by Lit Protocol signing once F-01 is complete), `FHEENV_PINATA_JWT`, `FHEENV_NOTIFY_WEBHOOK` (optional)
-- [ ] Document the `rotationPolicy` config block format in `frontend/content/docs/cli/ci-cd.mdx` with a concrete `.fheenv.json` example
-- [ ] **Note:** once F-01 (OIDC + Lit Protocol) is complete, remove `FHEENV_PRIVATE_KEY` from Actions secrets and replace the wallet setup step with the Lit OIDC session sig flow
+- [ ] Create `cli/src/commands/rotate-check.ts` — reads `rotationPolicy` from `.fheenv.json`, calls `getEnvironment()` to read `updatedAt` for each configured env, rotates if `now - updatedAt > (expireInDays - graceMinutes/1440) * 86400`; passes `triggerSource: "scheduled"` to audit; exits with code 1 and logs error if any rotation fails (so Actions marks the run as failed)
+- [ ] Register `fheenv rotate-check` in `cli/src/index.ts`
+- [ ] Create `.github/workflows/rotate-scheduled.yml` with `schedule` trigger, `workflow_dispatch`, checkout → install fheenv CLI → `fheenv rotate-check` → failure notification via `FHEENV_NOTIFY_WEBHOOK` secret
+- [ ] Secrets used: `FHEENV_PRIVATE_KEY` (Rotator key), `FHEENV_PINATA_JWT`, `FHEENV_NOTIFY_WEBHOOK` (optional)
 
 ---
 
 ### Phase 5 — Audit Evidence Indexer + Frontend Dashboard
 
-**Why:** On-chain events are tamper-evident but not auditor-friendly. An aggregated, exportable log with rotation history, last/next rotation dates, and overdue warnings is what the auditor actually reviews. Start collecting early — evidence needs a few rotation cycles of history to be credible.
+**Why:** On-chain events are tamper-evident but not auditor-friendly. An aggregated, exportable log with rotation history and overdue warnings is what the auditor actually reviews. Start collecting early.
 
 **Files to create:**
 
@@ -166,38 +140,15 @@ The following controls are **complete** on the current branch and do not need re
 **Files to modify:**
 
 - `fheenv/frontend/app/(app)/project/[id]/env/[env]/page.tsx`
-- `fheenv/frontend/content/docs/cli/ci-cd.mdx`
 
 **Tasks:**
 
-- [ ] Create `scripts/index-audit.ts` — reads `AccessGranted`, `AccessRevoked`, `EnvironmentUpdated`, `AccessGrantedWithExpiry`, `RotatorAdded`, `RotatorRemoved` events from chain (all blocks, paginated); writes JSONL records to `~/.fheenv/audit.log` with all `AuditEvent` fields; deduplicate by `txHash` so re-runs are idempotent; add a `source: "on_chain"` field to distinguish from CLI-written records
-- [ ] Create `scripts/export-audit.ts` — reads `~/.fheenv/audit.log`, converts to CSV with headers matching the evidence table in spec §4.6; accepts `--from` and `--to` date flags; writes to `audit-export-<date>.csv`
-- [ ] Create `frontend/app/(app)/project/[id]/audit/page.tsx` — per-project rotation history page: table of `EnvironmentUpdated` events (env name, version, timestamp, actor, new CID); per-env last rotation date and next scheduled rotation (read from `.fheenv.json` `rotationPolicy` if present); red warning badge if any env is overdue (`now - updatedAt > expireInDays * 86400`)
-- [ ] Modify `frontend/app/(app)/project/[id]/env/[env]/page.tsx` — add a small "Last rotated" timestamp below the Rotate Key button, read from `updatedAt` returned by `getEnvironment()`; add an amber warning if `updatedAt` is older than 90 days
-- [ ] Add link to audit page from project page (`frontend/app/(app)/project/[id]/page.tsx`)
-- [ ] Document `fheenv index-audit` and `fheenv export-audit` commands in `frontend/content/docs/cli/commands.mdx`
+- [ ] Create `scripts/index-audit.ts` — reads `AccessGranted`, `AccessRevoked`, `EnvironmentUpdated`, `RotatorGranted`, `RotatorRevoked` events from chain; writes JSONL to `~/.fheenv/audit.log`; deduplicates by `txHash`
+- [ ] Create `scripts/export-audit.ts` — reads `~/.fheenv/audit.log`, converts to CSV with headers matching spec §4.6 evidence table; accepts `--from` / `--to` date flags
+- [ ] Create `frontend/app/(app)/project/[id]/audit/page.tsx` — per-project rotation history: `EnvironmentUpdated` events table, last rotation date per env, red overdue badge if `now - updatedAt > expireInDays * 86400`
+- [ ] `frontend/app/(app)/project/[id]/env/[env]/page.tsx` — add "Last rotated" timestamp from `updatedAt`; amber warning if older than 90 days
 
 ---
-
-### Phase 6 — Frontend Rotate Key Button Wiring
-
-**Why:** Currently the button in `project/[id]/env/[env]/page.tsx` calls `handleRotate()` which is a stub — it sets a log message pointing to the CLI. Phase 1's `@fheenv/core` extraction makes it possible to call real rotation from a Next.js API route. This is the lowest audit-risk phase (it's a UX gap, not a control gap) but important for completeness and for non-technical team members who use the dashboard.
-
-**Note from spec §4.3:** Do not reimplement rotation logic a third time — call `@fheenv/core` from the API route.
-
-**Files to create:**
-
-- `fheenv/frontend/app/api/rotate/route.ts`
-
-**Files to modify:**
-
-- `fheenv/frontend/app/(app)/project/[id]/env/[env]/page.tsx`
-
-**Tasks:**
-
-- [ ] Create `frontend/app/api/rotate/route.ts` — POST route accepting `{ projectId: string, envName: string }`; reads the Rotator key from `FHEENV_PRIVATE_KEY` server-side env var (not exposed to browser); calls `rotateEnvironment()` from `@fheenv/core`; returns `{ success: boolean, newCid: string, version: number, error?: string }`; logs `trigger: "manual_frontend"` to audit
-- [ ] Replace the stub `handleRotate()` in `frontend/app/(app)/project/[id]/env/[env]/page.tsx` with a real `fetch("/api/rotate", { method: "POST", body: JSON.stringify({ projectId: id, envName: env }) })`; show spinner during rotation; on success, display new CID and version; on error, display the error message with instructions to run `fheenv rotate` manually as a fallback
-- [ ] Add `FHEENV_PRIVATE_KEY` (Rotator key, not owner key) to the Next.js environment variable documentation in `frontend/content/docs/cli/ci-cd.mdx`
 
 ---
 
