@@ -9,6 +9,7 @@ import { fetchFromIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheDecryptUint128 } from "../lib/fhe-node";
 import { logAuditEvent } from "../lib/audit";
+import { captureCliUsage } from "../lib/posthog";
 import { type Address } from "viem";
 
 export interface PullOptions {
@@ -80,6 +81,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
       projectId: config.projectId.toString(),
       envName,
     });
+    captureCliUsage("pull", config.projectId);
   } catch (err) {
     spinner.fail("Pull failed");
     throw err;
