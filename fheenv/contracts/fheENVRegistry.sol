@@ -47,6 +47,14 @@ contract fheENVRegistry {
     // SOC 2 CC6.3 / CC6.6 — least privilege; time-limited CI/CD grants
     mapping(uint256 => mapping(bytes32 => mapping(address => uint256))) public memberExpiry;
 
+    // SOC 2 CC6.1 — Rotator role: can call updateEnvironment() and batchGrantAccess()
+    // but is explicitly denied revokeAccess(), addOwner(), transferOwnership(), and grantAccess().
+    // Intended for the scheduled rotation service and CI pipelines.
+    // Note: a Rotator that calls updateEnvironment() receives FHE decrypt permission on the new
+    // handles, making it a high-value credential despite its restricted function scope.
+    // See fheenv-key-rotation-soc2-spec §4.5 for the full threat model.
+    mapping(uint256 => mapping(address => bool)) public rotators;
+
     // ─── Events ───────────────────────────────────────────────────────────────
 
     event ProjectCreated(uint256 indexed projectId, address indexed owner, string name);
@@ -56,11 +64,23 @@ contract fheENVRegistry {
     event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
     /// @dev Emitted when access is granted with an explicit expiry timestamp.
     event AccessGrantedWithExpiry(uint256 indexed projectId, bytes32 indexed envHash, address indexed member, uint256 expiresAt);
+    /// @dev Emitted when a Rotator role is granted to an address.
+    event RotatorGranted(uint256 indexed projectId, address indexed rotator);
+    /// @dev Emitted when a Rotator role is revoked from an address.
+    event RotatorRevoked(uint256 indexed projectId, address indexed rotator);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
     modifier onlyProjectOwner(uint256 projectId) {
         require(owners[projectId][msg.sender], "Not a project owner");
+        _;
+    }
+
+    modifier onlyProjectOwnerOrRotator(uint256 projectId) {
+        require(
+            owners[projectId][msg.sender] || rotators[projectId][msg.sender],
+            "Not a project owner or rotator"
+        );
         _;
     }
 
@@ -111,6 +131,32 @@ contract fheENVRegistry {
         emit OwnerAdded(projectId, newOwner);
     }
 
+    // ─── Rotator Role Management ──────────────────────────────────────────────
+
+    /// @notice Grant the Rotator role to an address for a project.
+    /// @dev    The Rotator can call updateEnvironment() and batchGrantAccess() but
+    ///         cannot call revokeAccess(), grantAccess(), addOwner(), or transferOwnership().
+    ///         See §4.5 of the key-rotation spec for the full threat model.
+    function addRotator(uint256 projectId, address rotator)
+        external
+        projectExists(projectId)
+        onlyProjectOwner(projectId)
+    {
+        require(rotator != address(0), "Invalid address");
+        rotators[projectId][rotator] = true;
+        emit RotatorGranted(projectId, rotator);
+    }
+
+    /// @notice Revoke the Rotator role from an address.
+    function removeRotator(uint256 projectId, address rotator)
+        external
+        projectExists(projectId)
+        onlyProjectOwner(projectId)
+    {
+        rotators[projectId][rotator] = false;
+        emit RotatorRevoked(projectId, rotator);
+    }
+
     // ─── Environment Management ───────────────────────────────────────────────
 
     /// @notice Hash env name for use as a mapping key.
@@ -129,7 +175,7 @@ contract fheENVRegistry {
         InEuint128 calldata inKeyLow,
         string calldata blobCid,
         uint256 expectedVersion
-    ) external projectExists(projectId) onlyProjectOwner(projectId) {
+    ) external projectExists(projectId) onlyProjectOwnerOrRotator(projectId) {
         bytes32 envHash = envNameToHash(envName);
         Environment storage env = environments[projectId][envHash];
 
@@ -181,7 +227,7 @@ contract fheENVRegistry {
         uint256 projectId,
         string calldata envName,
         address[] calldata newMembers
-    ) external projectExists(projectId) onlyProjectOwner(projectId) {
+    ) external projectExists(projectId) onlyProjectOwnerOrRotator(projectId) {
         require(newMembers.length <= 100, "Max 100 members per batch");
         bytes32 envHash = envNameToHash(envName);
         Environment storage env = environments[projectId][envHash];

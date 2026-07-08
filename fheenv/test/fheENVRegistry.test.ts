@@ -99,7 +99,7 @@ describe("fheENVRegistry", function () {
     const { high, low } = await encryptAesKey();
     await expect(
       registry.connect(stranger).updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
-    ).to.be.revertedWith("Not a project owner");
+    ).to.be.revertedWith("Not a project owner or rotator");
   });
 
   // ─── Access control ──────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ describe("fheENVRegistry", function () {
     const { high: h2, low: l2 } = await encryptAesKey();
     await expect(
       registry.updateEnvironment(1n, "production", h2, l2, BLOB_CID, 0n),
-    ).to.be.revertedWith("Not a project owner");
+    ).to.be.revertedWith("Not a project owner or rotator");
   });
 
   it("31. multiple environments in the same project are independent", async function () {
@@ -358,5 +358,139 @@ describe("fheENVRegistry", function () {
     const [, , cidUpper] = await registry.getEnvironment(0n, "Production");
     expect(cidLower).to.equal("QmLower");
     expect(cidUpper).to.equal("QmUpper");
+  });
+
+  // ─── Rotator role ────────────────────────────────────────────────────────
+
+  it("35. owner can grant and revoke Rotator role", async function () {
+    await registry.createProject("MyProject");
+    await expect(registry.addRotator(0n, stranger.address))
+      .to.emit(registry, "RotatorGranted")
+      .withArgs(0n, stranger.address);
+    expect(await registry.rotators(0n, stranger.address)).to.equal(true);
+
+    await expect(registry.removeRotator(0n, stranger.address))
+      .to.emit(registry, "RotatorRevoked")
+      .withArgs(0n, stranger.address);
+    expect(await registry.rotators(0n, stranger.address)).to.equal(false);
+  });
+
+  it("36. non-owner cannot grant or revoke Rotator role", async function () {
+    await registry.createProject("MyProject");
+    await expect(registry.connect(stranger).addRotator(0n, stranger.address)).to.be.revertedWith(
+      "Not a project owner",
+    );
+    await expect(registry.connect(stranger).removeRotator(0n, stranger.address)).to.be.revertedWith(
+      "Not a project owner",
+    );
+  });
+
+  it("37. Rotator can call updateEnvironment", async function () {
+    await registry.createProject("MyProject");
+    await registry.addRotator(0n, stranger.address);
+
+    // stranger is the rotator — they need their own encrypted inputs
+    const rotatorClient = await hre.cofhe.createClientWithBatteries(stranger);
+    const [high, low] = await rotatorClient
+      .encryptInputs([Encryptable.uint128(AES_KEY_HIGH), Encryptable.uint128(AES_KEY_LOW)])
+      .execute();
+
+    await expect(
+      registry.connect(stranger).updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
+    ).to.not.be.reverted;
+
+    const [, , blobCid, version] = await registry.getEnvironment(0n, "production");
+    expect(version).to.equal(1n);
+    expect(blobCid).to.equal(BLOB_CID);
+  });
+
+  it("38. Rotator can call batchGrantAccess", async function () {
+    await setupWithEnv();
+    await registry.addRotator(0n, stranger.address);
+
+    await expect(registry.connect(stranger).batchGrantAccess(0n, "production", [member.address])).to
+      .not.be.reverted;
+    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(true);
+  });
+
+  it("39. Rotator cannot call revokeAccess", async function () {
+    await setupWithEnv();
+    await registry.grantAccess(0n, "production", member.address);
+    await registry.addRotator(0n, stranger.address);
+
+    await expect(
+      registry.connect(stranger).revokeAccess(0n, "production", member.address),
+    ).to.be.revertedWith("Not a project owner");
+  });
+
+  it("40. Rotator cannot call grantAccess (single)", async function () {
+    await setupWithEnv();
+    await registry.addRotator(0n, stranger.address);
+
+    await expect(
+      registry.connect(stranger).grantAccess(0n, "production", member.address),
+    ).to.be.revertedWith("Not a project owner");
+  });
+
+  it("41. Rotator cannot call addOwner", async function () {
+    await registry.createProject("MyProject");
+    await registry.addRotator(0n, stranger.address);
+
+    await expect(registry.connect(stranger).addOwner(0n, member.address)).to.be.revertedWith(
+      "Not a project owner",
+    );
+  });
+
+  it("42. Rotator cannot call transferOwnership", async function () {
+    await registry.createProject("MyProject");
+    await registry.addRotator(0n, stranger.address);
+
+    await expect(
+      registry.connect(stranger).transferOwnership(0n, member.address),
+    ).to.be.revertedWith("Not a project owner");
+  });
+
+  it("43. Rotator revocation prevents further updateEnvironment calls", async function () {
+    await registry.createProject("MyProject");
+    await registry.addRotator(0n, stranger.address);
+    await registry.removeRotator(0n, stranger.address);
+
+    const rotatorClient = await hre.cofhe.createClientWithBatteries(stranger);
+    const [high, low] = await rotatorClient
+      .encryptInputs([Encryptable.uint128(AES_KEY_HIGH), Encryptable.uint128(AES_KEY_LOW)])
+      .execute();
+
+    await expect(
+      registry.connect(stranger).updateEnvironment(0n, "production", high, low, BLOB_CID, 0n),
+    ).to.be.revertedWith("Not a project owner or rotator");
+  });
+
+  it("44. addRotator rejects zero address", async function () {
+    await registry.createProject("MyProject");
+    await expect(
+      registry.addRotator(0n, "0x0000000000000000000000000000000000000000"),
+    ).to.be.revertedWith("Invalid address");
+  });
+
+  it("45. Rotator role is scoped per-project", async function () {
+    await registry.createProject("ProjectA"); // projectId 0
+    await registry.connect(member).createProject("ProjectB"); // projectId 1
+
+    // Grant rotator on project 0 only
+    await registry.addRotator(0n, stranger.address);
+    expect(await registry.rotators(0n, stranger.address)).to.equal(true);
+    expect(await registry.rotators(1n, stranger.address)).to.equal(false);
+
+    // stranger cannot call batchGrantAccess on project 1
+    await setupWithEnv(); // pushes to project 0, but we need project 1 initialized
+    const memberClient = await hre.cofhe.createClientWithBatteries(member);
+    const [high, low] = await memberClient
+      .encryptInputs([Encryptable.uint128(AES_KEY_HIGH), Encryptable.uint128(AES_KEY_LOW)])
+      .execute();
+    await registry.connect(member).updateEnvironment(1n, "production", high, low, BLOB_CID, 0n);
+
+    await expect(
+      registry.connect(stranger).batchGrantAccess(1n, "production", [member2.address]),
+    ).to.be.revertedWith("Not a project owner or rotator");
   });
 });
