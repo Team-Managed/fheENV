@@ -109,9 +109,9 @@ export function HeroSection() {
       </div>
 
       {/* Hero grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh] overflow-x-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-20 sm:pt-28 pb-8 sm:pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh]">
         {/* ── Left: text ── */}
-        <div className="flex flex-col gap-7">
+        <div className="flex flex-col gap-7 min-w-0">
           <div className="hero-el text-center lg:text-left flex flex-col gap-2 sm:gap-4 pb-4">
             <MorphingText
               texts={morphTexts}
