@@ -133,11 +133,14 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       removedMember: memberAddress,
       unpinStatus: "failed",
     });
-    throw new Error(
-      `Partial failure: revokeAccess succeeded but rotation failed for env "${envName}". ` +
-        `Run \`fheenv rotate --env ${envName}\` to complete. Underlying error: ${(err as Error).message}`,
+    const rotateErr = Object.assign(
+      new Error(
+        `Partial failure: revokeAccess succeeded but rotation failed for env "${envName}". ` +
+          `Run \`fheenv rotate --env ${envName}\` to complete. Underlying error: ${(err as Error).message}`,
+      ),
       { cause: err },
     );
+    throw rotateErr;
   }
 
   rotateSpinner.succeed(

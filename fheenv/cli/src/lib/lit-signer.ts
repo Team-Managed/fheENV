@@ -41,8 +41,10 @@ async function callLitAction(
   } catch (err) {
     const status = (err as { response?: { status?: number } }).response?.status;
     const body = (err as { response?: { data?: unknown } }).response?.data;
-    throw new Error(
-      `Lit API request failed${status ? ` (HTTP ${status})` : ""}: ${JSON.stringify(body) ?? (err as Error).message}`,
+    throw Object.assign(
+      new Error(
+        `Lit API request failed${status ? ` (HTTP ${status})` : ""}: ${JSON.stringify(body) ?? (err as Error).message}`,
+      ),
       { cause: err },
     );
   }
