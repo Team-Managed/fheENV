@@ -7,6 +7,7 @@ import { fetchFromIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheDecryptUint128 } from "../lib/fhe-node";
 import { parseEnvNode } from "../lib/env-parser-node";
+import { logAuditEvent } from "../lib/audit";
 import { type Address } from "viem";
 
 export interface RunOptions {
@@ -24,7 +25,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
 
   const spinner = ora(`Fetching env "${envName}" for run...`).start();
   try {
-    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
+    const { publicClient, walletClient, account } = createClients(config.rpcUrl, config.chainId);
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
 
@@ -63,6 +64,13 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     const envVars = parseEnvNode(envContent);
 
     spinner.stop();
+
+    logAuditEvent({
+      actor: account.address,
+      action: "env_run",
+      projectId: config.projectId.toString(),
+      envName,
+    });
 
     // Inject vars into child process env
     const childEnv = { ...process.env, ...envVars };

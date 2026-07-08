@@ -125,9 +125,13 @@ team
   .description("Grant an address access to decrypt a specific environment")
   .requiredOption("-m, --member <address>", "Ethereum address to grant access")
   .option("-e, --env <envName>", "Environment name", "production")
+  .option(
+    "--expires <duration>",
+    "Time-limited grant for CI/CD service accounts: e.g. 30d, 8h, 90m (SOC 2 CC6.3)",
+  )
   .action(async (opts) => {
     try {
-      await teamAddCommand({ member: opts.member, envName: opts.env });
+      await teamAddCommand({ member: opts.member, envName: opts.env, expires: opts.expires });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
