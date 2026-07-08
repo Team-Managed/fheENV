@@ -75,7 +75,7 @@ const Cursor = () => (
 function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boolean }) {
   if (!show) return null;
   return (
-    <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
+    <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs min-w-0 overflow-hidden">
       <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>
         ~/my-app ➜
       </span>
@@ -205,7 +205,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
           <div className="px-4 py-2 border-b border-white/[0.06] flex items-center gap-2">
             <span className="text-[10px] font-mono text-slate-500">bash</span>
           </div>
-          <div className="p-4 flex flex-col gap-1.5 overflow-y-auto">
+          <div className="p-4 flex flex-col gap-1.5 overflow-y-auto overflow-x-hidden">
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
