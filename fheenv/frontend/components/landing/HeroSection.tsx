@@ -32,9 +32,9 @@ function HeroInstallCommand() {
 
   return (
     <div className="hero-el w-full max-w-[520px] mx-auto lg:mx-0">
-      <div className="flex items-center gap-2 mb-2">
-        <Terminal className="size-3 text-aqua" />
-        <span className="text-[11px] font-mono text-slate-400">
+      <div className="flex items-center gap-2 mb-2 min-w-0">
+        <Terminal className="size-3 shrink-0 text-aqua" />
+        <span className="text-[11px] font-mono text-slate-400 truncate min-w-0">
           {isWindows ? "PowerShell" : "Terminal"} — install in seconds
         </span>
         <button
@@ -109,7 +109,7 @@ export function HeroSection() {
       </div>
 
       {/* Hero grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh]">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-2 gap-14 items-center min-h-[92vh] overflow-x-hidden">
         {/* ── Left: text ── */}
         <div className="flex flex-col gap-7">
           <div className="hero-el text-center lg:text-left flex flex-col gap-2 sm:gap-4 pb-4">
