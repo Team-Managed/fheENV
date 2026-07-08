@@ -138,12 +138,56 @@ const REGISTRY_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "uint256", name: "projectId", type: "uint256" },
+      { internalType: "string", name: "envName", type: "string" },
+      { internalType: "address", name: "member", type: "address" },
+      { internalType: "uint256", name: "expiresAt", type: "uint256" },
+    ],
+    name: "grantAccessWithExpiry",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "projectId", type: "uint256" },
+      { internalType: "string", name: "envName", type: "string" },
+      { internalType: "address", name: "member", type: "address" },
+    ],
+    name: "expireAccess",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "projectId", type: "uint256" },
+      { internalType: "bytes32", name: "", type: "bytes32" },
+      { internalType: "address", name: "", type: "address" },
+    ],
+    name: "memberExpiry",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     name: "AccessGranted",
     type: "event",
     inputs: [
       { name: "projectId", type: "uint256", indexed: true },
       { name: "envHash", type: "bytes32", indexed: true },
       { name: "member", type: "address", indexed: true },
+    ],
+  },
+  {
+    name: "AccessGrantedWithExpiry",
+    type: "event",
+    inputs: [
+      { name: "projectId", type: "uint256", indexed: true },
+      { name: "envHash", type: "bytes32", indexed: true },
+      { name: "member", type: "address", indexed: true },
+      { name: "expiresAt", type: "uint256", indexed: false },
     ],
   },
   {
@@ -251,6 +295,29 @@ export async function updateEnvironment(
       params.blobCid,
       params.expectedVersion,
     ],
+    account,
+    chain: walletClient.chain ?? null,
+  });
+  await publicClient.waitForTransactionReceipt({ hash });
+}
+
+export async function grantAccessWithExpiry(
+  registryAddress: Address,
+  projectId: bigint,
+  envName: string,
+  member: Address,
+  expiresAt: bigint,
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+): Promise<void> {
+  const account = walletClient.account;
+  if (!account) throw new Error("WalletClient has no account");
+
+  const hash = await walletClient.writeContract({
+    address: registryAddress,
+    abi: REGISTRY_ABI,
+    functionName: "grantAccessWithExpiry",
+    args: [projectId, envName, member, expiresAt],
     account,
     chain: walletClient.chain ?? null,
   });

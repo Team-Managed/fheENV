@@ -72,13 +72,69 @@ docker run -e FHEENV_PRIVATE_KEY=0x... my-app
 ## Required Setup
 
 1. Create a **dedicated wallet** for CI (not your personal key)
-2. Grant it access: `fheenv team add --member 0xCI_WALLET`
+2. Grant it **time-limited** access: `fheenv team add --member 0xCI_WALLET --expires 90d`
 3. Add the private key as a repository secret: `FHEENV_PRIVATE_KEY`
 4. Commit `.fheenv.json` to your repo (it has no secrets)
 
 <Callout type="warn">
   Prefer `fheenv run` over `fheenv pull` in CI. It avoids writing secrets to disk entirely.
 </Callout>
+
+## SOC 2 Compliance Checklist
+
+The following controls map to SOC 2 Trust Service Criteria:
+
+| Control   | Requirement                         | How to meet it                                                                                                                          |
+| --------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **CC6.1** | Credentials encrypted at rest       | Run `fheenv login` with a passphrase — keyfile is AES-256-GCM encrypted. Set `FHEENV_KEY_PASSPHRASE` to unlock non-interactively.       |
+| **CC6.3** | Least privilege                     | Use `--expires` to issue time-limited grants. CI wallets should never have permanent access.                                            |
+| **CC6.6** | Revoke access when no longer needed | Run `fheenv team remove` then `fheenv rotate` immediately. Expired grants are cleaned up with `expireAccess()` on-chain.                |
+| **CC7.2** | Audit trail                         | All secret accesses, member changes, and rotations are written to `~/.fheenv/audit.log` (JSONL, mode 0600). Ship this log to your SIEM. |
+| **CC8.1** | Change management                   | Key rotation procedure: `fheenv team remove` → `fheenv rotate`. Documented and enforced by CLI warnings.                                |
+
+## Time-Limited CI Grants (CC6.3)
+
+Grant a CI wallet access that auto-expires, avoiding permanent standing access:
+
+```bash
+# Grant access for 90 days (typical sprint/quarter cycle)
+fheenv team add --member 0xCI_WALLET --expires 90d
+
+# Grant access for a single 8-hour pipeline window
+fheenv team add --member 0xCI_WALLET --expires 8h
+```
+
+After expiry, call `expireAccess()` on-chain (or let any keeper clean it up) — no owner action
+required.
+
+## Encrypted Developer Keyfile (CC6.1)
+
+For developers using the local keyfile (not CI):
+
+```bash
+# Login with passphrase — keyfile is AES-256-GCM + scrypt encrypted
+fheenv login
+
+# Unlock non-interactively (e.g. in a script)
+FHEENV_KEY_PASSPHRASE=<passphrase> fheenv pull
+```
+
+## Audit Log (CC7.2)
+
+Every `fheenv pull`, `fheenv run`, `fheenv team add/remove`, and `fheenv rotate` writes a structured
+JSON line to `~/.fheenv/audit.log`:
+
+```json
+{
+  "actor": "0xABC...",
+  "action": "env_run",
+  "projectId": "1",
+  "envName": "production",
+  "timestamp": "2026-07-08T10:00:00.000Z"
+}
+```
+
+Forward this to your SIEM (Datadog, Splunk, CloudWatch) for centralized audit evidence.
 
 # At runtime, pass FHEENV_PRIVATE_KEY as env var
 

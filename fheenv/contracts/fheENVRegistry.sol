@@ -43,6 +43,10 @@ contract fheENVRegistry {
     // projectId → envHash → address → hasReadAccess
     mapping(uint256 => mapping(bytes32 => mapping(address => bool))) public members;
 
+    // projectId → envHash → address → expiry timestamp (0 = permanent)
+    // SOC 2 CC6.3 / CC6.6 — least privilege; time-limited CI/CD grants
+    mapping(uint256 => mapping(bytes32 => mapping(address => uint256))) public memberExpiry;
+
     // ─── Events ───────────────────────────────────────────────────────────────
 
     event ProjectCreated(uint256 indexed projectId, address indexed owner, string name);
@@ -50,6 +54,8 @@ contract fheENVRegistry {
     event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
+    /// @dev Emitted when access is granted with an explicit expiry timestamp.
+    event AccessGrantedWithExpiry(uint256 indexed projectId, bytes32 indexed envHash, address indexed member, uint256 expiresAt);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -191,6 +197,40 @@ contract fheENVRegistry {
         }
     }
 
+    /// @notice Grant a single member decrypt access to an environment with a time-based expiry.
+    /// @dev    SOC 2 CC6.3 / CC6.6 — use for CI/CD service accounts. expiresAt is a Unix timestamp.
+    function grantAccessWithExpiry(
+        uint256 projectId,
+        string calldata envName,
+        address member,
+        uint256 expiresAt
+    ) external projectExists(projectId) onlyProjectOwner(projectId) {
+        require(member != address(0), "Invalid address");
+        require(expiresAt > block.timestamp, "Expiry must be in the future");
+        bytes32 envHash = envNameToHash(envName);
+        Environment storage env = environments[projectId][envHash];
+        require(env.initialized, "Environment not initialized");
+
+        FHE.allow(env.aesKeyHigh, member);
+        FHE.allow(env.aesKeyLow, member);
+        members[projectId][envHash][member] = true;
+        memberExpiry[projectId][envHash][member] = expiresAt;
+
+        emit AccessGrantedWithExpiry(projectId, envHash, member, expiresAt);
+    }
+
+    /// @notice Permissionlessly clean up an expired grant.
+    /// @dev    Anyone can call this once the expiry has passed, enabling keepers / CI to self-clean.
+    function expireAccess(uint256 projectId, string calldata envName, address member) external {
+        bytes32 envHash = envNameToHash(envName);
+        require(members[projectId][envHash][member], "Member not in access list");
+        uint256 expiry = memberExpiry[projectId][envHash][member];
+        require(expiry != 0, "Access has no expiry set");
+        require(block.timestamp > expiry, "Access not yet expired");
+        members[projectId][envHash][member] = false;
+        emit AccessRevoked(projectId, envHash, member);
+    }
+
     /// @notice Remove a member from the access list and emit AccessRevoked.
     /// @dev    CoFHE has no revokeAllow primitive — FHE cryptographic access on the current
     ///         ciphertext handles persists until updateEnvironment() rotates the AES key.
@@ -227,10 +267,14 @@ contract fheENVRegistry {
         return (env.aesKeyHigh, env.aesKeyLow, env.blobCid, env.version, env.updatedAt);
     }
 
-    /// @notice Check if an address has access to an environment.
+    /// @notice Check if an address has active (non-expired) access to an environment.
     function hasAccess(uint256 projectId, string calldata envName, address member)
         external view returns (bool)
     {
-        return members[projectId][envNameToHash(envName)][member];
+        bytes32 envHash = envNameToHash(envName);
+        if (!members[projectId][envHash][member]) return false;
+        uint256 expiry = memberExpiry[projectId][envHash][member];
+        if (expiry != 0 && block.timestamp > expiry) return false;
+        return true;
     }
 }
