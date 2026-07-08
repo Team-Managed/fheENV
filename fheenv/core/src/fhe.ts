@@ -1,4 +1,4 @@
-// @ts-ignore — @cofhe/sdk/node provides Node.js-specific FHE client
+// @ts-expect-error — @cofhe/sdk/node provides Node.js-specific FHE client
 import { createCofheConfig, createCofheClient } from "@cofhe/sdk/node";
 import { getChainById } from "@cofhe/sdk/chains";
 import { Encryptable, FheTypes } from "@cofhe/sdk";
@@ -25,18 +25,16 @@ export async function createFheClient(
 ): Promise<AnyCofheClient> {
   const chain = getChainById(chainId);
   if (!chain) {
-    throw new Error(
-      `Unsupported chain ${chainId}. Supported: ${Object.keys(
-        require("@cofhe/sdk/chains").chains,
-      ).join(", ")}`,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const supportedChains = Object.keys(require("@cofhe/sdk/chains").chains).join(", ");
+    throw new Error(`Unsupported chain ${chainId}. Supported: ${supportedChains}`);
   }
-  // @ts-ignore
+  // @ts-expect-error — SDK type mismatch
   const config = createCofheConfig({ supportedChains: [chain] });
-  // @ts-ignore
+  // @ts-expect-error — SDK type mismatch
   const client = createCofheClient(config);
-  // @ts-ignore — viem version mismatch between CLI and @cofhe/sdk
-  await client.connect(publicClient as any, walletClient as any);
+  // @ts-expect-error — viem version mismatch between CLI and @cofhe/sdk
+  await client.connect(publicClient as unknown, walletClient as unknown);
   return client;
 }
 
@@ -63,8 +61,8 @@ export async function fheDecryptUint128(
   client: AnyCofheClient,
   ctHash: bigint,
   chainId: number,
-  publicClient: PublicClient,
-  walletClient: WalletClient,
+  _publicClient: PublicClient,
+  _walletClient: WalletClient,
 ): Promise<bigint> {
   // getOrCreateSelfPermit uses the already-connected client — no args needed
   await client.permits.getOrCreateSelfPermit();

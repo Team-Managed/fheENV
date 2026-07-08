@@ -15,6 +15,9 @@ export default tseslint.config(
       "**/typechain-types/**",
       "**/coverage/**",
       "**/.source/**",
+      // Lit Action files run inside the Lit Chipotle TEE — not a Node.js environment.
+      // ESLint doesn't know about TEE globals (ethers, Lit, js_params) so exclude them.
+      "**/lit-actions/**",
     ],
   },
   {

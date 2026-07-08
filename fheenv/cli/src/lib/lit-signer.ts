@@ -43,6 +43,7 @@ async function callLitAction(
     const body = (err as { response?: { data?: unknown } }).response?.data;
     throw new Error(
       `Lit API request failed${status ? ` (HTTP ${status})` : ""}: ${JSON.stringify(body) ?? (err as Error).message}`,
+      { cause: err },
     );
   }
   return (res.data as { response: LitSignResult }).response;
