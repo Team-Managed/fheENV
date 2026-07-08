@@ -1,4 +1,3 @@
-// @ts-expect-error — @cofhe/sdk/node provides Node.js-specific FHE client
 import { createCofheConfig, createCofheClient } from "@cofhe/sdk/node";
 import { getChainById } from "@cofhe/sdk/chains";
 import { Encryptable, FheTypes } from "@cofhe/sdk";
@@ -29,12 +28,11 @@ export async function createFheClient(
     const supportedChains = Object.keys(require("@cofhe/sdk/chains").chains).join(", ");
     throw new Error(`Unsupported chain ${chainId}. Supported: ${supportedChains}`);
   }
-  // @ts-expect-error — SDK type mismatch
   const config = createCofheConfig({ supportedChains: [chain] });
-  // @ts-expect-error — SDK type mismatch
   const client = createCofheClient(config);
-  // @ts-expect-error — viem version mismatch between CLI and @cofhe/sdk
-  await client.connect(publicClient as unknown, walletClient as unknown);
+  // viem version in workspace differs from @cofhe/sdk's expected Client type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await client.connect(publicClient as any, walletClient as any);
   return client;
 }
 
