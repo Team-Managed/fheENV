@@ -183,7 +183,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
       </div>
 
       {/* Split body */}
-      <div className="flex flex-col md:flex-row h-[500px] md:h-[440px]">
+      <div className="flex flex-col md:flex-row h-[640px] md:h-[440px]">
         {/* ── Left: .env file pane ── */}
         <div className="w-full md:w-[42%] bg-[#0d1117] border-b md:border-b-0 md:border-r border-white/[0.06] flex flex-col shrink-0">
           <div className="px-4 py-2 border-b border-white/[0.06] flex items-center gap-2">
