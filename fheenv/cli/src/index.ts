@@ -10,6 +10,10 @@ import { teamAddCommand } from "./commands/team-add";
 import { teamRemoveCommand } from "./commands/team-remove";
 import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
+import { rotatorAddCommand, rotatorRemoveCommand } from "./commands/rotator";
+import { rotateCheckCommand } from "./commands/rotate-check";
+import { indexAuditCommand } from "./commands/index-audit";
+import { exportAuditCommand } from "./commands/export-audit";
 
 const program = new Command();
 
@@ -159,12 +163,25 @@ team
 // ── fheenv team remove ────────────────────────────────────────────────────────
 team
   .command("remove")
-  .description("Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)")
+  .description(
+    "Revoke access and automatically rotate the AES key (cryptographic lockout). " +
+      "Use --no-rotate only when batch-removing multiple members.",
+  )
   .requiredOption("-m, --member <address>", "Ethereum address to revoke")
   .option("-e, --env <envName>", "Environment name", "production")
+  .option("-f, --file <path>", "Path to .env file to re-encrypt during auto-rotation", ".env")
+  .option(
+    "--no-rotate",
+    "Skip auto-rotation (UNSAFE — member retains FHE decrypt access until you run `fheenv rotate`)",
+  )
   .action(async (opts) => {
     try {
-      await teamRemoveCommand({ member: opts.member, envName: opts.env });
+      await teamRemoveCommand({
+        member: opts.member,
+        envName: opts.env,
+        envFile: opts.file,
+        noRotate: opts.noRotate,
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
@@ -182,6 +199,91 @@ program
   .action(async (opts) => {
     try {
       await rotateCommand({ envName: opts.env, envFile: opts.file });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv rotator ────────────────────────────────────────────────────
+const rotator = program
+  .command("rotator")
+  .description("Manage the Rotator automation role (SOC 2 CC6.1)");
+
+rotator
+  .command("add")
+  .description(
+    "Grant the Rotator role to an address (allows updateEnvironment + batchGrantAccess, no team management)",
+  )
+  .requiredOption("-a, --address <address>", "Ethereum address to grant the Rotator role")
+  .option("-p, --project-id <id>", "Project ID (defaults to .fheenv.json value)")
+  .action(async (opts) => {
+    try {
+      await rotatorAddCommand({ address: opts.address, projectId: opts.projectId });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+rotator
+  .command("remove")
+  .description("Revoke the Rotator role from an address")
+  .requiredOption("-a, --address <address>", "Ethereum address to revoke the Rotator role from")
+  .option("-p, --project-id <id>", "Project ID (defaults to .fheenv.json value)")
+  .action(async (opts) => {
+    try {
+      await rotatorRemoveCommand({ address: opts.address, projectId: opts.projectId });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv rotate-check ───────────────────────────────────────────────────────
+program
+  .command("rotate-check")
+  .description(
+    "Check rotation policy and rotate overdue environments. " +
+      "Intended for scheduled GitHub Actions workflows — exits with code 1 on any failure.",
+  )
+  .action(async () => {
+    try {
+      await rotateCheckCommand();
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv index-audit ──────────────────────────────────────────────────
+program
+  .command("index-audit")
+  .description(
+    "Index on-chain events into ~/.fheenv/audit.log (SOC 2 CC7.2 evidence). " +
+      "Run before exporting to ensure the log is current.",
+  )
+  .action(async () => {
+    try {
+      await indexAuditCommand();
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv export-audit ────────────────────────────────────────────────
+program
+  .command("export-audit")
+  .description(
+    "Export ~/.fheenv/audit.log as CSV for SOC 2 auditor review (CC6.3 / CC7.2 evidence).",
+  )
+  .option("-o, --output <file>", "Write to a file instead of stdout")
+  .option("--from <date>", "Include records on or after this date (ISO 8601, e.g. 2026-01-01)")
+  .option("--to <date>", "Include records on or before this date (ISO 8601, e.g. 2026-07-08)")
+  .action((opts) => {
+    try {
+      exportAuditCommand({ output: opts.output, from: opts.from, to: opts.to });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

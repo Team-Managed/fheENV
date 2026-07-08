@@ -8,6 +8,7 @@ import { generateAesKeyNode, aesEncryptNode, splitAesKeyToUint128Node } from "..
 import { uploadToIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment, updateEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheEncryptUint128, toInEuint128 } from "../lib/fhe-node";
+import { captureCliUsage } from "../lib/posthog";
 import { type Address } from "viem";
 
 export interface PushOptions {
@@ -77,6 +78,7 @@ export async function pushCommand(opts: PushOptions = {}): Promise<void> {
 
     spinner.succeed(chalk.green(`Pushed env "${envName}" to chain (CID: ${blobCid})`));
     console.log(chalk.dim(`  Project: ${config.projectId} | Version: ${currentVersion + 1n}`));
+    captureCliUsage("push", config.projectId);
   } catch (err) {
     spinner.fail("Push failed");
     throw err;
