@@ -297,7 +297,7 @@ export async function createProject(
   name: string,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<bigint> {
+): Promise<{ projectId: bigint; blockNumber: bigint }> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -310,6 +310,7 @@ export async function createProject(
     chain: walletClient.chain ?? null,
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  const blockNumber = receipt.blockNumber;
 
   // Parse ProjectCreated log to get projectId
   // keccak256("ProjectCreated(uint256,address,string)")
@@ -318,7 +319,7 @@ export async function createProject(
 
   for (const log of receipt.logs) {
     if (log.topics[0] === projectCreatedTopic && log.topics[1]) {
-      return BigInt(log.topics[1]);
+      return { projectId: BigInt(log.topics[1]), blockNumber };
     }
   }
 
@@ -329,7 +330,7 @@ export async function createProject(
     functionName: "nextProjectId",
     args: [],
   })) as bigint;
-  return next - 1n;
+  return { projectId: next - 1n, blockNumber };
 }
 
 export async function updateEnvironment(
@@ -469,6 +470,7 @@ export async function getActiveMembers(
   projectId: bigint,
   envName: string,
   publicClient: PublicClient,
+  fromBlock?: bigint,
 ): Promise<Address[]> {
   const envHash = (await publicClient.readContract({
     address: registryAddress,
@@ -489,13 +491,13 @@ export async function getActiveMembers(
       address: registryAddress,
       event: grantedEvent,
       args: { projectId, envHash } as Record<string, unknown>,
-      fromBlock: 0n,
+      fromBlock: fromBlock ?? 0n,
     }),
     publicClient.getLogs({
       address: registryAddress,
       event: revokedEvent,
       args: { projectId, envHash } as Record<string, unknown>,
-      fromBlock: 0n,
+      fromBlock: fromBlock ?? 0n,
     }),
   ]);
 

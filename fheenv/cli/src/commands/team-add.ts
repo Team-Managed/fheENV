@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
-import { readConfig } from "../lib/config";
+import { readConfig, addMemberToCache } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { grantAccess, grantAccessWithExpiry } from "../lib/contracts-node";
 import { logAuditEvent } from "../lib/audit";
@@ -79,6 +79,7 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
           `  They will need your CID to fetch the blob, and their address must have FHE decryption access.`,
         ),
       );
+      addMemberToCache(envName, opts.member);
       logAuditEvent({
         actor: account.address,
         action: "member_granted",

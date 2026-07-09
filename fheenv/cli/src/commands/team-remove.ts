@@ -2,7 +2,12 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import { readConfig } from "../lib/config";
+import {
+  readConfig,
+  removeMemberFromCache,
+  getCachedMembers,
+  ensureDeployedAtBlock,
+} from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { revokeAccess } from "../lib/contracts-node";
 import { rotateEnvironment, unpinFromIPFSNode, logAuditEvent } from "@fheenv/core";
@@ -46,6 +51,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
     revokeSpinner.succeed(
       chalk.yellow(`Access revoked for ${memberAddress} from env "${envName}"`),
     );
+    removeMemberFromCache(envName, memberAddress);
     logAuditEvent({
       actor: account.address,
       action: "member_revoked",
@@ -97,6 +103,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
 
   let rotateResult: Awaited<ReturnType<typeof rotateEnvironment>>;
   try {
+    const fromBlock = await ensureDeployedAtBlock(() => publicClient.getBlockNumber());
     rotateResult = await rotateEnvironment({
       registryAddress,
       projectId,
@@ -107,6 +114,11 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       publicClient,
       walletClient,
       excludeMembers: [memberAddress],
+      fromBlock,
+      knownMembers: (() => {
+        const cached = getCachedMembers(envName);
+        return cached ? (cached as Address[]) : undefined;
+      })(),
     });
   } catch (err) {
     rotateSpinner.fail(chalk.red("Auto-rotation FAILED after revokeAccess"));

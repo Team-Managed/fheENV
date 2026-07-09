@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import { readConfig } from "../lib/config";
+import { readConfig, getCachedMembers, ensureDeployedAtBlock } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { rotateEnvironment, logAuditEvent } from "@fheenv/core";
 import { capturePosthogEvent } from "../lib/posthog";
@@ -36,6 +36,8 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
     const { publicClient, walletClient, account } = createClients(config.rpcUrl, config.chainId);
 
     spinner.text = "Fetching current environment and members from chain...";
+    const fromBlock = await ensureDeployedAtBlock(() => publicClient.getBlockNumber());
+    const cachedMembers = getCachedMembers(envName);
     const result = await rotateEnvironment({
       registryAddress: config.registryAddress as Address,
       projectId: BigInt(config.projectId),
@@ -45,6 +47,8 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
       chainId: config.chainId,
       publicClient,
       walletClient,
+      fromBlock,
+      knownMembers: cachedMembers ? (cachedMembers as Address[]) : undefined,
     });
 
     const auditPayload = {

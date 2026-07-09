@@ -263,9 +263,15 @@ program
   .option("-o, --output <file>", "Write to a file instead of stdout")
   .option("--from <date>", "Include records on or after this date (ISO 8601, e.g. 2026-01-01)")
   .option("--to <date>", "Include records on or before this date (ISO 8601, e.g. 2026-07-08)")
+  .option("--format <fmt>", "Output format: csv (default) or table", "csv")
   .action((opts) => {
     try {
-      exportAuditCommand({ output: opts.output, from: opts.from, to: opts.to });
+      exportAuditCommand({
+        output: opts.output,
+        from: opts.from,
+        to: opts.to,
+        format: opts.format,
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

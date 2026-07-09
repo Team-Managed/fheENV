@@ -23,6 +23,10 @@ export interface RotateEnvironmentParams {
   walletClient: WalletClient;
   /** Members to NOT re-grant after rotation (e.g. the just-removed member). Default: [] */
   excludeMembers?: Address[];
+  /** Block to start scanning events from — avoids RPC block range limits. */
+  fromBlock?: bigint;
+  /** Pre-supplied member list — skips eth_getLogs entirely when provided. */
+  knownMembers?: Address[];
 }
 
 export interface RotateEnvironmentResult {
@@ -79,12 +83,9 @@ export async function rotateEnvironment(
   const previousCid = currentEnv.blobCid;
 
   // 2. Get active members, excluding any that should not be re-granted
-  const allActiveMembers = await getActiveMembers(
-    registryAddress,
-    projectId,
-    envName,
-    publicClient,
-  );
+  const allActiveMembers = params.knownMembers
+    ? params.knownMembers
+    : await getActiveMembers(registryAddress, projectId, envName, publicClient, params.fromBlock);
   const excludeSet = new Set(excludeMembers.map((a) => a.toLowerCase()));
   const membersToRegrant = allActiveMembers.filter((m) => !excludeSet.has(m.toLowerCase()));
 
