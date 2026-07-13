@@ -1,32 +1,77 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContract } from "wagmi";
+import { parseAbiItem } from "viem";
 import { useRouter } from "next/navigation";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
-import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
+import { REGISTRY_ABI, REGISTRY_ADDRESS, DEPLOY_BLOCK } from "@/lib/contracts";
 import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen } from "lucide-react";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
+  const publicClient = usePublicClient({ chainId: 11155111 });
   const [showModal, setShowModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
 
-  const {
-    data: nextId,
-    isLoading: loadingCount,
-    error: countError,
-  } = useReadContract({
-    address: REGISTRY_ADDRESS as `0x${string}`,
-    abi: REGISTRY_ABI,
-    functionName: "nextProjectId",
-    chainId: 11155111,
-    query: { enabled: !!REGISTRY_ADDRESS },
-  });
+  const [ownedProjectIds, setOwnedProjectIds] = useState<bigint[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectsError, setProjectsError] = useState<Error | null>(null);
 
-  const projectIds = Array.from({ length: Number(nextId ?? 0) }, (_, i) => BigInt(i));
+  useEffect(() => {
+    if (!address || !publicClient || !REGISTRY_ADDRESS) {
+      setOwnedProjectIds([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingProjects(true);
+    setProjectsError(null);
+
+    Promise.all([
+      publicClient.getLogs({
+        address: REGISTRY_ADDRESS,
+        event: parseAbiItem(
+          "event ProjectCreated(uint256 indexed projectId, address indexed owner, string name)",
+        ),
+        args: { owner: address },
+        fromBlock: DEPLOY_BLOCK,
+        toBlock: "latest",
+      }),
+      publicClient.getLogs({
+        address: REGISTRY_ADDRESS,
+        event: parseAbiItem(
+          "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
+        ),
+        args: { newOwner: address },
+        fromBlock: DEPLOY_BLOCK,
+        toBlock: "latest",
+      }),
+    ])
+      .then(([createdLogs, addedLogs]) => {
+        if (cancelled) return;
+        const ids = new Set<bigint>();
+        for (const log of createdLogs) {
+          if (log.args.projectId !== undefined) ids.add(log.args.projectId);
+        }
+        for (const log of addedLogs) {
+          if (log.args.projectId !== undefined) ids.add(log.args.projectId);
+        }
+        setOwnedProjectIds([...ids].sort((a, b) => (a < b ? -1 : 1)));
+        setLoadingProjects(false);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setProjectsError(err instanceof Error ? err : new Error(String(err)));
+          setLoadingProjects(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, publicClient]);
 
   return (
     <>
@@ -70,7 +115,7 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-      ) : loadingCount ? (
+      ) : loadingProjects ? (
         <div
           className="text-center py-24 flex flex-col items-center gap-3"
           style={{ color: "var(--text-muted)" }}
@@ -78,20 +123,20 @@ export default function Dashboard() {
           <Loader2 className="size-6 animate-spin" style={{ color: "var(--aqua)" }} />
           <p className="text-sm">Reading from Sepolia…</p>
         </div>
-      ) : countError ? (
+      ) : projectsError ? (
         <div
           className="rounded-xl p-6 flex items-start gap-3"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
         >
           <AlertCircle className="size-5 text-red-400 mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-400">Contract read failed</p>
+            <p className="text-sm font-medium text-red-400">Failed to load projects</p>
             <p className="text-xs mt-1 font-mono break-all" style={{ color: "var(--text-muted)" }}>
-              {countError.message}
+              {projectsError.message}
             </p>
           </div>
         </div>
-      ) : projectIds.length === 0 ? (
+      ) : ownedProjectIds.length === 0 ? (
         <div className="text-center py-24 flex flex-col items-center gap-4">
           <div
             className="size-14 rounded-full flex items-center justify-center"
@@ -115,11 +160,10 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projectIds.map((id) => (
+          {ownedProjectIds.map((id) => (
             <ProjectCard
               key={id.toString()}
               projectId={id}
-              address={address!}
               onClick={() => router.push(`/project/${id}`)}
             />
           ))}
@@ -141,15 +185,7 @@ export default function Dashboard() {
 
 type ProjectTuple = readonly [string, string, bigint, boolean];
 
-function ProjectCard({
-  projectId,
-  address,
-  onClick,
-}: {
-  projectId: bigint;
-  address: `0x${string}`;
-  onClick: () => void;
-}) {
+function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () => void }) {
   const { data: raw } = useReadContract({
     address: REGISTRY_ADDRESS,
     abi: REGISTRY_ABI,
@@ -157,16 +193,8 @@ function ProjectCard({
     args: [projectId],
     chainId: 11155111,
   });
-  const { data: isOwner } = useReadContract({
-    address: REGISTRY_ADDRESS,
-    abi: REGISTRY_ABI,
-    functionName: "owners",
-    args: [projectId, address],
-    chainId: 11155111,
-  });
   const project = raw as unknown as ProjectTuple | undefined;
-  // Only show projects where the connected user is an owner
-  if (!project || !project[3] || !isOwner) return null;
+  if (!project || !project[3]) return null;
   return (
     <button
       onClick={onClick}

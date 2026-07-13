@@ -9,6 +9,7 @@ import { parseAbi } from "viem";
 export const REGISTRY_ABI = parseAbi([
   "function createProject(string name) returns (uint256)",
   "function addOwner(uint256 projectId, address newOwner)",
+  "function removeOwner(uint256 projectId, address ownerToRemove)",
   "function transferOwnership(uint256 projectId, address newOwner)",
   "function updateEnvironment(uint256 projectId, string envName, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyHigh, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyLow, string blobCid, uint256 expectedVersion)",
   "function grantAccess(uint256 projectId, string envName, address member)",
@@ -24,6 +25,11 @@ export const REGISTRY_ABI = parseAbi([
   "event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
+  "event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner)",
 ]);
 
 export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "") as `0x${string}`;
+
+// Block the registry contract was deployed at. Set NEXT_PUBLIC_DEPLOY_BLOCK to narrow
+// the getLogs range and avoid slow/rate-limited full-history queries on the RPC.
+export const DEPLOY_BLOCK = BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? "0");
