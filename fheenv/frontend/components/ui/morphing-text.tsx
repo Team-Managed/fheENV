@@ -28,8 +28,8 @@ const useMorphingText = (texts: string[]) => {
       current1.style.filter = `blur(${Math.min(8 / invertedFraction - 8, 100)}px)`;
       current1.style.opacity = `${Math.pow(invertedFraction, 0.4) * 100}%`;
 
-      current1.textContent = texts[textIndexRef.current % texts.length];
-      current2.textContent = texts[(textIndexRef.current + 1) % texts.length];
+      current1.textContent = texts[textIndexRef.current % texts.length] ?? null;
+      current2.textContent = texts[(textIndexRef.current + 1) % texts.length] ?? null;
     },
     [texts],
   );
@@ -107,23 +107,6 @@ const Texts: React.FC<Pick<MorphingTextProps, "texts">> = ({ texts }) => {
     </div>
   );
 };
-
-const SvgFilters: React.FC = () => (
-  <svg id="filters" className="fixed h-0 w-0" preserveAspectRatio="xMidYMid slice">
-    <defs>
-      <filter id="threshold">
-        <feColorMatrix
-          in="SourceGraphic"
-          type="matrix"
-          values="1 0 0 0 0
-                  0 1 0 0 0
-                  0 0 1 0 0
-                  0 0 0 255 -140"
-        />
-      </filter>
-    </defs>
-  </svg>
-);
 
 export const MorphingText: React.FC<MorphingTextProps> = ({ texts, className, style }) => (
   <div className={cn("relative w-full leading-none font-bold", className)} style={style}>

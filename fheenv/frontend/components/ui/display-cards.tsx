@@ -20,7 +20,7 @@ export function DisplayCard({
   title = "Encrypted",
   description = "FHE Secure Secrets",
   date = "Just now",
-  iconClassName = "text-indigo-500",
+  iconClassName: _iconClassName = "text-indigo-500",
   titleClassName = "text-indigo-900",
 }: DisplayCardProps) {
   return (

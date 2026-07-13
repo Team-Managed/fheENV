@@ -12,6 +12,7 @@ export function WalletButton() {
   const { switchChain } = useSwitchChain();
 
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   if (!mounted)
     return (
@@ -69,7 +70,7 @@ export function WalletButton() {
 
   return (
     <button
-      onClick={() => connect({ connector: connectors[0] })}
+      onClick={() => connect({ connector: connectors[0]! })}
       className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
       style={{
         background: "var(--aqua)",

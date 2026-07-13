@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Terminal, Apple, Monitor, Copy, Check, Download } from "lucide-react";
+import { Terminal, Monitor, Copy, Check, Download } from "lucide-react";
 
 type Platform = "mac" | "linux" | "windows";
 
@@ -41,6 +41,7 @@ export function InstallSection() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(detectPlatform());
   }, []);
 

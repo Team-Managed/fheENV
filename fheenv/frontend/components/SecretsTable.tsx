@@ -93,7 +93,9 @@ export function SecretsTable({ projectId, envName }: Props) {
         .withPermit()
         .onPoll((ctx) =>
           setLoadingMsg(
-            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(ctx.elapsedMs / 1000)}s`,
+            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(
+              ctx.elapsedMs / 1000,
+            )}s`,
           ),
         )
         .execute();
@@ -194,13 +196,16 @@ export function SecretsTable({ projectId, envName }: Props) {
       // 4. FHE-encrypt new key halves
       setSaveMsg("FHE-encrypting AES key…");
       const { cofheClient, Encryptable } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(publicClient, walletClient);
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
 
       const [encHigh, encLow] = (await cofheClient
         .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
-        .execute()) as any;
+        // SDK execute() returns signature as string; viem ABI expects `0x${string}`
+        .execute()) as unknown as [
+        { ctHash: bigint; securityZone: number; utype: number; signature: `0x${string}` },
+        { ctHash: bigint; securityZone: number; utype: number; signature: `0x${string}` },
+      ];
 
       // 5. Submit to chain
       setSaveMsg("Submitting to blockchain…");
@@ -473,7 +478,9 @@ export function SecretsTable({ projectId, envName }: Props) {
             <div className="mt-4">
               {saveMsg && (
                 <p
-                  className={`text-xs font-mono mb-3 ${saveMsg.startsWith("Error") ? "text-red-400" : "animate-pulse"}`}
+                  className={`text-xs font-mono mb-3 ${
+                    saveMsg.startsWith("Error") ? "text-red-400" : "animate-pulse"
+                  }`}
                   style={saveMsg.startsWith("Error") ? {} : { color: "var(--aqua)" }}
                 >
                   {saveMsg}
