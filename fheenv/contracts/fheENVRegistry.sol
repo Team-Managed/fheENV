@@ -2,11 +2,17 @@
 pragma solidity ^0.8.25;
 
 import "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @title fheENVRegistry
 /// @notice Zero-trust secrets registry. Stores AES-256 keys as FHE ciphertexts.
 ///         The platform operator is cryptographically incapable of reading secrets.
-contract fheENVRegistry {
+/// @dev    Uses UUPS upgradeable proxy pattern (ERC-1967). The implementation owner
+///         must call `upgradeToAndCall` to apply a new implementation. Upgrade rights
+///         are gated to `owner` — use a multisig as the initial owner in production.
+contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     // ─── Data Structures ──────────────────────────────────────────────────────
 
@@ -27,6 +33,9 @@ contract fheENVRegistry {
     }
 
     // ─── State ────────────────────────────────────────────────────────────────
+    //
+    // WARNING: Storage layout must never be reordered across upgrades.
+    // Always append new variables at the end of this section.
 
     uint256 public nextProjectId;
 
@@ -50,6 +59,7 @@ contract fheENVRegistry {
     event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
+    event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -62,6 +72,31 @@ contract fheENVRegistry {
         require(projects[projectId].exists, "Project does not exist");
         _;
     }
+
+    // ─── Constructor / Initializer ────────────────────────────────────────────
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initializes the proxy. Called once by the proxy factory on deployment.
+    /// @param  initialOwner Address that controls upgrades and admin functions.
+    ///         Use a multisig in production (e.g. Safe).
+    function initialize(address initialOwner) external initializer {
+        __Ownable_init(initialOwner);
+    }
+
+    // ─── UUPS Upgrade Gate ────────────────────────────────────────────────────
+
+    /// @notice Gate upgrades to the contract owner.
+    /// @dev    Override required by UUPSUpgradeable. In production, `owner` should be
+    ///         a multisig. Consider pairing with a TimelockController for additional safety.
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {} // solhint-disable-line no-empty-blocks
 
     // ─── Project Management ───────────────────────────────────────────────────
 
@@ -88,6 +123,20 @@ contract fheENVRegistry {
         require(newOwner != address(0), "Invalid address");
         owners[projectId][newOwner] = true;
         emit OwnerAdded(projectId, newOwner);
+    }
+
+    /// @notice Remove a co-owner. Only the primary owner can call this.
+    /// @dev    The primary owner cannot be removed; use transferOwnership to replace them.
+    function removeOwner(uint256 projectId, address ownerToRemove)
+        external
+        projectExists(projectId)
+    {
+        require(projects[projectId].primaryOwner == msg.sender, "Only primary owner can remove co-owners");
+        require(ownerToRemove != address(0), "Invalid address");
+        require(ownerToRemove != projects[projectId].primaryOwner, "Cannot remove primary owner");
+        require(owners[projectId][ownerToRemove], "Address is not an owner");
+        owners[projectId][ownerToRemove] = false;
+        emit OwnerRemoved(projectId, ownerToRemove);
     }
 
     /// @notice Transfer primary ownership to a new address. Revokes the caller's owner status.
