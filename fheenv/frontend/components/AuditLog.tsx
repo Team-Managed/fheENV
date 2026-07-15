@@ -136,7 +136,7 @@ export function AuditLog({ projectId }: Props) {
       </p>
 
       {loading && (
-        <p className="text-xs font-mono animate-pulse" style={{ color: "var(--aqua)" }}>
+        <p className="text-xs font-mono animate-pulse" style={{ color: "var(--brand-blue)" }}>
           Fetching on-chain events…
         </p>
       )}
@@ -177,7 +177,7 @@ export function AuditLog({ projectId }: Props) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="transition-colors"
-                    style={{ color: "var(--aqua)" }}
+                    style={{ color: "var(--brand-blue)" }}
                   >
                     ↗ tx
                   </a>

@@ -11,7 +11,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         nav={{
           title: (
             <span className="font-mono font-bold">
-              <span className="text-teal-400">fhe</span>ENV
+              <span className="text-brand-blue">fhe</span>ENV
             </span>
           ),
           url: "/",

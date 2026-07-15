@@ -184,98 +184,98 @@ export function HeroSection() {
             {/* Terminal Body */}
             <div className="flex-1 overflow-auto p-6 sm:p-8 font-mono text-[12px] sm:text-[13px] leading-[1.8] text-slate-300">
               {/* Pull Wallet B */}
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-brand-blue font-bold">
+              <div className="cli-line w-full break-words text-brand-blue font-bold">
                 === Pull Wallet B ===
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-green-400">
+              <div className="cli-line w-full break-words text-green-400">
                 Passphrase to encrypt keyfile (blank = skip):
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Wallet saved to ~/.fheenv/wallet.json</span>{" "}
                 <span className="text-slate-500">(mode 0600, unencrypted)</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-slate-400 pl-3">
+              <div className="cli-line w-full break-words text-slate-400 pl-3">
                 Tip: re-run `fheenv login` with a passphrase to encrypt keyfile at rest.
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
                 <span className="text-slate-500">(permissions: 0600)</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap pl-3 text-slate-400">
+              <div className="cli-line w-full break-words pl-3 text-slate-400">
                 Version: 3 | Updated: 2026-07-09T17:43:48.000Z
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-slate-200">
+              <div className="cli-line w-full break-words text-slate-200">
                 DB_PASSWORD=<span className="text-pink-400">supersecret</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-slate-200">
+              <div className="cli-line w-full break-words text-slate-200">
                 API_KEY=<span className="text-pink-400">abc123</span>
               </div>
 
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap h-4" />
+              <div className="cli-line w-full break-words h-4" />
 
               {/* Remove Wallet B */}
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-brand-blue font-bold">
+              <div className="cli-line w-full break-words text-brand-blue font-bold">
                 === Remove Wallet B ===
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-yellow-400">⚠</span>{" "}
                 <span className="text-yellow-400/90">Keyfile is unencrypted. Re-run `fheenv login` with a passphrase to encrypt it.</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Access revoked for <span className="text-cyan-400">0xE36f...6176</span> from env &quot;production&quot;</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Rotation complete (v4) – <span className="text-cyan-400">0xE36f...6176</span> cryptographically locked out</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap pl-3 text-slate-400">
+              <div className="cli-line w-full break-words pl-3 text-slate-400">
                 New IPFS CID  : <span className="text-slate-300">QmPSE4yd8Ey6nAamRt3vZ9T6jLljsoL9omus5d5f7TpbE4</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap pl-3 text-slate-400">
+              <div className="cli-line w-full break-words pl-3 text-slate-400">
                 Previous CID  : <span className="text-slate-300">QmYvQ14NyFXHoefYAAUUEoDRCFM9BheUWsW3fma8ENd4BC</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap pl-3 text-slate-400">
+              <div className="cli-line w-full break-words pl-3 text-slate-400">
                 Re-granted    : <span className="text-slate-300">none</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Previous blob unpinned: <span className="text-slate-400">QmYvQ14NyF...ENd4BC</span></span>
               </div>
 
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap h-4" />
+              <div className="cli-line w-full break-words h-4" />
 
               {/* Wallet B locked out */}
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-brand-blue font-bold">
+              <div className="cli-line w-full break-words text-brand-blue font-bold">
                 === Wallet B locked out ===
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-red-400 font-bold">✗ Pull failed</span>
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-red-400">
+              <div className="cli-line w-full break-words text-red-400">
                 Error: sealOutput request failed: permit_denied
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-yellow-400 font-bold text-base">
+              <div className="cli-line w-full break-words text-yellow-400 font-bold text-base">
                 LOCKED OUT ✓
               </div>
 
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap h-4" />
+              <div className="cli-line w-full break-words h-4" />
 
               {/* Wallet A still works */}
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap text-brand-blue font-bold">
+              <div className="cli-line w-full break-words text-brand-blue font-bold">
                 === Wallet A still works ===
               </div>
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap">
+              <div className="cli-line w-full break-words">
                 <span className="text-green-400">✓</span>{" "}
                 <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
                 <span className="text-slate-500">(permissions: 0600)</span>
               </div>
 
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap h-4" />
+              <div className="cli-line w-full break-words h-4" />
 
-              <div className="cli-line w-fit whitespace-nowrap w-fit whitespace-nowrap flex items-center gap-1.5">
+              <div className="cli-line w-full break-words flex items-center gap-1.5">
                 <span className="text-green-400 font-semibold">~/fheENV</span>
                 <span className="text-brand-blue">$</span>
                 <span className="inline-block w-2 h-4 rounded-sm animate-pulse bg-brand-blue/60" />

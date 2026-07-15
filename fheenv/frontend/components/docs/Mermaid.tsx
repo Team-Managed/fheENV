@@ -14,8 +14,8 @@ export function Mermaid({ chart }: { chart: string }) {
         themeVariables: {
           primaryColor: "#1e293b",
           primaryTextColor: "#f1f5f9",
-          primaryBorderColor: "#2dd4bf",
-          lineColor: "#2dd4bf",
+          primaryBorderColor: "#6EACDA",
+          lineColor: "#6EACDA",
           secondaryColor: "#0f172a",
           tertiaryColor: "#1e293b",
           fontFamily: "monospace",

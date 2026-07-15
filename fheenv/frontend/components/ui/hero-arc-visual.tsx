@@ -123,7 +123,7 @@ export function HeroArcVisual() {
           return (
             <g key={ic.label}>
               <circle cx={p.x} cy={p.y} r={7} fill="rgba(45,212,191,0.07)" />
-              <circle cx={p.x} cy={p.y} r={3} fill="#2DD4BF" opacity={0.9} />
+              <circle cx={p.x} cy={p.y} r={3} fill="#6EACDA" opacity={0.9} />
             </g>
           );
         })}

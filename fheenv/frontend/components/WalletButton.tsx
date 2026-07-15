@@ -52,7 +52,7 @@ export function WalletButton() {
             {address?.slice(0, 6)}…{address?.slice(-4)}
           </span>
           <span className="text-slate-600">·</span>
-          <span style={{ color: "var(--aqua)" }} className="font-medium">
+          <span style={{ color: "var(--brand-blue)" }} className="font-medium">
             Sepolia
           </span>
         </div>
@@ -72,9 +72,9 @@ export function WalletButton() {
       onClick={() => connect({ connector: connectors[0] })}
       className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
       style={{
-        background: "var(--aqua)",
+        background: "var(--brand-blue)",
         color: "#030712",
-        boxShadow: "0 0 14px var(--aqua-glow)",
+        boxShadow: "0 0 14px var(--brand-blue-glow)",
       }}
     >
       <Wallet className="size-4" />

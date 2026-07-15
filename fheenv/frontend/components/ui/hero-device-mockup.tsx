@@ -22,7 +22,7 @@ const PlaintextEnv = () => (
       { key: "STRIPE_SECRET_KEY", val: "sk_live_AbCdEfGhIjKlMnOp" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
-        <span style={{ color: "#2DD4BF" }}>{key}</span>
+        <span style={{ color: "#6EACDA" }}>{key}</span>
         <span className="text-slate-500">=</span>
         <span className="text-slate-300">{val}</span>
       </div>
@@ -50,13 +50,13 @@ const EncryptedEnv = () => (
       { key: "STRIPE_SECRET_KEY", val: "0x9a8b7c6d5e4f3a2b…" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
-        <span style={{ color: "#2DD4BF" }}>{key}</span>
+        <span style={{ color: "#6EACDA" }}>{key}</span>
         <span className="text-slate-500">=</span>
         <span className="text-slate-600">{val}</span>
       </div>
     ))}
-    <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-aqua/70 border border-aqua/20 rounded-full px-2 py-0.5">
-      <span className="w-1.5 h-1.5 rounded-full bg-aqua/70 animate-pulse" />
+    <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-brand-blue/70 border border-brand-blue/20 rounded-full px-2 py-0.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue/70 animate-pulse" />
       FHE encrypted · On-chain
     </div>
   </motion.div>
@@ -67,7 +67,7 @@ const Cursor = () => (
   <motion.span
     animate={{ opacity: [1, 0] }}
     transition={{ repeat: Infinity, duration: 0.7 }}
-    className="inline-block w-[7px] h-[14px] bg-aqua/70 rounded-sm ml-0.5 align-middle"
+    className="inline-block w-[7px] h-[14px] bg-brand-blue/70 rounded-sm ml-0.5 align-middle"
   />
 );
 
@@ -76,7 +76,7 @@ function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boo
   if (!show) return null;
   return (
     <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>
+      <span className="font-bold select-none" style={{ color: "#6EACDA" }}>
         ~/my-app ➜
       </span>
       <motion.span
@@ -165,7 +165,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
         "relative w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col",
         "border border-white/[0.06] bg-[#0d1117]",
         "shadow-[0_32px_64px_-16px_rgba(45,212,191,0.12),0_0_0_1px_rgba(45,212,191,0.06)]",
-        "hover:border-aqua/25 transition-colors duration-500",
+        "hover:border-brand-blue/25 transition-colors duration-500",
         className,
       )}
     >
@@ -209,7 +209,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                <span className="font-bold" style={{ color: "#6EACDA" }}>
                   ~/my-app ➜
                 </span>
                 <Cursor />
@@ -259,7 +259,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
                 transition={{ delay: 1 }}
                 className="flex items-center gap-1.5 font-mono text-[11px] pt-1.5"
               >
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                <span className="font-bold" style={{ color: "#6EACDA" }}>
                   ~/my-app
                 </span>
                 <span className="text-slate-500">➜</span>

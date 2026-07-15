@@ -40,7 +40,7 @@ export function FAQSection() {
 
       <div className="max-w-3xl mx-auto px-6 relative z-10">
         <div className="text-center mb-16">
-          <p className="font-mono text-xs font-semibold tracking-widest text-aqua uppercase mb-4">
+          <p className="font-mono text-xs font-semibold tracking-widest text-brand-blue uppercase mb-4">
             Got questions?
           </p>
           <h2 className="text-4xl font-bold text-slate-100">
@@ -53,7 +53,7 @@ export function FAQSection() {
             <motion.div
               key={i}
               whileHover={{ scale: 1.005 }}
-              className="rounded-xl border border-white/8 bg-white/[0.03] hover:border-aqua/25 transition-all cursor-pointer overflow-hidden"
+              className="rounded-xl border border-white/8 bg-white/[0.03] hover:border-brand-blue/25 transition-all cursor-pointer overflow-hidden"
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
             >
               <div className="flex justify-between items-center p-5 text-slate-100 font-semibold">
@@ -61,7 +61,7 @@ export function FAQSection() {
                 <motion.span
                   animate={{ rotate: openIdx === i ? 45 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="text-aqua text-xl ml-4 shrink-0"
+                  className="text-brand-blue text-xl ml-4 shrink-0"
                 >
                   +
                 </motion.span>
@@ -90,20 +90,20 @@ export function FAQSection() {
       <div className="mt-28 pt-8 border-t border-white/8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-mono text-lg font-bold text-slate-100">
-            <span className="text-aqua">fhe</span>ENV
+            <span className="text-brand-blue">fhe</span>ENV
           </span>
           <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <a href="/docs" className="hover:text-aqua transition-colors">
+            <a href="/docs" className="hover:text-brand-blue transition-colors">
               Docs
             </a>
             <a
               href="https://github.com/Team-Managed/fheENV"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-aqua transition-colors"
+              className="hover:text-brand-blue transition-colors"
             >
               GitHub
             </a>

@@ -72,11 +72,11 @@ function CodeBlock({ code, className = "" }: { code: string; className?: string 
     <div className={`group relative rounded-xl bg-[#0a0a0a] border border-white/[0.06] overflow-hidden ${className}`}>
       <button
         onClick={handleCopy}
-        className="absolute top-3 right-3 p-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all opacity-0 group-hover:opacity-100"
+        className="absolute top-3 right-3 p-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all opacity-100 sm:opacity-0 group-hover:opacity-100"
       >
         {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
       </button>
-      <pre className="p-4 overflow-x-auto font-mono text-[12px] leading-[1.8] text-slate-300">
+      <pre className="p-4 overflow-x-hidden whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.8] text-slate-300">
         <code>{code}</code>
       </pre>
     </div>

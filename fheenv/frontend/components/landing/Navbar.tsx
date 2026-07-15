@@ -14,21 +14,21 @@ export function Navbar() {
           className="size-6"
         />
         <span className="font-mono text-xl font-bold tracking-tight text-slate-100">
-          <span className="text-aqua">fhe</span>ENV
+          <span className="text-brand-blue">fhe</span>ENV
         </span>
       </Link>
 
       <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-        <Link href="#features" className="hover:text-aqua transition-colors">
+        <Link href="#features" className="hover:text-brand-blue transition-colors">
           Features
         </Link>
-        <Link href="#how-it-works" className="hover:text-aqua transition-colors">
+        <Link href="#how-it-works" className="hover:text-brand-blue transition-colors">
           How it works
         </Link>
-        <Link href="/docs" className="hover:text-aqua transition-colors">
+        <Link href="/docs" className="hover:text-brand-blue transition-colors">
           Docs
         </Link>
-        <Link href="#faq" className="hover:text-aqua transition-colors">
+        <Link href="#faq" className="hover:text-brand-blue transition-colors">
           FAQ
         </Link>
       </div>

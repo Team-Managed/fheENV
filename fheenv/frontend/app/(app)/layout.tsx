@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               className="size-5"
             />
             <span className="font-mono font-bold tracking-tight text-slate-100">
-              <span style={{ color: "var(--aqua)" }}>fhe</span>ENV
+              <span style={{ color: "var(--brand-blue)" }}>fhe</span>ENV
             </span>
           </Link>
           <WalletButton />

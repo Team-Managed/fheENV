@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Outfit, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
 
-const spaceGrotesk = Space_Grotesk({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const firaCode = Fira_Code({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500", "700"],
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={cn(spaceGrotesk.variable, jetbrainsMono.variable, "dark")}
+      className={cn(outfit.variable, firaCode.variable, "dark")}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-brand-ink text-slate-100 font-sans antialiased">

@@ -43,9 +43,9 @@ export default function Dashboard() {
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
             style={{
-              background: "var(--aqua)",
+              background: "var(--brand-blue)",
               color: "#030712",
-              boxShadow: "0 0 16px var(--aqua-glow)",
+              boxShadow: "0 0 16px var(--brand-blue-glow)",
             }}
           >
             <Plus className="size-4" />
@@ -61,7 +61,7 @@ export default function Dashboard() {
             className="size-14 rounded-full flex items-center justify-center"
             style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
           >
-            <FolderLock className="size-6" style={{ color: "var(--aqua)" }} />
+            <FolderLock className="size-6" style={{ color: "var(--brand-blue)" }} />
           </div>
           <div>
             <p className="font-semibold text-slate-200">Connect your wallet</p>
@@ -75,7 +75,7 @@ export default function Dashboard() {
           className="text-center py-24 flex flex-col items-center gap-3"
           style={{ color: "var(--text-muted)" }}
         >
-          <Loader2 className="size-6 animate-spin" style={{ color: "var(--aqua)" }} />
+          <Loader2 className="size-6 animate-spin" style={{ color: "var(--brand-blue)" }} />
           <p className="text-sm">Reading from Sepolia…</p>
         </div>
       ) : countError ? (
@@ -108,7 +108,7 @@ export default function Dashboard() {
           <button
             onClick={() => setShowModal(true)}
             className="mt-1 text-sm font-medium transition-colors"
-            style={{ color: "var(--aqua)" }}
+            style={{ color: "var(--brand-blue)" }}
           >
             Create project →
           </button>
@@ -176,8 +176,8 @@ function ProjectCard({
         border: "1px solid var(--surface-border)",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--aqua)";
-        (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px var(--aqua-glow)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--brand-blue)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px var(--brand-blue-glow)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = "var(--surface-border)";
@@ -188,7 +188,7 @@ function ProjectCard({
         className="size-9 rounded-lg flex items-center justify-center mb-4 transition-colors"
         style={{ background: "rgba(45,212,191,0.1)" }}
       >
-        <FolderLock className="size-4" style={{ color: "var(--aqua)" }} />
+        <FolderLock className="size-4" style={{ color: "var(--brand-blue)" }} />
       </div>
       <p className="font-semibold text-slate-100 text-sm">{project[0]}</p>
       <p className="text-xs font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>
@@ -201,7 +201,7 @@ function ProjectCard({
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           Project #{projectId.toString()}
         </span>
-        <span className="text-xs font-medium transition-colors" style={{ color: "var(--aqua)" }}>
+        <span className="text-xs font-medium transition-colors" style={{ color: "var(--brand-blue)" }}>
           Open →
         </span>
       </div>
