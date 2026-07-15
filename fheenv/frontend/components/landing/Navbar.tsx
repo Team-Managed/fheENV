@@ -4,8 +4,8 @@ import Image from "next/image";
 
 export function Navbar() {
   return (
-    <nav className="relative z-50 mx-auto flex h-20 w-full max-w-7xl items-center justify-between border-b border-brand-blue/15 bg-brand-ink px-6">
-      <Link href="/" className="flex items-center gap-2">
+    <nav className="fixed top-4 inset-x-0 z-[100] mx-auto flex h-16 w-[calc(100%-2rem)] max-w-7xl items-center justify-between rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/70 backdrop-blur-xl px-6 shadow-2xl transition-all duration-300">
+      <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
         <Image
           src="/brand/logo-icon.svg"
           alt="fheENV Logo"
@@ -32,7 +32,7 @@ export function Navbar() {
 
       <Link
         href="/dashboard"
-        className="bg-brand-blue px-5 py-2.5 text-sm font-bold text-brand-ink transition-colors hover:bg-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
+        className="bg-brand-blue px-5 py-2.5 text-sm font-bold text-brand-ink transition-colors hover:bg-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue rounded-xl"
       >
         Launch App
       </Link>
