@@ -23,12 +23,54 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 function AuditLogCard() {
   const events = [
-    { time: "17:44:06", event: "env_pulled", wallet: "0x50BD..8B90", env: "production", detail: "–", color: "text-brand-blue" },
-    { time: "17:44:13", event: "member_granted", wallet: "0x50BD..8B90", env: "production", detail: "→ 0xE36f…6176", color: "text-green-400" },
-    { time: "17:44:30", event: "env_pulled", wallet: "0xE36f..6176", env: "production", detail: "–", color: "text-brand-blue" },
-    { time: "17:44:50", event: "member_revoked", wallet: "0x50BD..8B90", env: "production", detail: "✗ 0xE36f…6176", color: "text-red-400" },
-    { time: "17:45:29", event: "key_rotated", wallet: "0x50BD..8B90", env: "production", detail: "→ QmPSE4..pbE4 ✓ unpinned", color: "text-yellow-400" },
-    { time: "17:45:49", event: "env_pulled", wallet: "0x50BD..8B90", env: "production", detail: "–", color: "text-brand-blue" },
+    {
+      time: "17:44:06",
+      event: "env_pulled",
+      wallet: "0x50BD..8B90",
+      env: "production",
+      detail: "–",
+      color: "text-brand-blue",
+    },
+    {
+      time: "17:44:13",
+      event: "member_granted",
+      wallet: "0x50BD..8B90",
+      env: "production",
+      detail: "→ 0xE36f…6176",
+      color: "text-green-400",
+    },
+    {
+      time: "17:44:30",
+      event: "env_pulled",
+      wallet: "0xE36f..6176",
+      env: "production",
+      detail: "–",
+      color: "text-brand-blue",
+    },
+    {
+      time: "17:44:50",
+      event: "member_revoked",
+      wallet: "0x50BD..8B90",
+      env: "production",
+      detail: "✗ 0xE36f…6176",
+      color: "text-red-400",
+    },
+    {
+      time: "17:45:29",
+      event: "key_rotated",
+      wallet: "0x50BD..8B90",
+      env: "production",
+      detail: "→ QmPSE4..pbE4 ✓ unpinned",
+      color: "text-yellow-400",
+    },
+    {
+      time: "17:45:49",
+      event: "env_pulled",
+      wallet: "0x50BD..8B90",
+      env: "production",
+      detail: "–",
+      color: "text-brand-blue",
+    },
   ];
 
   return (
@@ -44,14 +86,19 @@ function AuditLogCard() {
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#27c93f]">
-          <span className="size-1.5 rounded-full bg-[#27c93f] shadow-[0_0_8px_#27c93f] animate-pulse" /> Live
+          <span className="size-1.5 rounded-full bg-[#27c93f] shadow-[0_0_8px_#27c93f] animate-pulse" />{" "}
+          Live
         </div>
       </div>
 
       {/* Table */}
       <div className="flex-1 rounded-xl border border-white/[0.06] bg-[#0a0a0a]/60 overflow-hidden">
         <div className="grid grid-cols-[56px_1fr_1fr_70px_1fr] gap-1.5 px-4 py-2 border-b border-white/[0.04] text-[9px] font-mono font-bold tracking-wider text-brand-blue/40 uppercase">
-          <span>Time</span><span>Event</span><span>Wallet</span><span>Env</span><span>Detail</span>
+          <span>Time</span>
+          <span>Event</span>
+          <span>Wallet</span>
+          <span>Env</span>
+          <span>Detail</span>
         </div>
         <div className="divide-y divide-white/[0.03]">
           {events.map((e, i) => (
@@ -65,7 +112,9 @@ function AuditLogCard() {
             >
               <span className="text-slate-500">{e.time}</span>
               <span className={`font-bold ${e.color}`}>{e.event}</span>
-              <span className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors">{e.wallet}</span>
+              <span className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors">
+                {e.wallet}
+              </span>
               <span className="text-slate-500">{e.env}</span>
               <span className="text-slate-400 truncate">{e.detail}</span>
             </motion.div>
@@ -161,7 +210,11 @@ export function FeaturesSection() {
   }, []);
 
   return (
-    <section id="features" ref={sectionRef} className="py-28 bg-brand-ink overflow-hidden relative z-10">
+    <section
+      id="features"
+      ref={sectionRef}
+      className="bg-brand-ink pt-20 pb-0 overflow-hidden relative z-10 sm:pt-28"
+    >
       {/* Ambient glows */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-blue/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[120px] pointer-events-none" />
@@ -173,11 +226,11 @@ export function FeaturesSection() {
             <Shield className="size-3.5" /> Built different
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold text-slate-100 mb-4 leading-tight tracking-tight">
-            Enterprise-grade security{" "}
-            <span className="text-brand-blue">for your secrets</span>
+            Enterprise-grade security <span className="text-brand-blue">for your secrets</span>
           </h2>
           <p className="text-lg text-slate-400">
-            Stop pasting .env files in Slack. Secure your secrets with the next generation of cryptographic privacy.
+            Stop pasting .env files in Slack. Secure your secrets with the next generation of
+            cryptographic privacy.
           </p>
         </div>
 
@@ -209,7 +262,10 @@ export function FeaturesSection() {
                 { label: "Compute", status: "On-chain" },
                 { label: "Decrypt", status: "Threshold" },
               ].map((s) => (
-                <div key={s.label} className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-center">
+                <div
+                  key={s.label}
+                  className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-center"
+                >
                   <div className="text-[10px] font-bold text-brand-blue">{s.label}</div>
                   <div className="text-[9px] text-slate-500">{s.status}</div>
                 </div>
@@ -228,7 +284,8 @@ export function FeaturesSection() {
             <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
               <span className="text-cyan-400/70">0x50BD..8B90</span>
               <span className="ml-auto flex items-center gap-1 text-[#27c93f] text-[9px]">
-                <span className="size-1.5 rounded-full bg-[#27c93f] shadow-[0_0_6px_#27c93f]" /> Connected
+                <span className="size-1.5 rounded-full bg-[#27c93f] shadow-[0_0_6px_#27c93f]" />{" "}
+                Connected
               </span>
             </div>
           </BentoCard>
@@ -297,8 +354,13 @@ export function FeaturesSection() {
             className="lg:col-span-2"
           >
             <div className="rounded-lg bg-[#0a0a0a] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
-              <div><span className="text-green-400">~</span> <span className="text-brand-blue">$</span> <span className="text-slate-200">fheenv run -- node server.js</span></div>
-              <div className="text-brand-sand mt-0.5">✓ 12 vars injected · running (no disk write)</div>
+              <div>
+                <span className="text-green-400">~</span> <span className="text-brand-blue">$</span>{" "}
+                <span className="text-slate-200">fheenv run -- node server.js</span>
+              </div>
+              <div className="text-brand-sand mt-0.5">
+                ✓ 12 vars injected · running (no disk write)
+              </div>
             </div>
           </BentoCard>
 
@@ -311,7 +373,10 @@ export function FeaturesSection() {
             className="lg:col-span-1"
           >
             <div className="rounded-lg bg-[#0a0a0a] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
-              <div className="text-slate-400">FHEENV_PRIVATE_KEY=<span className="text-pink-400">$&#123;&#123; secrets.KEY &#125;&#125;</span></div>
+              <div className="text-slate-400">
+                FHEENV_PRIVATE_KEY=
+                <span className="text-pink-400">$&#123;&#123; secrets.KEY &#125;&#125;</span>
+              </div>
               <div className="text-brand-sand mt-0.5">✓ fheenv pull --env production</div>
             </div>
           </BentoCard>
