@@ -25,6 +25,9 @@ export function Navbar() {
         <Link href="#how-it-works" className="hover:text-aqua transition-colors">
           How it works
         </Link>
+        <Link href="/docs" className="hover:text-aqua transition-colors">
+          Docs
+        </Link>
         <Link href="#faq" className="hover:text-aqua transition-colors">
           FAQ
         </Link>
