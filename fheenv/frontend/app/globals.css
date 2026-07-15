@@ -3,28 +3,37 @@
 @import "fumadocs-ui/css/preset.css";
 
 :root {
-  --bg: #030712;
-  --surface: rgba(30, 41, 59, 0.4);
-  --surface-border: rgba(255, 255, 255, 0.08);
-  --surface-hover: rgba(51, 65, 85, 0.5);
+  --brand-ink: #021526;
+  --brand-navy: #03346e;
+  --brand-blue: #6eacda;
+  --brand-sand: #e2e2b6;
 
-  --aqua: #2dd4bf;
-  --aqua-glow: rgba(45, 212, 191, 0.2);
-  --peach: #ffb5a7;
-  --peach-glow: rgba(255, 181, 167, 0.2);
+  --bg: var(--brand-ink);
+  --surface: rgba(3, 52, 110, 0.24);
+  --surface-border: rgba(110, 172, 218, 0.18);
+  --surface-hover: rgba(3, 52, 110, 0.42);
+
+  --aqua: var(--brand-blue);
+  --aqua-glow: rgba(110, 172, 218, 0.22);
+  --peach: var(--brand-sand);
+  --peach-glow: rgba(226, 226, 182, 0.18);
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
 
-  --background: #030712;
+  --background: var(--brand-ink);
   --foreground: #f8fafc;
 }
 
 @theme inline {
-  --color-aqua: #2dd4bf;
-  --color-peach: #ffb5a7;
-  --color-bg-dark: #030712;
-  --color-surface: rgba(30, 41, 59, 0.4);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-sand: var(--brand-sand);
+  --color-aqua: var(--aqua);
+  --color-peach: var(--peach);
+  --color-bg-dark: var(--brand-ink);
+  --color-surface: var(--surface);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: "Space Grotesk", sans-serif;

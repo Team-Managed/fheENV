@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export function Navbar() {
   return (
-    <nav className="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto w-full z-50 relative">
+    <nav className="relative z-50 mx-auto flex h-20 w-full max-w-7xl items-center justify-between border-b border-brand-blue/15 bg-brand-ink px-6">
       <Link href="/" className="flex items-center gap-2">
         <Image
           src="/brand/logo-icon.svg"
@@ -32,7 +32,7 @@ export function Navbar() {
 
       <Link
         href="/dashboard"
-        className="bg-aqua hover:bg-aqua/90 text-[#030712] px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_0_16px_rgba(45,212,191,0.3)]"
+        className="bg-brand-blue px-5 py-2.5 text-sm font-bold text-brand-ink transition-colors hover:bg-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
       >
         Launch App
       </Link>
