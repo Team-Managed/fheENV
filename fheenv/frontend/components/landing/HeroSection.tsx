@@ -16,77 +16,118 @@ import {
 export function HeroSection() {
   const pinSectionRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const terminalBodyRef = useRef<HTMLDivElement>(null);
+  const terminalContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
 
     const terminal = terminalRef.current;
+    const terminalBody = terminalBodyRef.current;
+    const terminalContent = terminalContentRef.current;
     const pinSection = pinSectionRef.current;
-    if (!terminal || !pinSection) return;
+    if (!terminal || !terminalBody || !terminalContent || !pinSection) return;
 
     const cliLines = terminal.querySelectorAll(".cli-line");
     if (cliLines.length === 0) return;
 
-    // Hide all CLI lines initially
-    gsap.set(cliLines, { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
-
     const wrapper = terminal.parentElement;
     if (!wrapper) return;
 
-    // Master timeline: pinned while terminal expands + lines type
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: pinSection,
-        start: "top top",
-        end: "+=2000",
-        pin: true,
-        scrub: 0.6,
-        anticipatePin: 1,
-      },
+    const isPhone = window.matchMedia("(max-width: 767px)").matches;
+    const navbar = document.querySelector<HTMLElement>("[data-site-navbar]");
+    const getNavbarClearance = () =>
+      Math.ceil(navbar?.getBoundingClientRect().bottom ?? (isPhone ? 68 : 80)) + 8;
+    const media = gsap.matchMedia();
+
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.set(cliLines, { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
+
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: pinSection,
+          start: () => `top ${getNavbarClearance()}px`,
+          end: "+=2000",
+          pin: true,
+          scrub: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      timeline.to(wrapper, {
+        paddingTop: 0,
+        paddingRight: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        duration: 0.25,
+        ease: "none",
+      }, 0);
+
+      timeline.to(terminal, {
+        maxWidth: "100%",
+        width: "100%",
+        height: () => `calc(100svh - ${getNavbarClearance()}px)`,
+        minHeight: 0,
+        borderRadius: 0,
+        borderColor: "transparent",
+        boxShadow: "none",
+        duration: 0.25,
+        ease: "none",
+      }, 0);
+
+      timeline.to(terminalBody, {
+        maxHeight: () => `calc(100svh - ${getNavbarClearance() + 40}px)`,
+        duration: 0.25,
+        ease: "none",
+      }, 0);
+
+      timeline.to(cliLines, {
+        clipPath: "inset(0 0% 0 0)",
+        stagger: 0.1,
+        duration: 0.2,
+        ease: "steps(40)",
+      }, 0.15);
+
+      timeline.to(terminalContent, {
+        y: () => -Math.max(0, terminalContent.scrollHeight - terminalBody.clientHeight + 64),
+        duration: 0.45,
+        ease: "none",
+      }, 0.55);
+
+      return () => timeline.kill();
     });
 
-    // Phase 1: Remove wrapper padding so terminal can fill viewport
-    tl.to(wrapper, {
-      padding: 0,
-      duration: 0.25,
-      ease: "power2.inOut",
-    }, 0);
+    media.add("(prefers-reduced-motion: reduce)", () => {
+      gsap.set(cliLines, { clearProps: "transform,visibility,opacity,clipPath" });
+      gsap.set([wrapper, terminal], { clearProps: "all" });
+    });
 
-    // Phase 1: Terminal expands to fill the viewport
-    tl.to(terminal, {
-      maxWidth: "100%",
-      width: "100vw",
-      height: "100vh",
-      borderRadius: 0,
-      borderColor: "transparent",
-      boxShadow: "none",
-      duration: 0.25,
-      ease: "power2.inOut",
-    }, 0);
-
-    // Phase 2: Type in CLI lines — left to right wipe using clip-path
-    // Use steps easing to simulate character-by-character typing
-    tl.to(cliLines, {
-      clipPath: "inset(0 0% 0 0)",
-      stagger: 0.1,
-      duration: 0.2,
-      ease: "steps(40)",
-    }, 0.15);
+    let active = true;
+    const refresh = () => {
+      if (active) ScrollTrigger.refresh();
+    };
+    const refreshFrame = window.requestAnimationFrame(refresh);
+    document.fonts.ready.then(refresh);
+    window.addEventListener("load", refresh);
 
     return () => {
-      tl.kill();
-      ScrollTrigger.getAll().forEach(st => st.kill());
+      active = false;
+      window.cancelAnimationFrame(refreshFrame);
+      window.removeEventListener("load", refresh);
+      media.revert();
     };
   }, []);
 
   return (
     <>
       {/* Hero text section — scrolls normally */}
-      <section className="relative overflow-hidden bg-brand-ink px-6 pb-12 pt-32 sm:pt-40">
+      <section className="relative overflow-hidden bg-brand-ink px-4 pb-4 pt-24 sm:px-6 sm:pt-40">
         {/* Dithering background */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] opacity-80"
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] opacity-35 sm:opacity-60"
           style={{
             WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 58%, transparent 94%)",
             maskImage: "linear-gradient(to bottom, black 0%, black 58%, transparent 94%)",
@@ -105,7 +146,7 @@ export function HeroSection() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] bg-brand-ink/25" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] bg-brand-ink/50 sm:bg-brand-ink/35" aria-hidden="true" />
 
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
@@ -113,12 +154,12 @@ export function HeroSection() {
               <ShieldCheck className="size-3.5" /> Encrypted locally · verified on-chain
             </div>
 
-            <div className="flex flex-col items-center gap-2 sm:gap-4 pb-4">
+            <div className="flex flex-col items-center gap-2 pb-4 sm:gap-4">
               <MorphingText
                 texts={["Zero-Trust", "Encrypted", "On-Chain", "Secure"]}
-                className="text-[clamp(44px,7vw,88px)] font-semibold tracking-tighter text-brand-blue leading-[0.96]"
+                className="text-[32px] font-semibold leading-none tracking-tighter text-brand-blue min-[360px]:text-[36px] sm:text-[clamp(44px,7vw,88px)] sm:leading-[0.96]"
               />
-              <h1 className="text-[clamp(44px,7vw,88px)] font-semibold leading-[0.96] text-slate-50 tracking-tight drop-shadow-sm">
+              <h1 className="max-w-full text-[36px] font-semibold leading-[1.02] tracking-tight text-slate-50 drop-shadow-sm max-[359px]:text-[32px] sm:text-[clamp(44px,7vw,88px)] sm:leading-[0.96]">
                 Environment Secrets.
               </h1>
             </div>
@@ -129,16 +170,16 @@ export function HeroSection() {
               plaintext. <span className="text-slate-400">Not even us.</span>
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href="/dashboard"
-                className="inline-flex h-11 items-center gap-2 bg-brand-blue px-6 text-sm font-semibold text-brand-ink transition-all hover:bg-brand-sand hover:shadow-[0_0_20px_rgba(226,226,182,0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sand rounded-full"
+                className="inline-flex h-11 w-full max-w-60 items-center justify-center gap-2 rounded-full bg-brand-blue px-6 text-sm font-semibold text-brand-ink transition-all hover:bg-brand-sand hover:shadow-[0_0_20px_rgba(226,226,182,0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sand sm:w-auto"
               >
                 Get Started <ArrowRight className="size-4" />
               </Link>
               <Link
                 href="/docs"
-                className="inline-flex h-11 items-center gap-2 border border-brand-blue/40 bg-brand-ink/70 px-6 text-sm font-medium text-slate-100 backdrop-blur-sm transition-all hover:border-brand-sand/50 hover:text-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sand rounded-full"
+                className="inline-flex h-11 w-full max-w-60 items-center justify-center gap-2 rounded-full border border-brand-blue/40 bg-brand-ink/70 px-6 text-sm font-medium text-slate-100 backdrop-blur-sm transition-all hover:border-brand-sand/50 hover:text-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sand sm:w-auto"
               >
                 <Terminal className="size-3.5" /> See how it works
               </Link>
@@ -150,13 +191,13 @@ export function HeroSection() {
       {/* Pinned CLI section — sticks while terminal expands + types */}
       <section
         ref={pinSectionRef}
-        className="relative z-50 bg-brand-ink overflow-hidden border-b border-brand-blue/20"
+        className="relative z-50 min-h-[100svh] overflow-hidden border-b border-brand-blue/20 bg-brand-ink"
       >
         {/* Crime Scene Tapes */}
-        <div className="absolute top-1/3 -left-[20%] w-[140%] -rotate-6 z-[5] opacity-50 mix-blend-screen pointer-events-none">
+        <div className="absolute top-1/3 -left-[20%] z-[5] hidden w-[140%] -rotate-6 opacity-50 mix-blend-screen pointer-events-none md:block">
           <CrimeTapeMarquee direction="left" />
         </div>
-        <div className="absolute bottom-1/4 -left-[20%] w-[140%] rotate-3 z-[5] opacity-50 mix-blend-screen pointer-events-none">
+        <div className="absolute bottom-1/4 -left-[20%] z-[5] hidden w-[140%] rotate-3 opacity-50 mix-blend-screen pointer-events-none md:block">
           <CrimeTapeMarquee direction="right" text="KEY ROTATION /// WALLET AUTH /// IPFS STORAGE /// ZERO PLAINTEXT /// THRESHOLD DECRYPTION /// " />
         </div>
 
@@ -164,10 +205,10 @@ export function HeroSection() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-brand-blue/10 blur-[150px] rounded-full pointer-events-none" />
 
         {/* Terminal — starts centered, animates to fill viewport */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen p-6 sm:p-10 will-change-[padding]">
+        <div className="relative z-10 flex min-h-[100svh] items-start justify-center px-4 pt-0 pb-0 will-change-[padding] sm:px-10">
           <div
             ref={terminalRef}
-            className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] shadow-[0_0_80px_rgba(110,172,218,0.08)] flex flex-col will-change-[max-width,width,height,border-radius]"
+            className="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0a0a] shadow-[0_0_80px_rgba(110,172,218,0.08)] will-change-[max-width,width,height,border-radius] md:rounded-2xl"
           >
             {/* Terminal Header */}
             <div className="flex h-10 shrink-0 items-center border-b border-white/[0.06] bg-[#111] px-4">
@@ -182,7 +223,8 @@ export function HeroSection() {
             </div>
 
             {/* Terminal Body */}
-            <div className="flex-1 overflow-auto p-6 sm:p-8 font-mono text-[12px] sm:text-[13px] leading-[1.8] text-slate-300">
+            <div ref={terminalBodyRef} className="max-h-[520px] flex-1 overflow-hidden p-4 font-mono text-[11px] leading-[1.75] text-slate-300 sm:p-8 sm:text-[13px]">
+              <div ref={terminalContentRef} className="pb-16 will-change-transform">
               {/* Pull Wallet B */}
               <div className="cli-line w-full break-words text-brand-blue font-bold">
                 === Pull Wallet B ===
@@ -280,12 +322,13 @@ export function HeroSection() {
                 <span className="text-brand-blue">$</span>
                 <span className="inline-block w-2 h-4 rounded-sm animate-pulse bg-brand-blue/60" />
               </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bottom tag line */}
-        <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-x-8 gap-y-2 flex-wrap font-mono text-[10px] uppercase text-slate-500 pointer-events-none">
+        <div className="absolute inset-x-0 bottom-0 z-20 flex min-h-16 flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-brand-blue/15 bg-brand-ink/95 px-4 py-3 font-mono text-[9px] uppercase text-slate-500 backdrop-blur-sm pointer-events-none md:bottom-6 md:min-h-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[10px] md:backdrop-blur-none">
           <span>AES-256-GCM client-side</span>
           <span>FHE access control</span>
           <span>Automatic key rotation</span>

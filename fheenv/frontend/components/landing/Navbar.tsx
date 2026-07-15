@@ -4,7 +4,10 @@ import Image from "next/image";
 
 export function Navbar() {
   return (
-    <nav className="fixed top-4 inset-x-0 z-[100] mx-auto flex h-16 w-[calc(100%-2rem)] max-w-7xl items-center justify-between rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/70 backdrop-blur-xl px-6 shadow-2xl transition-all duration-300">
+    <nav
+      data-site-navbar
+      className="fixed inset-x-0 top-3 z-[100] mx-auto flex h-14 w-[calc(100%-1rem)] max-w-7xl items-center justify-between rounded-xl border border-white/[0.08] bg-[#0a0a0a]/70 px-3 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:top-4 sm:h-16 sm:w-[calc(100%-2rem)] sm:rounded-2xl sm:px-6"
+    >
       <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
         <Image
           src="/brand/logo-icon.svg"
@@ -35,7 +38,7 @@ export function Navbar() {
 
       <Link
         href="/dashboard"
-        className="bg-brand-blue px-5 py-2.5 text-sm font-bold text-brand-ink transition-colors hover:bg-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue rounded-xl"
+        className="rounded-lg bg-brand-blue px-3 py-2 text-xs font-bold text-brand-ink transition-colors hover:bg-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue sm:rounded-xl sm:px-5 sm:py-2.5 sm:text-sm"
       >
         Launch App
       </Link>
