@@ -1,208 +1,301 @@
 "use client";
-import React, { useRef, useEffect } from "react";
-import { Tree } from "@/components/ui/file-tree";
-import type { TreeViewElement } from "@/components/ui/file-tree";
+import React, { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Terminal, FolderLock } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Apple,
+  MonitorDot,
+  Download,
+  KeyRound,
+  FolderOpen,
+  Upload,
+  Users,
+  Play,
+  Terminal,
+  Copy,
+  Check,
+} from "lucide-react";
 
-const ELEMENTS: TreeViewElement[] = [
-  {
-    id: "project",
-    isSelectable: true,
-    name: "my-app",
-    children: [
-      {
-        id: "src",
-        isSelectable: true,
-        name: "src",
-        children: [{ id: "app", isSelectable: true, name: "index.ts" }],
-      },
-      { id: "fheenv-json", isSelectable: true, name: ".fheenv.json (committed)" },
-      { id: "env-local", isSelectable: true, name: ".env.local (fetched by fheenv, gitignored)" },
-      { id: "gitignore", isSelectable: true, name: ".gitignore" },
-      { id: "package", isSelectable: true, name: "package.json" },
-    ],
-  },
-];
+/* ------------------------------------------------------------------ */
+/*  OS Tab switcher                                                    */
+/* ------------------------------------------------------------------ */
+
+function OsTab({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+        active
+          ? "text-white bg-white/[0.08] border border-white/[0.1]"
+          : "text-slate-400 hover:text-slate-200 border border-transparent"
+      }`}
+    >
+      {icon}
+      {label}
+      {active && (
+        <motion.div
+          layoutId="os-indicator"
+          className="absolute inset-0 rounded-lg border border-brand-blue/40 bg-brand-blue/5"
+          style={{ zIndex: -1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        />
+      )}
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Code block with copy                                               */
+/* ------------------------------------------------------------------ */
+
+function CodeBlock({ code, className = "" }: { code: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className={`group relative rounded-xl bg-[#0a0a0a] border border-white/[0.06] overflow-hidden ${className}`}>
+      <button
+        onClick={handleCopy}
+        className="absolute top-3 right-3 p-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all opacity-0 group-hover:opacity-100"
+      >
+        {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
+      </button>
+      <pre className="p-4 overflow-x-auto font-mono text-[12px] leading-[1.8] text-slate-300">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Step card                                                          */
+/* ------------------------------------------------------------------ */
+
+function StepCard({
+  num,
+  icon,
+  title,
+  description,
+  children,
+}: {
+  num: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="hiw-step group"
+    >
+      <div className="flex items-start gap-5">
+        {/* Step number + line */}
+        <div className="flex flex-col items-center shrink-0">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue font-mono text-sm font-bold group-hover:bg-brand-blue/20 group-hover:border-brand-blue/40 transition-colors">
+            {num}
+          </div>
+          <div className="w-px flex-1 bg-gradient-to-b from-brand-blue/20 to-transparent mt-2 min-h-[40px]" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 pb-10">
+          <div className="flex items-center gap-2 mb-1.5">
+            {icon}
+            <h3 className="text-lg font-bold text-white">{title}</h3>
+          </div>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">{description}</p>
+          {children}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main section                                                       */
+/* ------------------------------------------------------------------ */
 
 export function HowItWorksSection() {
+  const [os, setOs] = useState<"mac" | "windows">("mac");
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.set(".hiw-step", { opacity: 0, y: 50 });
-      gsap.set(".hiw-demo", { opacity: 0, scale: 0.95 });
-      gsap.to(".hiw-step", {
-        opacity: 1,
-        y: 0,
+      gsap.from(".hiw-header", {
+        opacity: 0,
+        y: 30,
         duration: 0.8,
-        stagger: 0.2,
         ease: "power3.out",
-        scrollTrigger: { trigger: ".hiw-steps-container", start: "top 80%" },
-      });
-      gsap.to(".hiw-demo", {
-        opacity: 1,
-        scale: 1,
-        duration: 1,
-        stagger: 0.2,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".hiw-demos-container", start: "top 80%" },
+        scrollTrigger: { trigger: ".hiw-header", start: "top 85%" },
       });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
 
-  const steps = [
-    {
-      num: "01",
-      title: "Connect Wallet",
-      desc: "Sign in with your Ethereum wallet — no emails, no passwords, no trusted third party.",
-    },
-    {
-      num: "02",
-      title: "Push Secrets",
-      desc: "Your .env is AES-encrypted locally, stored on IPFS. The key is FHE-encrypted on-chain.",
-    },
-    {
-      num: "03",
-      title: "Pull or Run",
-      desc: "Decrypt via threshold network — plaintext stays on your machine. Inject into processes without writing to disk.",
-    },
-  ];
+  const installCmd =
+    os === "mac"
+      ? 'curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash'
+      : 'irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex';
+
+  const verifyCmd =
+    os === "mac"
+      ? 'source ~/.zshrc\nfheenv --version'
+      : '# Open a new terminal, then:\nfheenv --version';
 
   return (
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="py-28 text-slate-100 relative overflow-hidden"
+      className="py-28 bg-brand-ink text-slate-100 relative overflow-hidden z-10"
     >
-      {/* Glows */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-aqua/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-peach/5 rounded-full blur-[120px] pointer-events-none" />
+      {/* Ambient glows */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-blue/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-20">
-          <p className="font-mono text-xs font-semibold tracking-widest text-aqua uppercase mb-4">
-            The flow
+      <div className="max-w-4xl mx-auto px-6 relative z-10">
+        {/* Header */}
+        <div className="hiw-header text-center mb-16">
+          <p className="font-mono text-xs font-semibold tracking-widest text-brand-blue uppercase mb-4">
+            Get started
           </p>
-          <h2 className="text-4xl font-bold mb-4 text-slate-100">
-            How it <span className="text-aqua">works</span>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-slate-100 tracking-tight">
+            Up and running in <span className="text-brand-blue">5 minutes.</span>
           </h2>
-          <p className="text-slate-300 drop-shadow-sm font-medium text-lg">
-            A seamless developer experience with uncompromising security.
+          <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto">
+            Install the CLI, push your secrets, and share with your team.
           </p>
+        </div>
+
+        {/* OS Switcher */}
+        <div className="flex items-center justify-center gap-2 mb-12">
+          <OsTab
+            active={os === "mac"}
+            onClick={() => setOs("mac")}
+            icon={<Apple className="size-4" />}
+            label="macOS / Linux"
+          />
+          <OsTab
+            active={os === "windows"}
+            onClick={() => setOs("windows")}
+            icon={<MonitorDot className="size-4" />}
+            label="Windows"
+          />
         </div>
 
         {/* Steps */}
-        <div className="hiw-steps-container grid md:grid-cols-3 gap-12 relative mb-24">
-          <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-white/8 -z-10" />
-          {steps.map((step, idx) => (
-            <div key={idx} className="hiw-step relative flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-full bg-white/[0.04] backdrop-blur-md border border-aqua/30 flex items-center justify-center font-mono text-xl font-bold mb-6 text-aqua shadow-[0_0_20px_rgba(45,212,191,0.15)] hover:scale-110 transition-transform cursor-default">
-                {step.num}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={os}
+            initial={{ opacity: 0, x: os === "mac" ? -20 : 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: os === "mac" ? 20 : -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Step 1: Install */}
+            <StepCard
+              num="01"
+              icon={<Download className="size-4 text-brand-blue" />}
+              title="Install fheenv"
+              description={
+                os === "mac"
+                  ? "One-line install for macOS and Linux. Detects your OS/architecture automatically."
+                  : "Run PowerShell as Administrator and execute the install script."
+              }
+            >
+              <CodeBlock code={installCmd} />
+              <div className="mt-3">
+                <CodeBlock code={verifyCmd} />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">{step.title}</h3>
-              <p className="text-slate-300 drop-shadow-sm font-medium text-sm leading-relaxed">
-                {step.desc}
-              </p>
-            </div>
-          ))}
-        </div>
+            </StepCard>
 
-        {/* Demo panels */}
-        <div className="hiw-demos-container grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* CLI Demo */}
-          <div className="hiw-demo w-full rounded-xl border border-white/[0.06] bg-[#0d1117] overflow-hidden hover:border-aqua/25 transition-colors duration-500">
-            <div className="flex items-center px-4 py-3 border-b border-white/[0.06] bg-[#161b22]">
-              <div className="flex space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-400/70" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
-                <div className="w-3 h-3 rounded-full bg-green-400/70" />
+            {/* Step 2: Login */}
+            <StepCard
+              num="02"
+              icon={<KeyRound className="size-4 text-brand-sand" />}
+              title="Save your wallet"
+              description="One-time per machine. Your private key is stored locally with restricted file permissions."
+            >
+              <CodeBlock code="fheenv login --key 0xYOUR_PRIVATE_KEY" />
+              <div className="mt-2 font-mono text-[10px] text-slate-500 flex items-center gap-2">
+                <span className="text-green-400">✓</span> Saved to ~/.fheenv/wallet.json (permissions: 0600)
               </div>
-              <div className="mx-auto flex items-center gap-2 text-xs text-slate-500 font-mono">
-                <Terminal className="size-3" />
-                fheenv-cli
-              </div>
-            </div>
-            <div className="p-6 font-mono text-[12px] leading-[1.85] text-slate-300 space-y-0.5">
-              {/* init */}
-              <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
-                  ~/my-app ➜
-                </span>{" "}
-                <span className="text-slate-200">fheenv init --name my-app</span>
-              </div>
-              <div className="text-slate-400 pl-1">
-                Creating project &quot;my-app&quot; on-chain...
-              </div>
-              <div className="text-green-400 font-medium pl-1 pb-3">✓ Project created! ID: 0</div>
+            </StepCard>
 
-              {/* push */}
-              <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
-                  ~/my-app ➜
-                </span>{" "}
-                <span className="text-slate-200">fheenv push --env production</span>
-              </div>
-              <div className="text-slate-400 pl-1">
-                Generating AES key and encrypting env blob...
-              </div>
-              <div className="text-slate-400 pl-1">Uploading encrypted blob to IPFS...</div>
-              <div className="text-slate-400 pl-1">
-                FHE-encrypting AES key via threshold network...
-              </div>
-              <div className="text-green-400 font-medium pl-1 pb-3">
-                ✓ Environment pushed! Version: 1
-              </div>
-
-              {/* run */}
-              <div>
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
-                  ~/my-app ➜
-                </span>{" "}
-                <span className="text-slate-200">fheenv run -- node server.js</span>
-              </div>
-              <div className="text-slate-400 pl-1">Decrypting AES key via threshold network...</div>
-              <div className="text-slate-400 pl-1">
-                Fetching and decrypting env blob from IPFS...
-              </div>
-              <div className="text-green-400 font-medium pl-1 pb-3">
-                ✓ 12 vars injected · server.js running (no disk write)
-              </div>
-
-              {/* trailing prompt */}
-              <div className="flex items-center gap-1.5 pt-1">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
-                  ~/my-app ➜
-                </span>
-                <span
-                  className="inline-block w-[7px] h-[14px] rounded-sm animate-pulse"
-                  style={{ background: "#2DD4BF", opacity: 0.6 }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* File Tree Demo */}
-          <div className="hiw-demo opacity-0 w-full rounded-xl border border-white/[0.06] bg-[#0d1117] overflow-hidden hover:border-peach/25 transition-colors duration-500">
-            <div className="flex items-center px-4 py-3 border-b border-white/[0.06] bg-[#161b22]">
-              <div className="mx-auto flex items-center gap-2 text-xs text-slate-500 font-mono">
-                <FolderLock className="size-3" />
-                project structure
-              </div>
-            </div>
-            <div className="p-8 h-[360px]">
-              <Tree
-                className="bg-transparent rounded-md text-slate-300 p-2 overflow-hidden h-full border border-white/5"
-                initialExpandedItems={["project", "src"]}
-                initialSelectedId="fheenv-json"
-                elements={ELEMENTS}
+            {/* Step 3: Init */}
+            <StepCard
+              num="03"
+              icon={<FolderOpen className="size-4 text-brand-blue" />}
+              title="Initialize a project"
+              description="Creates a project on-chain and writes .fheenv.json to your repo. Commit this file — it contains no secrets."
+            >
+              <CodeBlock
+                code={`cd my-app\nfheenv init \\\n  --name "my-app" \\\n  --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \\\n  --rpc https://sepolia.infura.io/v3/YOUR_KEY \\\n  --chain-id 11155111 \\\n  --pinata-jwt eyJ...`}
               />
-            </div>
-          </div>
-        </div>
+            </StepCard>
+
+            {/* Step 4: Push */}
+            <StepCard
+              num="04"
+              icon={<Upload className="size-4 text-green-400" />}
+              title="Push your secrets"
+              description="Your .env is AES-encrypted locally, the blob goes to IPFS, and the key is FHE-encrypted on-chain."
+            >
+              <CodeBlock code="fheenv push --env production" />
+              <div className="mt-2 space-y-0.5 font-mono text-[10px]">
+                <div className="text-slate-500">Generating AES key and encrypting env blob...</div>
+                <div className="text-slate-500">Uploading encrypted blob to IPFS...</div>
+                <div className="text-slate-500">FHE-encrypting AES key via threshold network...</div>
+                <div className="text-brand-sand">✓ Environment pushed! Version: 1</div>
+              </div>
+            </StepCard>
+
+            {/* Step 5: Team */}
+            <StepCard
+              num="05"
+              icon={<Users className="size-4 text-brand-blue" />}
+              title="Add your team"
+              description="Grant access by wallet address. They can pull immediately — no key sharing needed."
+            >
+              <CodeBlock code="fheenv team add --member 0xTeammateAddress --env production" />
+            </StepCard>
+
+            {/* Step 6: Run */}
+            <StepCard
+              num="06"
+              icon={<Play className="size-4 text-brand-sand" />}
+              title="Pull or run"
+              description="Decrypt and write to .env.local, or inject directly into a process without touching disk."
+            >
+              <CodeBlock
+                code={`# Write to disk\nfheenv pull --env production\n\n# Or inject into process (recommended)\nfheenv run --env production -- ${os === "windows" ? "npm start" : "node server.js"}`}
+              />
+              <div className="mt-2 font-mono text-[10px] text-brand-sand">
+                ✓ 12 vars injected · server running (no disk write)
+              </div>
+            </StepCard>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );

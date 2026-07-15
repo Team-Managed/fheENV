@@ -6,7 +6,7 @@ import { FAQSection } from "@/components/landing/FAQSection";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen flex flex-col font-sans">
+    <main className="min-h-screen font-sans">
       <Navbar />
       <HeroSection />
       <FeaturesSection />
