@@ -34,7 +34,7 @@ export function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="py-28 relative">
+    <section id="faq" className="relative pt-10 sm:pt-16">
       {/* Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.04)_0%,transparent_60%)] pointer-events-none" />
 
@@ -87,7 +87,7 @@ export function FAQSection() {
       </div>
 
       {/* Footer */}
-      <div className="mt-28 pt-8 border-t border-white/8">
+      <div className="mt-12 border-t border-white/8 py-8 sm:mt-16">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-mono text-lg font-bold text-slate-100">
             <span className="text-brand-blue">fhe</span>ENV

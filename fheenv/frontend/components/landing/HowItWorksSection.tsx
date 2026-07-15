@@ -69,7 +69,9 @@ function CodeBlock({ code, className = "" }: { code: string; className?: string 
   };
 
   return (
-    <div className={`group relative rounded-xl bg-[#0a0a0a] border border-white/[0.06] overflow-hidden ${className}`}>
+    <div
+      className={`group relative rounded-xl bg-[#0a0a0a] border border-white/[0.06] overflow-hidden ${className}`}
+    >
       <button
         onClick={handleCopy}
         className="absolute top-3 right-3 p-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all opacity-100 sm:opacity-0 group-hover:opacity-100"
@@ -155,19 +157,19 @@ export function HowItWorksSection() {
 
   const installCmd =
     os === "mac"
-      ? 'curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash'
-      : 'irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex';
+      ? "curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash"
+      : "irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex";
 
   const verifyCmd =
     os === "mac"
-      ? 'source ~/.zshrc\nfheenv --version'
-      : '# Open a new terminal, then:\nfheenv --version';
+      ? "source ~/.zshrc\nfheenv --version"
+      : "# Open a new terminal, then:\nfheenv --version";
 
   return (
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="py-28 bg-brand-ink text-slate-100 relative overflow-hidden z-10"
+      className="relative z-10 overflow-hidden bg-brand-ink pt-10 pb-0 text-slate-100 sm:pt-16"
     >
       {/* Ambient glows */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-blue/5 rounded-full blur-[120px] pointer-events-none" />
@@ -238,7 +240,8 @@ export function HowItWorksSection() {
             >
               <CodeBlock code="fheenv login --key 0xYOUR_PRIVATE_KEY" />
               <div className="mt-2 font-mono text-[10px] text-slate-500 flex items-center gap-2">
-                <span className="text-green-400">✓</span> Saved to ~/.fheenv/wallet.json (permissions: 0600)
+                <span className="text-green-400">✓</span> Saved to ~/.fheenv/wallet.json
+                (permissions: 0600)
               </div>
             </StepCard>
 
@@ -265,7 +268,9 @@ export function HowItWorksSection() {
               <div className="mt-2 space-y-0.5 font-mono text-[10px]">
                 <div className="text-slate-500">Generating AES key and encrypting env blob...</div>
                 <div className="text-slate-500">Uploading encrypted blob to IPFS...</div>
-                <div className="text-slate-500">FHE-encrypting AES key via threshold network...</div>
+                <div className="text-slate-500">
+                  FHE-encrypting AES key via threshold network...
+                </div>
                 <div className="text-brand-sand">✓ Environment pushed! Version: 1</div>
               </div>
             </StepCard>
