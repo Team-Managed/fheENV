@@ -201,7 +201,10 @@ function ProjectCard({
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           Project #{projectId.toString()}
         </span>
-        <span className="text-xs font-medium transition-colors" style={{ color: "var(--brand-blue)" }}>
+        <span
+          className="text-xs font-medium transition-colors"
+          style={{ color: "var(--brand-blue)" }}
+        >
           Open →
         </span>
       </div>
