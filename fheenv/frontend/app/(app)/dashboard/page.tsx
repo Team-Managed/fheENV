@@ -4,7 +4,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { useRouter } from "next/navigation";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
-import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen } from "lucide-react";
+import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen, ScrollText } from "lucide-react";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
@@ -35,7 +35,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Projects</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Each project holds isolated environments with FHE-encrypted secrets.
+            Select a project to review its on-chain audit trail.
           </p>
         </div>
         {clientConnected && (
@@ -202,10 +202,11 @@ function ProjectCard({
           Project #{projectId.toString()}
         </span>
         <span
-          className="text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium transition-colors"
           style={{ color: "var(--brand-blue)" }}
         >
-          Open →
+          <ScrollText className="size-3.5" />
+          View audit trail →
         </span>
       </div>
     </button>

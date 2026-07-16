@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { House, LayoutDashboard } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span style={{ color: "var(--brand-blue)" }}>fhe</span>ENV
             </span>
           </Link>
-          <WalletButton />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100"
+            >
+              <House className="size-4" />
+              <span className="hidden md:inline">Home</span>
+            </Link>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100"
+            >
+              <LayoutDashboard className="size-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+            <WalletButton />
+          </div>
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
