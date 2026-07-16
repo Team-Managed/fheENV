@@ -83,8 +83,10 @@ export function SecretsTable({ projectId, envName }: Props) {
     try {
       setLoadingMsg("Connecting to CoFHE…");
       const { cofheClient, FheTypes } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(
+        publicClient as unknown as Parameters<typeof cofheClient.connect>[0],
+        walletClient as unknown as Parameters<typeof cofheClient.connect>[1],
+      );
       setLoadingMsg("Creating FHE permit…");
       await cofheClient.permits.getOrCreateSelfPermit();
       setLoadingMsg("Requesting decryption from Threshold Network…");
@@ -198,9 +200,11 @@ export function SecretsTable({ projectId, envName }: Props) {
       await cofheClient.connect(publicClient as any, walletClient as any);
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
 
-      const [encHigh, encLow] = (await cofheClient
+      const [encHigh, encLow] = await cofheClient
         .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
-        .execute()) as any;
+        .execute();
+      const inKeyHigh = { ...encHigh, signature: encHigh.signature as `0x${string}` };
+      const inKeyLow = { ...encLow, signature: encLow.signature as `0x${string}` };
 
       // 5. Submit to chain
       setSaveMsg("Submitting to blockchain…");
@@ -208,7 +212,7 @@ export function SecretsTable({ projectId, envName }: Props) {
         address: REGISTRY_ADDRESS,
         abi: REGISTRY_ABI,
         functionName: "updateEnvironment",
-        args: [projectId, envName, encHigh, encLow, cid, version ?? 0n],
+        args: [projectId, envName, inKeyHigh, inKeyLow, cid, version ?? 0n],
         account: address,
       });
       await publicClient.waitForTransactionReceipt({
