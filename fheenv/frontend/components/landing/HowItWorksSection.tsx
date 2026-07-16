@@ -12,7 +12,6 @@ import {
   Upload,
   Users,
   Play,
-  Terminal,
   Copy,
   Check,
 } from "lucide-react";
@@ -236,7 +235,7 @@ export function HowItWorksSection() {
               num="02"
               icon={<KeyRound className="size-4 text-brand-sand" />}
               title="Save your wallet"
-              description="One-time per machine. Your private key is stored locally with restricted file permissions."
+              description="One-time per machine. Your private key is stored locally with restricted permissions and optional passphrase encryption."
             >
               <CodeBlock code="fheenv login --key 0xYOUR_PRIVATE_KEY" />
               <div className="mt-2 font-mono text-[10px] text-slate-500 flex items-center gap-2">

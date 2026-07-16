@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { HelpCircle } from "lucide-react";
 
 export function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -21,11 +20,11 @@ export function FAQSection() {
     },
     {
       q: "Is there a web dashboard?",
-      a: "Yes — connect your wallet at fheenv.vercel.app to create projects, push/pull secrets, view and edit variables, manage team access, and see a full on-chain audit log. All encryption happens in your browser.",
+      a: "Yes — connect your wallet at fheenv.vercel.app to create projects and review their public on-chain audit evidence. Secret push, pull, rotation, and team access remain CLI workflows so the dashboard does not imply capabilities it does not currently expose.",
     },
     {
       q: "What happens when someone leaves the team?",
-      a: "Revoke their access with fheenv team remove, then run fheenv rotate to re-encrypt with a fresh AES key. The old ciphertexts become useless to the removed member since they never receive FHE.allow on the new handles.",
+      a: "fheenv team remove revokes the member and rotates with a fresh AES key by default when the source env file is available. If rotation is skipped or fails, the CLI raises a critical warning because the old FHE handles remain decryptable until rotation succeeds.",
     },
     {
       q: "Is this open source?",

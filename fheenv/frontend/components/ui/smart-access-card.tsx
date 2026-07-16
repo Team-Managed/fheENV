@@ -56,7 +56,9 @@ export function SmartAccessCard({ className }: SmartAccessCardProps) {
               <div
                 className={cn(
                   "h-2 w-2 rounded-full",
-                  perm.active ? "bg-brand-blue shadow-[0_0_8px_rgba(45,212,191,0.8)]" : "bg-slate-600",
+                  perm.active
+                    ? "bg-brand-blue shadow-[0_0_8px_rgba(45,212,191,0.8)]"
+                    : "bg-slate-600",
                 )}
               />
             </div>

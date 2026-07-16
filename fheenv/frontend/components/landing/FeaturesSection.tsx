@@ -81,8 +81,8 @@ function AuditLogCard() {
             <ShieldCheck className="size-4 text-brand-blue" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">On-Chain Audit Log</h3>
-            <p className="text-[10px] text-slate-400">Every action, permanently recorded</p>
+            <h3 className="text-base font-bold text-white">Structured Audit Trail</h3>
+            <p className="text-[10px] text-slate-400">CLI activity plus indexed on-chain changes</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#27c93f]">
@@ -121,7 +121,7 @@ function AuditLogCard() {
           ))}
         </div>
         <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-2">
-          <span className="text-[9px] text-slate-500 font-mono">Sepolia · Block #6,214,891</span>
+          <span className="text-[9px] text-slate-500 font-mono">JSONL · SOC 2 CC7.2 evidence</span>
           <div className="flex items-center gap-1 text-[9px] text-brand-blue/50 font-medium cursor-pointer hover:text-brand-blue transition-colors">
             <ExternalLink className="size-2.5" /> Etherscan
           </div>
@@ -141,7 +141,6 @@ function BentoCard({
   description,
   children,
   className = "",
-  iconColor = "text-brand-blue",
   glowColor = "rgba(110,172,218,0.06)",
 }: {
   icon: React.ReactNode;
@@ -149,7 +148,6 @@ function BentoCard({
   description: string;
   children?: React.ReactNode;
   className?: string;
-  iconColor?: string;
   glowColor?: string;
 }) {
   return (
@@ -277,7 +275,6 @@ export function FeaturesSection() {
             icon={<WalletCards className="size-4 text-brand-sand" />}
             title="Wallet Auth"
             description="Sign in with Ethereum. No emails, no passwords, no trusted third party."
-            iconColor="text-brand-sand"
             glowColor="rgba(226,226,182,0.06)"
             className="lg:col-span-1"
           >
@@ -297,9 +294,8 @@ export function FeaturesSection() {
 
           <BentoCard
             icon={<RotateCcw className="size-4 text-yellow-400" />}
-            title="Auto Key Rotation"
-            description="On member revocation, keys rotate automatically. Old IPFS blobs are unpinned. Zero manual work."
-            iconColor="text-yellow-400"
+            title="Revocation Rotation"
+            description="Team removal rotates by default when the source env is available. Partial failures are surfaced, and superseded Pinata pins are removed best-effort."
             glowColor="rgba(250,204,21,0.06)"
             className="lg:col-span-2"
           >
@@ -313,8 +309,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<Users className="size-4 text-green-400" />}
             title="Team Access"
-            description="Grant and revoke access by wallet address. Revoked members are cryptographically locked out."
-            iconColor="text-green-400"
+            description="Grant permanent or time-limited wallet access. A removed member is cryptographically locked out after successful rotation."
             glowColor="rgba(34,197,94,0.06)"
             className="lg:col-span-2"
           >
@@ -366,18 +361,20 @@ export function FeaturesSection() {
 
           <BentoCard
             icon={<Zap className="size-4 text-brand-sand" />}
-            title="CI/CD Ready"
-            description="Use FHEENV_PRIVATE_KEY env var in GitHub Actions — no keyfile, no MetaMask, fully automated."
-            iconColor="text-brand-sand"
+            title="OIDC-Gated Rotation"
+            description="Scheduled rotation can use a short-lived GitHub identity token and Lit TEE signing, so the Rotator private key never enters the CI runner or workflow secrets."
             glowColor="rgba(226,226,182,0.06)"
             className="lg:col-span-1"
           >
             <div className="rounded-lg bg-[#0a0a0a] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
-              <div className="text-slate-400">
-                FHEENV_PRIVATE_KEY=
-                <span className="text-pink-400">$&#123;&#123; secrets.KEY &#125;&#125;</span>
+              <div className="flex items-center justify-between gap-1 text-slate-400">
+                <span>GitHub OIDC</span>
+                <span className="text-brand-blue">→</span>
+                <span>Lit TEE</span>
+                <span className="text-brand-blue">→</span>
+                <span>signed tx</span>
               </div>
-              <div className="text-brand-sand mt-0.5">✓ fheenv pull --env production</div>
+              <div className="text-brand-sand mt-1">✓ no Rotator key in runner</div>
             </div>
           </BentoCard>
         </div>
