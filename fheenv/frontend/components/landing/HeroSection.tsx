@@ -7,11 +7,7 @@ import { MorphingText } from "@/components/ui/morphing-text";
 import { CrimeTapeMarquee } from "@/components/landing/CrimeTapeMarquee";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  ArrowRight,
-  ShieldCheck,
-  Terminal,
-} from "lucide-react";
+import { ArrowRight, ShieldCheck, Terminal } from "lucide-react";
 
 export function HeroSection() {
   const pinSectionRef = useRef<HTMLDivElement>(null);
@@ -36,68 +32,120 @@ export function HeroSection() {
     const wrapper = terminal.parentElement;
     if (!wrapper) return;
 
-    const isPhone = window.matchMedia("(max-width: 767px)").matches;
     const navbar = document.querySelector<HTMLElement>("[data-site-navbar]");
-    const getNavbarClearance = () =>
-      Math.ceil(navbar?.getBoundingClientRect().bottom ?? (isPhone ? 68 : 80)) + 8;
+    const terminalCaption = pinSection.querySelector<HTMLElement>("[data-terminal-caption]");
     const media = gsap.matchMedia();
 
     media.add("(prefers-reduced-motion: no-preference)", () => {
       gsap.set(cliLines, { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
 
+      const setNavbarVisible = (visible: boolean) => {
+        if (!navbar) return;
+        navbar.style.pointerEvents = visible ? "" : "none";
+        gsap.to(navbar, {
+          autoAlpha: visible ? 1 : 0,
+          y: visible ? 0 : -16,
+          duration: 0.2,
+          overwrite: true,
+        });
+      };
+
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: pinSection,
-          start: () => `top ${getNavbarClearance()}px`,
+          start: "top top",
           end: "+=2000",
           pin: true,
           scrub: true,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          onEnter: () => setNavbarVisible(false),
+          onEnterBack: () => setNavbarVisible(false),
+          onLeave: () => setNavbarVisible(true),
+          onLeaveBack: () => setNavbarVisible(true),
         },
       });
 
-      timeline.to(wrapper, {
-        paddingTop: 0,
-        paddingRight: 0,
-        paddingBottom: 0,
-        paddingLeft: 0,
-        duration: 0.25,
-        ease: "none",
-      }, 0);
+      timeline.to(
+        wrapper,
+        {
+          paddingTop: 0,
+          paddingRight: 0,
+          paddingBottom: 0,
+          paddingLeft: 0,
+          duration: 0.25,
+          ease: "none",
+        },
+        0,
+      );
 
-      timeline.to(terminal, {
-        maxWidth: "100%",
-        width: "100%",
-        height: () => `calc(100svh - ${getNavbarClearance()}px)`,
-        minHeight: 0,
-        borderRadius: 0,
-        borderColor: "transparent",
-        boxShadow: "none",
-        duration: 0.25,
-        ease: "none",
-      }, 0);
+      if (terminalCaption) {
+        timeline.to(
+          terminalCaption,
+          {
+            autoAlpha: 0,
+            duration: 0.1,
+            ease: "none",
+          },
+          0,
+        );
+      }
 
-      timeline.to(terminalBody, {
-        maxHeight: () => `calc(100svh - ${getNavbarClearance() + 40}px)`,
-        duration: 0.25,
-        ease: "none",
-      }, 0);
+      timeline.to(
+        terminal,
+        {
+          maxWidth: "100%",
+          width: "100%",
+          height: "100svh",
+          minHeight: 0,
+          borderRadius: 0,
+          borderColor: "transparent",
+          boxShadow: "none",
+          duration: 0.25,
+          ease: "none",
+        },
+        0,
+      );
 
-      timeline.to(cliLines, {
-        clipPath: "inset(0 0% 0 0)",
-        stagger: 0.1,
-        duration: 0.2,
-        ease: "steps(40)",
-      }, 0.15);
+      timeline.to(
+        terminalBody,
+        {
+          maxHeight: "calc(100svh - 40px)",
+          duration: 0.25,
+          ease: "none",
+        },
+        0,
+      );
 
-      timeline.to(terminalContent, {
-        y: () => -Math.max(0, terminalContent.scrollHeight - terminalBody.clientHeight + 64),
-        duration: 0.45,
-        ease: "none",
-      }, 0.55);
+      timeline.to(
+        cliLines,
+        {
+          clipPath: "inset(0 0% 0 0)",
+          stagger: 0.1,
+          duration: 0.2,
+          ease: "steps(40)",
+        },
+        0.15,
+      );
 
-      return () => timeline.kill();
+      timeline.to(
+        terminalContent,
+        {
+          y: () => -Math.max(0, terminalContent.scrollHeight - terminalBody.clientHeight + 64),
+          duration: 0.45,
+          ease: "none",
+        },
+        0.55,
+      );
+
+      return () => {
+        timeline.kill();
+        if (navbar) {
+          gsap.killTweensOf(navbar);
+          gsap.set(navbar, { clearProps: "opacity,transform,visibility" });
+          navbar.style.pointerEvents = "";
+        }
+      };
     });
 
     media.add("(prefers-reduced-motion: reduce)", () => {
@@ -146,7 +194,10 @@ export function HeroSection() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] bg-brand-ink/50 sm:bg-brand-ink/35" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[620px] bg-brand-ink/50 sm:bg-brand-ink/35"
+          aria-hidden="true"
+        />
 
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
@@ -165,9 +216,12 @@ export function HeroSection() {
             </div>
 
             <p className="mx-auto mt-4 max-w-2xl text-[15.5px] leading-relaxed text-slate-300 font-medium sm:text-lg">
-              Your <code className="font-mono text-brand-blue bg-brand-blue/10 px-1.5 py-0.5 rounded border border-brand-blue/20">.env</code>, encrypted
-              with Fully Homomorphic Encryption. Push, pull, and run secrets — without ever exposing
-              plaintext. <span className="text-slate-400">Not even us.</span>
+              Your{" "}
+              <code className="font-mono text-brand-blue bg-brand-blue/10 px-1.5 py-0.5 rounded border border-brand-blue/20">
+                .env
+              </code>
+              , encrypted with Fully Homomorphic Encryption. Push, pull, and run secrets — without
+              ever exposing plaintext. <span className="text-slate-400">Not even us.</span>
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
@@ -198,7 +252,10 @@ export function HeroSection() {
           <CrimeTapeMarquee direction="left" />
         </div>
         <div className="absolute bottom-1/4 -left-[20%] z-[5] hidden w-[140%] rotate-3 opacity-50 mix-blend-screen pointer-events-none md:block">
-          <CrimeTapeMarquee direction="right" text="KEY ROTATION /// WALLET AUTH /// IPFS STORAGE /// ZERO PLAINTEXT /// THRESHOLD DECRYPTION /// " />
+          <CrimeTapeMarquee
+            direction="right"
+            text="KEY ROTATION /// WALLET AUTH /// IPFS STORAGE /// ZERO PLAINTEXT /// THRESHOLD DECRYPTION /// "
+          />
         </div>
 
         {/* Ambient glow */}
@@ -223,112 +280,135 @@ export function HeroSection() {
             </div>
 
             {/* Terminal Body */}
-            <div ref={terminalBodyRef} className="max-h-[520px] flex-1 overflow-hidden p-4 font-mono text-[11px] leading-[1.75] text-slate-300 sm:p-8 sm:text-[13px]">
+            <div
+              ref={terminalBodyRef}
+              className="max-h-[520px] flex-1 overflow-hidden p-4 font-mono text-[11px] leading-[1.75] text-slate-300 sm:p-8 sm:text-[13px]"
+            >
               <div ref={terminalContentRef} className="pb-16 will-change-transform">
-              {/* Pull Wallet B */}
-              <div className="cli-line w-full break-words text-brand-blue font-bold">
-                === Pull Wallet B ===
-              </div>
-              <div className="cli-line w-full break-words text-green-400">
-                Passphrase to encrypt keyfile (blank = skip):
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Wallet saved to ~/.fheenv/wallet.json</span>{" "}
-                <span className="text-slate-500">(mode 0600, unencrypted)</span>
-              </div>
-              <div className="cli-line w-full break-words text-slate-400 pl-3">
-                Tip: re-run `fheenv login` with a passphrase to encrypt keyfile at rest.
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
-                <span className="text-slate-500">(permissions: 0600)</span>
-              </div>
-              <div className="cli-line w-full break-words pl-3 text-slate-400">
-                Version: 3 | Updated: 2026-07-09T17:43:48.000Z
-              </div>
-              <div className="cli-line w-full break-words text-slate-200">
-                DB_PASSWORD=<span className="text-pink-400">supersecret</span>
-              </div>
-              <div className="cli-line w-full break-words text-slate-200">
-                API_KEY=<span className="text-pink-400">abc123</span>
-              </div>
+                {/* Pull Wallet B */}
+                <div className="cli-line w-full break-words text-brand-blue font-bold">
+                  === Pull Wallet B ===
+                </div>
+                <div className="cli-line w-full break-words text-green-400">
+                  Passphrase to encrypt keyfile (blank = skip):
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">Wallet saved to ~/.fheenv/wallet.json</span>{" "}
+                  <span className="text-slate-500">(mode 0600, unencrypted)</span>
+                </div>
+                <div className="cli-line w-full break-words text-slate-400 pl-3">
+                  Tip: re-run `fheenv login` with a passphrase to encrypt keyfile at rest.
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
+                  <span className="text-slate-500">(permissions: 0600)</span>
+                </div>
+                <div className="cli-line w-full break-words pl-3 text-slate-400">
+                  Version: 3 | Updated: 2026-07-09T17:43:48.000Z
+                </div>
+                <div className="cli-line w-full break-words text-slate-200">
+                  DB_PASSWORD=<span className="text-pink-400">supersecret</span>
+                </div>
+                <div className="cli-line w-full break-words text-slate-200">
+                  API_KEY=<span className="text-pink-400">abc123</span>
+                </div>
 
-              <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words h-4" />
 
-              {/* Remove Wallet B */}
-              <div className="cli-line w-full break-words text-brand-blue font-bold">
-                === Remove Wallet B ===
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-yellow-400">⚠</span>{" "}
-                <span className="text-yellow-400/90">Keyfile is unencrypted. Re-run `fheenv login` with a passphrase to encrypt it.</span>
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Access revoked for <span className="text-cyan-400">0xE36f...6176</span> from env &quot;production&quot;</span>
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Rotation complete (v4) – <span className="text-cyan-400">0xE36f...6176</span> cryptographically locked out</span>
-              </div>
-              <div className="cli-line w-full break-words pl-3 text-slate-400">
-                New IPFS CID  : <span className="text-slate-300">QmPSE4yd8Ey6nAamRt3vZ9T6jLljsoL9omus5d5f7TpbE4</span>
-              </div>
-              <div className="cli-line w-full break-words pl-3 text-slate-400">
-                Previous CID  : <span className="text-slate-300">QmYvQ14NyFXHoefYAAUUEoDRCFM9BheUWsW3fma8ENd4BC</span>
-              </div>
-              <div className="cli-line w-full break-words pl-3 text-slate-400">
-                Re-granted    : <span className="text-slate-300">none</span>
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Previous blob unpinned: <span className="text-slate-400">QmYvQ14NyF...ENd4BC</span></span>
-              </div>
+                {/* Remove Wallet B */}
+                <div className="cli-line w-full break-words text-brand-blue font-bold">
+                  === Remove Wallet B ===
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-yellow-400">⚠</span>{" "}
+                  <span className="text-yellow-400/90">
+                    Keyfile is unencrypted. Re-run `fheenv login` with a passphrase to encrypt it.
+                  </span>
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">
+                    Access revoked for <span className="text-cyan-400">0xE36f...6176</span> from env
+                    &quot;production&quot;
+                  </span>
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">
+                    Rotation complete (v4) – <span className="text-cyan-400">0xE36f...6176</span>{" "}
+                    cryptographically locked out
+                  </span>
+                </div>
+                <div className="cli-line w-full break-words pl-3 text-slate-400">
+                  New IPFS CID :{" "}
+                  <span className="text-slate-300">
+                    QmPSE4yd8Ey6nAamRt3vZ9T6jLljsoL9omus5d5f7TpbE4
+                  </span>
+                </div>
+                <div className="cli-line w-full break-words pl-3 text-slate-400">
+                  Previous CID :{" "}
+                  <span className="text-slate-300">
+                    QmYvQ14NyFXHoefYAAUUEoDRCFM9BheUWsW3fma8ENd4BC
+                  </span>
+                </div>
+                <div className="cli-line w-full break-words pl-3 text-slate-400">
+                  Re-granted : <span className="text-slate-300">none</span>
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">
+                    Previous blob unpinned:{" "}
+                    <span className="text-slate-400">QmYvQ14NyF...ENd4BC</span>
+                  </span>
+                </div>
 
-              <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words h-4" />
 
-              {/* Wallet B locked out */}
-              <div className="cli-line w-full break-words text-brand-blue font-bold">
-                === Wallet B locked out ===
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-red-400 font-bold">✗ Pull failed</span>
-              </div>
-              <div className="cli-line w-full break-words text-red-400">
-                Error: sealOutput request failed: permit_denied
-              </div>
-              <div className="cli-line w-full break-words text-yellow-400 font-bold text-base">
-                LOCKED OUT ✓
-              </div>
+                {/* Wallet B locked out */}
+                <div className="cli-line w-full break-words text-brand-blue font-bold">
+                  === Wallet B locked out ===
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-red-400 font-bold">✗ Pull failed</span>
+                </div>
+                <div className="cli-line w-full break-words text-red-400">
+                  Error: sealOutput request failed: permit_denied
+                </div>
+                <div className="cli-line w-full break-words text-yellow-400 font-bold text-base">
+                  LOCKED OUT ✓
+                </div>
 
-              <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words h-4" />
 
-              {/* Wallet A still works */}
-              <div className="cli-line w-full break-words text-brand-blue font-bold">
-                === Wallet A still works ===
-              </div>
-              <div className="cli-line w-full break-words">
-                <span className="text-green-400">✓</span>{" "}
-                <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
-                <span className="text-slate-500">(permissions: 0600)</span>
-              </div>
+                {/* Wallet A still works */}
+                <div className="cli-line w-full break-words text-brand-blue font-bold">
+                  === Wallet A still works ===
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
+                  <span className="text-slate-500">(permissions: 0600)</span>
+                </div>
 
-              <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words h-4" />
 
-              <div className="cli-line w-full break-words flex items-center gap-1.5">
-                <span className="text-green-400 font-semibold">~/fheENV</span>
-                <span className="text-brand-blue">$</span>
-                <span className="inline-block w-2 h-4 rounded-sm animate-pulse bg-brand-blue/60" />
-              </div>
+                <div className="cli-line w-full break-words flex items-center gap-1.5">
+                  <span className="text-green-400 font-semibold">~/fheENV</span>
+                  <span className="text-brand-blue">$</span>
+                  <span className="inline-block w-2 h-4 rounded-sm animate-pulse bg-brand-blue/60" />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom tag line */}
-        <div className="absolute inset-x-0 bottom-0 z-20 flex min-h-16 flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-brand-blue/15 bg-brand-ink/95 px-4 py-3 font-mono text-[9px] uppercase text-slate-500 backdrop-blur-sm pointer-events-none md:bottom-6 md:min-h-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[10px] md:backdrop-blur-none">
+        <div
+          data-terminal-caption
+          className="absolute inset-x-0 bottom-0 z-20 flex min-h-16 flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-brand-blue/15 bg-brand-ink/95 px-4 py-3 font-mono text-[9px] uppercase text-slate-500 backdrop-blur-sm pointer-events-none md:bottom-6 md:min-h-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[10px] md:backdrop-blur-none"
+        >
           <span>AES-256-GCM client-side</span>
           <span>FHE access control</span>
           <span>Automatic key rotation</span>
