@@ -1,4 +1,4 @@
-import { parseAbi } from "viem";
+import { parseAbi, type Address } from "viem";
 
 // InEuint128 tuple: (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature)
 // Matches compiled artifact: fheENVRegistry.json -> updateEnvironment inputs
@@ -23,7 +23,13 @@ export const REGISTRY_ABI = parseAbi([
   "event EnvironmentUpdated(uint256 indexed projectId, bytes32 indexed envHash, string blobCid, uint256 version)",
   "event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
+  "event AccessGrantedWithExpiry(uint256 indexed projectId, bytes32 indexed envHash, address indexed member, uint256 expiresAt)",
+  "event RotatorGranted(uint256 indexed projectId, address indexed rotator)",
+  "event RotatorRevoked(uint256 indexed projectId, address indexed rotator)",
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
 ]);
 
-export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "") as `0x${string}`;
+const DEFAULT_REGISTRY_ADDRESS: Address = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
+
+export const REGISTRY_ADDRESS =
+  (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address | undefined) ?? DEFAULT_REGISTRY_ADDRESS;
