@@ -7,7 +7,8 @@ description: Complete reference for all fheENV CLI commands
 
 ## `fheenv login`
 
-Save your wallet private key to the local keyfile.
+Save your wallet private key to the local keyfile. Interactive login also prompts for an optional
+passphrase; when provided, the key is protected with scrypt-derived AES-256-GCM encryption.
 
 ```bash
 fheenv login                    # prompts via stdin
@@ -19,7 +20,8 @@ echo "0x..." | fheenv login    # pipe from secret manager
 | ------------------------ | ---------------------------------------------------------- |
 | `-k, --key <privateKey>` | 0x-prefixed private key (optional, reads stdin if omitted) |
 
-Stores at `~/.fheenv/wallet.json` with permissions `0600`.
+Stores at `~/.fheenv/wallet.json` with permissions `0600`. Legacy plaintext keyfiles remain readable
+but produce a deprecation warning.
 
 ---
 
@@ -106,12 +108,14 @@ Grant decrypt access to another wallet.
 
 ```bash
 fheenv team add --member 0xTeammate --env production
+fheenv team add --member 0xCI_WALLET --env production --expires 8h
 ```
 
-| Flag                     | Default      | Description             |
-| ------------------------ | ------------ | ----------------------- |
-| `-m, --member <address>` | required     | Wallet address to grant |
-| `-e, --env <name>`       | `production` | Environment             |
+| Flag                     | Default      | Description                          |
+| ------------------------ | ------------ | ------------------------------------ |
+| `-m, --member <address>` | required     | Wallet address to grant              |
+| `-e, --env <name>`       | `production` | Environment                          |
+| `--expires <duration>`   | permanent    | Expiry such as `30d`, `8h`, or `90m` |
 
 ---
 
@@ -121,15 +125,19 @@ Revoke access from a wallet.
 
 ```bash
 fheenv team remove --member 0xFormer --env production
+fheenv team remove --member 0xFormer --env production --no-rotate
 ```
 
-| Flag                     | Default      | Description              |
-| ------------------------ | ------------ | ------------------------ |
-| `-m, --member <address>` | required     | Wallet address to revoke |
-| `-e, --env <name>`       | `production` | Environment              |
+| Flag                     | Default      | Description                                           |
+| ------------------------ | ------------ | ----------------------------------------------------- |
+| `-m, --member <address>` | required     | Wallet address to revoke                              |
+| `-e, --env <name>`       | `production` | Environment                                           |
+| `-f, --file <path>`      | `.env`       | Source file used for automatic rotation               |
+| `--no-rotate`            | off          | Skip rotation; unsafe until a later rotation succeeds |
 
-> **Important:** After revoking, run `fheenv rotate` to re-encrypt with a fresh key. The removed
-> member can still decrypt old ciphertexts until rotation.
+By default, removal performs both logical revocation and fresh-key rotation. If the source file is
+missing, rotation fails, or `--no-rotate` is used, the CLI reports that the member still has FHE
+decrypt access to the old handles.
 
 ---
 
@@ -155,6 +163,72 @@ fheenv rotate --env staging --file .env.staging
 4. FHE-encrypts new key halves
 5. Calls `batchGrantAccess` for all active members
 
+After rotation, fheENV attempts to unpin the previous blob from Pinata. This is best-effort and does
+not guarantee deletion from every IPFS cache.
+
+---
+
+## `fheenv rotator add/remove`
+
+Manage the restricted Rotator automation role.
+
+```bash
+fheenv rotator add --address 0xROTATOR
+fheenv rotator remove --address 0xROTATOR
+```
+
+| Flag                    | Default        | Description             |
+| ----------------------- | -------------- | ----------------------- |
+| `-a, --address <addr>`  | required       | Rotator address         |
+| `-p, --project-id <id>` | current config | Override the project ID |
+
+Rotators can update environments and re-grant active members without receiving full owner access.
+
+---
+
+## `fheenv rotate-check`
+
+Rotate environments whose `.fheenv.json` policy is due. The command exits nonzero if any rotation
+fails, making it suitable for scheduled workflows.
+
+```bash
+fheenv rotate-check
+```
+
+When `FHEENV_LIT_ACTION_CID`, `FHEENV_LIT_API_KEY`, and `GITHUB_OIDC_JWT` are all configured,
+rotation uses the Lit Action signer instead of loading a local private key.
+
+---
+
+## `fheenv index-audit`
+
+Append new public chain events to the local mode-`0600` JSONL audit log.
+
+```bash
+fheenv index-audit
+```
+
+The indexer is incremental and uses public chain data; it does not load a signing key.
+
+---
+
+## `fheenv export-audit`
+
+Export local and indexed audit records as CSV or a terminal table.
+
+```bash
+fheenv export-audit --output audit.csv
+fheenv export-audit --from 2026-01-01 --to 2026-06-30
+fheenv export-audit --format table
+```
+
+| Flag                | Default | Description                           |
+| ------------------- | ------- | ------------------------------------- |
+| `-o, --output`      | stdout  | Write output to a file                |
+| `--from <date>`     | none    | Include records on or after the date  |
+| `--to <date>`       | none    | Include records on or before the date |
+| `--format <format>` | `csv`   | `csv` or `table`                      |
+
 ---
 
 ## `fheenv update`
@@ -171,8 +245,12 @@ Downloads the latest release from GitHub and replaces the current binary.
 
 ## Environment Variables
 
-| Variable             | Description                                              |
-| -------------------- | -------------------------------------------------------- |
-| `FHEENV_PRIVATE_KEY` | Wallet key (overrides keyfile)                           |
-| `FHEENV_PINATA_JWT`  | Pinata JWT (used by `init` if `--pinata-jwt` not passed) |
-| `FHEENV_RPC`         | RPC URL override                                         |
+| Variable                | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| `FHEENV_PRIVATE_KEY`    | Raw wallet key (overrides keyfile)               |
+| `FHEENV_KEY_PASSPHRASE` | Unlock an encrypted local keyfile                |
+| `FHEENV_PINATA_JWT`     | Pinata JWT (used by `init` if not passed)        |
+| `FHEENV_RPC`            | RPC URL override                                 |
+| `FHEENV_LIT_ACTION_CID` | Lit Action CID for OIDC-backed rotation          |
+| `FHEENV_LIT_API_KEY`    | Lit API credential; not a signing key            |
+| `GITHUB_OIDC_JWT`       | GitHub Actions identity token for the Lit signer |

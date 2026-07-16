@@ -65,11 +65,15 @@ Project Owner ──► Can push, pull, grant, revoke, rotate
        │
        ├── Co-Owner (addOwner) ──► Same permissions as owner
        │
-       └── Member (grantAccess) ──► Can pull/decrypt only
+  ├── Rotator ──► Can update environments and re-grant active members
+  │
+  └── Member ──► Can pull/decrypt until permanent or time-limited access expires
 ```
 
 - **Owners** are set on-chain and can only be added (no removeOwner for safety)
 - **Members** have per-environment, per-project access
+- **Rotators** support scheduled automation without receiving full owner authority
+- **Time-limited grants** reduce standing access for CI/CD service accounts
 - **FHE.allow** is the cryptographic gate — without it, Threshold Network refuses decryption
 
 ## Revocation Guarantees
@@ -80,25 +84,46 @@ Project Owner ──► Can push, pull, grant, revoke, rotate
 | `revokeAccess` | FHE permit on **old** handles persists | Old handles orphaned                             |
 | `rotate`       | New ciphertext handles created         | Revoked member has no `FHE.allow` on new handles |
 
-**Always rotate after revoking.** The CLI prominently warns about this.
+`fheenv team remove` rotates by default when the source env file is available. If rotation is
+skipped with `--no-rotate`, the file is unavailable, or rotation fails, the CLI raises a critical
+warning because the old handles remain decryptable.
+
+After successful rotation, fheENV attempts to unpin the superseded blob from Pinata. This is
+best-effort deletion of a pin, not a guarantee that every IPFS node has removed its cached copy.
 
 ## Data at Rest
 
-| Data                      | Location                | Encrypted?        | Readable By                                  |
-| ------------------------- | ----------------------- | ----------------- | -------------------------------------------- |
-| `.env` plaintext          | Your machine only       | No (local)        | You                                          |
-| AES-encrypted blob        | IPFS                    | Yes (AES-256-GCM) | No one without AES key                       |
-| AES key (as euint128 × 2) | Sepolia chain           | Yes (FHE)         | Only permitted wallets via Threshold Network |
-| `.fheenv.json`            | Your repo               | No                | Anyone (contains no secrets)                 |
-| Wallet private key        | `~/.fheenv/wallet.json` | No                | You (file is `chmod 600`)                    |
+| Data                      | Location                | Encrypted?                    | Readable By                                  |
+| ------------------------- | ----------------------- | ----------------------------- | -------------------------------------------- |
+| `.env` plaintext          | Your machine only       | No (local)                    | You                                          |
+| AES-encrypted blob        | IPFS                    | Yes (AES-256-GCM)             | No one without AES key                       |
+| AES key (as euint128 × 2) | Sepolia chain           | Yes (FHE)                     | Only permitted wallets via Threshold Network |
+| `.fheenv.json`            | Your repo               | No                            | Anyone (contains no secrets)                 |
+| Wallet private key        | `~/.fheenv/wallet.json` | Optional AES-256-GCM + scrypt | You (file is mode `0600`)                    |
+
+For scheduled rotation, the optional Lit signer uses a GitHub OIDC token to request transaction
+signatures from a Lit Action-backed account. The Rotator private key is not placed in the workflow.
+Ordinary CI jobs may still use `FHEENV_PRIVATE_KEY`; treat it as a raw secret and scope it tightly.
+
+### OIDC and Lit trust boundary
+
+The OIDC token is a short-lived identity assertion, not a private key. The Lit Action validates
+GitHub's token signature, issuer, audience, repository, and workflow before using its internal
+Rotator key to sign. The runner receives the signed transaction, never the key material.
+
+This changes the primary CI risk from **key extraction** to **signing authorization**. The current
+SOC 2 branch policy must still be hardened for production by restricting the Git ref or environment,
+chain ID, registry target, transaction value, and permitted function selectors. The restricted
+on-chain Rotator role provides an additional boundary but does not replace transaction validation
+inside the Lit Action.
 
 ## Comparison to Alternatives
 
-| Feature               | fheENV                   | Doppler/Vault               | AWS Secrets Manager |
-| --------------------- | ------------------------ | --------------------------- | ------------------- |
-| Server sees plaintext | Never                    | Yes (at rest, they encrypt) | Yes (KMS-wrapped)   |
-| Trust model           | Zero-trust (math)        | Trust the provider          | Trust AWS           |
-| Key management        | User-controlled (wallet) | Provider-managed            | AWS KMS             |
-| Audit trail           | On-chain (immutable)     | Provider logs (mutable)     | CloudTrail          |
-| Access control        | Wallet-based, on-chain   | Email/RBAC                  | IAM policies        |
-| Open source           | Yes (ELv2)               | Partially                   | No                  |
+| Feature               | fheENV                          | Doppler/Vault               | AWS Secrets Manager |
+| --------------------- | ------------------------------- | --------------------------- | ------------------- |
+| Server sees plaintext | Never                           | Yes (at rest, they encrypt) | Yes (KMS-wrapped)   |
+| Trust model           | Zero-trust (math)               | Trust the provider          | Trust AWS           |
+| Key management        | User-controlled (wallet)        | Provider-managed            | AWS KMS             |
+| Audit trail           | Local JSONL + on-chain evidence | Provider logs (mutable)     | CloudTrail          |
+| Access control        | Wallet-based, on-chain          | Email/RBAC                  | IAM policies        |
+| Open source           | Yes (ELv2)                      | Partially                   | No                  |

@@ -45,7 +45,8 @@ import { Mermaid } from "@/components/docs/Mermaid";
 - **fheENVRegistry.sol** — single contract managing all projects, environments, and access
 - **Optimistic locking** — version numbers prevent concurrent push conflicts
 - **FHE permission management** — `FHE.allow()` grants decrypt access per address
-- **Event-based audit trail** — all actions emit indexed events for transparency
+- **Event-based chain evidence** — environment and access changes emit indexed events
+- **Local structured audit** — CLI access and rotation activity is written as mode-`0600` JSONL
 
 ### 3. Threshold Network Layer
 
