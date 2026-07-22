@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings ?? []),
       { module: /fumadocs-mdx/, message: /build dependencies failed/ },
-      { module: /ox/, message: /Critical dependency: the request of a dependency is an expression/ },
+      {
+        module: /ox/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
     ];
     // fumadocs loads generated modules through dynamic URLs, which webpack's
     // persistent cache cannot trace. A production build is short-lived, so a

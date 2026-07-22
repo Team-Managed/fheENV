@@ -7,7 +7,17 @@ import { MorphingText } from "@/components/ui/morphing-text";
 import { CrimeTapeMarquee } from "@/components/landing/CrimeTapeMarquee";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, BookOpen, Check, Copy, Minus, ShieldCheck, Square, Terminal, X } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Copy,
+  Minus,
+  ShieldCheck,
+  Square,
+  Terminal,
+  X,
+} from "lucide-react";
 import { INSTALL_COMMANDS, type Platform } from "@/components/landing/platform";
 
 export function HeroSection({ platform }: { platform: Platform }) {
@@ -242,7 +252,11 @@ export function HeroSection({ platform }: { platform: Platform }) {
             {/* Terminal Header */}
             <div
               className={`relative flex h-10 shrink-0 items-center border-b border-white/[0.06] px-4 ${
-                platform === "windows" ? "bg-[#202020]" : platform === "linux" ? "bg-[#272727]" : "bg-[#111]"
+                platform === "windows"
+                  ? "bg-[#202020]"
+                  : platform === "linux"
+                    ? "bg-[#272727]"
+                    : "bg-[#111]"
               }`}
             >
               {platform === "mac" && (
@@ -265,15 +279,23 @@ export function HeroSection({ platform }: { platform: Platform }) {
               </div>
               {platform === "windows" && (
                 <div className="ml-auto -mr-4 flex h-10 text-slate-400">
-                  <span className="flex w-12 items-center justify-center"><Minus className="size-4 stroke-[2.5]" /></span>
-                  <span className="flex w-12 items-center justify-center"><Square className="size-3.5 stroke-[2.5]" /></span>
-                  <span className="flex w-12 items-center justify-center transition-colors hover:bg-[#c42b1c] hover:text-white"><X className="size-4 stroke-[2.5]" /></span>
+                  <span className="flex w-12 items-center justify-center">
+                    <Minus className="size-4 stroke-[2.5]" />
+                  </span>
+                  <span className="flex w-12 items-center justify-center">
+                    <Square className="size-3.5 stroke-[2.5]" />
+                  </span>
+                  <span className="flex w-12 items-center justify-center transition-colors hover:bg-[#c42b1c] hover:text-white">
+                    <X className="size-4 stroke-[2.5]" />
+                  </span>
                 </div>
               )}
             </div>
 
             <div className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0d1117] px-4 py-3 font-mono text-[10px] sm:px-8 sm:text-[11px]">
-              <span className="shrink-0 text-brand-blue">{platform === "windows" ? "PS&gt;" : "$"}</span>
+              <span className="shrink-0 text-brand-blue">
+                {platform === "windows" ? "PS&gt;" : "$"}
+              </span>
               <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-slate-200">
                 {installCommand}
               </code>
@@ -324,7 +346,9 @@ export function HeroSection({ platform }: { platform: Platform }) {
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">production encrypted locally · uploaded to IPFS</span>
+                  <span className="text-slate-200">
+                    production encrypted locally · uploaded to IPFS
+                  </span>
                 </div>
                 <div className="cli-line w-full break-words h-4" />
                 <div className="cli-line w-full break-words border-y border-brand-blue/20 bg-brand-blue/[0.07] px-3 py-2 text-[10px] font-bold tracking-[0.16em] text-brand-sand sm:text-xs">
@@ -349,7 +373,9 @@ export function HeroSection({ platform }: { platform: Platform }) {
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-brand-blue">{prompt}</span>{" "}
-                  <span className="text-slate-200">fheenv pull --env production --output .env.local</span>
+                  <span className="text-slate-200">
+                    fheenv pull --env production --output .env.local
+                  </span>
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
