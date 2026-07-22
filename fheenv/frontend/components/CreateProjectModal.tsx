@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
 import { X, Loader2 } from "lucide-react";
+import { BaseError, parseEventLogs } from "viem";
 
 type Props = { onClose: () => void; onCreated: (id: bigint) => void };
 
@@ -32,10 +33,17 @@ export function CreateProjectModal({ onClose, onCreated }: Props) {
       });
       const hash = await walletClient.writeContract(request);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      const projectId = BigInt(receipt.logs[0]?.topics[1] ?? "0");
-      onCreated(projectId);
+      const [createdEvent] = parseEventLogs({
+        abi: REGISTRY_ABI,
+        eventName: "ProjectCreated",
+        logs: receipt.logs,
+      });
+      if (!createdEvent) throw new Error("Project was created, but its ID could not be read.");
+      onCreated(createdEvent.args.projectId);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(
+        e instanceof BaseError ? e.shortMessage : "Could not create the project. Try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -76,24 +84,32 @@ export function CreateProjectModal({ onClose, onCreated }: Props) {
             type="text"
             placeholder="my-app"
             value={name}
+            maxLength={64}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             className="w-full rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-200 outline-none transition-all"
             style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
-            onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+            onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
           />
         </div>
-        {error && <p className="text-xs text-red-400 mb-3 font-mono">{error}</p>}
+        {error && (
+          <p
+            className="mb-3 max-h-24 overflow-y-auto break-words font-mono text-xs leading-relaxed text-red-400"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
         <div className="flex gap-2.5">
           <button
             onClick={handleCreate}
             disabled={loading || !name.trim()}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-bold transition-all disabled:opacity-50"
             style={{
-              background: "var(--aqua)",
+              background: "var(--brand-blue)",
               color: "#030712",
-              boxShadow: loading ? "none" : "0 0 14px var(--aqua-glow)",
+              boxShadow: loading ? "none" : "0 0 14px var(--brand-blue-glow)",
             }}
           >
             {loading ? (

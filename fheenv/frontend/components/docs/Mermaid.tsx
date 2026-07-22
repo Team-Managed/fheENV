@@ -1,26 +1,49 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "fumadocs-ui/provider/base";
 
 export function Mermaid({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState("");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme !== "light";
 
   useEffect(() => {
     let cancelled = false;
+    setSvg("");
     import("mermaid").then((m) => {
       m.default.initialize({
         startOnLoad: false,
-        theme: "dark",
-        themeVariables: {
-          primaryColor: "#1e293b",
-          primaryTextColor: "#f1f5f9",
-          primaryBorderColor: "#2dd4bf",
-          lineColor: "#2dd4bf",
-          secondaryColor: "#0f172a",
-          tertiaryColor: "#1e293b",
-          fontFamily: "monospace",
-          fontSize: "14px",
-        },
+        theme: "base",
+        themeVariables: isDark
+          ? {
+              background: "#021526",
+              primaryColor: "#03346e",
+              primaryTextColor: "#f8fafc",
+              primaryBorderColor: "#6eacda",
+              lineColor: "#6eacda",
+              secondaryColor: "#06294a",
+              tertiaryColor: "#0b355d",
+              clusterBkg: "#021526",
+              clusterBorder: "#6eacda",
+              edgeLabelBackground: "#021526",
+              titleColor: "#e2e2b6",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            }
+          : {
+              background: "#f4f8fc",
+              primaryColor: "#d9ebf8",
+              primaryTextColor: "#021526",
+              primaryBorderColor: "#337bb5",
+              lineColor: "#337bb5",
+              secondaryColor: "#e8f2fa",
+              tertiaryColor: "#f7fbfe",
+              clusterBkg: "#f4f8fc",
+              clusterBorder: "#6eacda",
+              edgeLabelBackground: "#f4f8fc",
+              titleColor: "#03346e",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            },
       });
       const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
       m.default.render(id, chart).then(({ svg: rendered }) => {
@@ -30,11 +53,15 @@ export function Mermaid({ chart }: { chart: string }) {
     return () => {
       cancelled = true;
     };
-  }, [chart]);
+  }, [chart, isDark]);
+
+  const surfaceClass = isDark
+    ? "border-brand-blue/20 bg-brand-ink text-slate-100"
+    : "border-brand-navy/20 bg-[#f4f8fc] text-brand-ink";
 
   if (!svg) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-[#0d1117] p-8 text-center text-sm text-slate-500">
+      <div className={`rounded-xl border p-8 text-center text-sm ${surfaceClass}`}>
         Loading diagram...
       </div>
     );
@@ -43,7 +70,7 @@ export function Mermaid({ chart }: { chart: string }) {
   return (
     <div
       ref={ref}
-      className="rounded-xl border border-white/[0.06] bg-[#0d1117] p-6 overflow-x-auto [&_svg]:mx-auto [&_svg]:max-w-full"
+      className={`overflow-x-auto rounded-xl border p-6 [&_svg]:mx-auto [&_svg]:max-w-full ${surfaceClass}`}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

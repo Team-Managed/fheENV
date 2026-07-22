@@ -114,7 +114,7 @@ export function PushEnvForm({ projectId, envName }: Props) {
         rows={7}
         className="w-full rounded-xl px-4 py-3 text-xs font-mono text-slate-300 outline-none transition-all resize-none mb-4"
         style={{ background: "rgba(3,7,18,0.6)", border: "1px solid var(--surface-border)" }}
-        onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+        onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
         onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
       />
       <button
@@ -122,9 +122,9 @@ export function PushEnvForm({ projectId, envName }: Props) {
         disabled={loading || !rawEnv.trim()}
         className="w-full py-2.5 rounded-full text-sm font-bold transition-all disabled:opacity-40"
         style={{
-          background: "var(--aqua)",
+          background: "var(--brand-blue)",
           color: "#030712",
-          boxShadow: loading ? "none" : "0 0 14px var(--aqua-glow)",
+          boxShadow: loading ? "none" : "0 0 14px var(--brand-blue-glow)",
         }}
       >
         {loading ? "Encrypting & Pushing…" : "Encrypt & Push →"}
@@ -140,7 +140,7 @@ export function PushEnvForm({ projectId, envName }: Props) {
               className="text-xs font-mono"
               style={{
                 color: l.startsWith("✅")
-                  ? "var(--aqua)"
+                  ? "var(--brand-blue)"
                   : l.startsWith("❌")
                     ? "#f87171"
                     : "var(--text-muted)",
