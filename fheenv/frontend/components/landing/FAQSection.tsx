@@ -8,27 +8,27 @@ export function FAQSection() {
   const faqs = [
     {
       q: "What is Fully Homomorphic Encryption?",
-      a: "FHE allows computations on encrypted data without decrypting it first. Your AES key is stored on-chain as FHE ciphertexts — even blockchain node operators and our servers cannot read your secrets. Only addresses you explicitly grant access to can decrypt via the Threshold Network.",
+      a: "FHE works with encrypted data without exposing its contents. fheENV uses it to protect each environment's AES key on-chain.",
     },
     {
       q: "Who holds the decryption keys?",
-      a: "Only you and the team members you grant access to via your wallet. The AES key is split into two halves, each FHE-encrypted as euint128 on-chain. Decryption happens locally through the Threshold Network — no one else ever sees plaintext.",
+      a: "Only wallets you approve can decrypt the AES key through the Threshold Network. Decryption happens on the user's device.",
     },
     {
       q: "Is there a CLI tool?",
-      a: "Yes! Install with one command: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash. Then use fheenv push, fheenv pull, fheenv run (inject secrets into processes without writing to disk), and fheenv rotate (re-key after revoking access).",
+      a: "Yes. Use it to push, pull, run, rotate, and manage wallet access.",
     },
     {
       q: "Is there a web dashboard?",
-      a: "Yes — connect your wallet at fheenv.vercel.app to create projects and review their public on-chain audit evidence. Secret push, pull, rotation, and team access remain CLI workflows so the dashboard does not imply capabilities it does not currently expose.",
+      a: "Yes. Connect a wallet to create projects and inspect public on-chain activity. Secret operations remain in the CLI.",
     },
     {
       q: "What happens when someone leaves the team?",
-      a: "fheenv team remove revokes the member and rotates with a fresh AES key by default when the source env file is available. If rotation is skipped or fails, the CLI raises a critical warning because the old FHE handles remain decryptable until rotation succeeds.",
+      a: "Remove their access, then rotate the environment. Rotation creates a new AES key that excludes the revoked wallet.",
     },
     {
-      q: "Is this open source?",
-      a: "Yes — licensed under Elastic License 2.0. You can self-host, fork, contribute, and use it freely for your own projects. The only restriction is you cannot resell it as a competing managed service.",
+      q: "Can I self-host it?",
+      a: "Yes. The Elastic License 2.0 allows self-hosting, modification, and contributions. It does not allow a competing managed service.",
     },
   ];
 

@@ -28,7 +28,7 @@ function AuditLogCard() {
       event: "env_pulled",
       wallet: "0x50BD..8B90",
       env: "production",
-      detail: "–",
+      detail: "none",
       color: "text-brand-blue",
     },
     {
@@ -44,7 +44,7 @@ function AuditLogCard() {
       event: "env_pulled",
       wallet: "0xE36f..6176",
       env: "production",
-      detail: "–",
+      detail: "none",
       color: "text-brand-blue",
     },
     {
@@ -68,7 +68,7 @@ function AuditLogCard() {
       event: "env_pulled",
       wallet: "0x50BD..8B90",
       env: "production",
-      detail: "–",
+      detail: "none",
       color: "text-brand-blue",
     },
   ];
@@ -121,7 +121,9 @@ function AuditLogCard() {
           ))}
         </div>
         <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-2">
-          <span className="text-[9px] text-slate-500 font-mono">JSONL · SOC 2 CC7.2 evidence</span>
+          <span className="text-[9px] text-slate-500 font-mono">
+            JSONL · local and on-chain events
+          </span>
           <div className="flex items-center gap-1 text-[9px] text-brand-blue/50 font-medium cursor-pointer hover:text-brand-blue transition-colors">
             <ExternalLink className="size-2.5" /> Etherscan
           </div>
@@ -221,15 +223,12 @@ export function FeaturesSection() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="font-mono text-xs font-semibold tracking-widest text-brand-blue uppercase mb-4 flex items-center justify-center gap-2">
-            <Shield className="size-3.5" /> Built different
+            <Shield className="size-3.5" /> Security model
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold text-slate-100 mb-4 leading-tight tracking-tight">
-            Enterprise-grade security <span className="text-brand-blue">for your secrets</span>
+            Security for <span className="text-brand-blue">environment secrets</span>
           </h2>
-          <p className="text-lg text-slate-400">
-            Stop pasting .env files in Slack. Secure your secrets with the next generation of
-            cryptographic privacy.
-          </p>
+          <p className="text-lg text-slate-400">Encrypt secrets before they leave your machine.</p>
         </div>
 
         {/* Bento Grid */}
@@ -238,7 +237,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<EyeOff className="size-4 text-brand-blue" />}
             title="Zero-Trust"
-            description="Your env vars are encrypted client-side with AES-256-GCM. We never see plaintext data or your keys."
+            description="AES-256-GCM encrypts each environment on your device. fheENV never sees plaintext."
             className="lg:col-span-1"
           >
             <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
@@ -250,7 +249,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<Shield className="size-4 text-brand-blue" />}
             title="FHE Encryption"
-            description="Access control computed directly on encrypted data via the Fhenix threshold network."
+            description="Fhenix controls access to the encrypted AES key on-chain."
             className="lg:col-span-2"
             glowColor="rgba(110,172,218,0.08)"
           >
@@ -274,7 +273,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<WalletCards className="size-4 text-brand-sand" />}
             title="Wallet Auth"
-            description="Sign in with Ethereum. No emails, no passwords, no trusted third party."
+            description="Connect an Ethereum wallet. No separate account or password."
             glowColor="rgba(226,226,182,0.06)"
             className="lg:col-span-1"
           >
@@ -295,7 +294,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<RotateCcw className="size-4 text-yellow-400" />}
             title="Revocation Rotation"
-            description="Team removal rotates by default when the source env is available. Partial failures are surfaced, and superseded Pinata pins are removed best-effort."
+            description="Remove access on-chain, then rotate the environment to replace its AES key."
             glowColor="rgba(250,204,21,0.06)"
             className="lg:col-span-2"
           >
@@ -309,7 +308,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<Users className="size-4 text-green-400" />}
             title="Team Access"
-            description="Grant permanent or time-limited wallet access. A removed member is cryptographically locked out after successful rotation."
+            description="Grant access by wallet. Rotation excludes revoked members from new ciphertexts."
             glowColor="rgba(34,197,94,0.06)"
             className="lg:col-span-2"
           >
@@ -334,7 +333,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<HardDrive className="size-4 text-brand-blue" />}
             title="IPFS Storage"
-            description="Encrypted blobs stored on IPFS with content-addressed CIDs. Decentralized, immutable, verifiable."
+            description="IPFS stores only AES-encrypted blobs, addressed by CID."
             className="lg:col-span-1"
           >
             <div className="font-mono text-[10px] text-slate-500 truncate">
@@ -345,7 +344,7 @@ export function FeaturesSection() {
           <BentoCard
             icon={<Terminal className="size-4 text-brand-blue" />}
             title="CLI-First DX"
-            description="Push, pull, run — three commands. Inject secrets into processes without writing to disk."
+            description="Push, pull, or inject secrets without writing them to disk."
             className="lg:col-span-2"
           >
             <div className="rounded-lg bg-[#0a0a0a] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
@@ -361,20 +360,20 @@ export function FeaturesSection() {
 
           <BentoCard
             icon={<Zap className="size-4 text-brand-sand" />}
-            title="OIDC-Gated Rotation"
-            description="Scheduled rotation can use a short-lived GitHub identity token and Lit TEE signing, so the Rotator private key never enters the CI runner or workflow secrets."
+            title="CI Workflows"
+            description="Use a scoped wallet credential to pull or inject secrets during a job."
             glowColor="rgba(226,226,182,0.06)"
             className="lg:col-span-1"
           >
             <div className="rounded-lg bg-[#0a0a0a] border border-white/[0.06] px-3 py-2 font-mono text-[10px]">
               <div className="flex items-center justify-between gap-1 text-slate-400">
-                <span>GitHub OIDC</span>
+                <span>CI secret</span>
                 <span className="text-brand-blue">→</span>
-                <span>Lit TEE</span>
+                <span>fheenv run</span>
                 <span className="text-brand-blue">→</span>
-                <span>signed tx</span>
+                <span>process env</span>
               </div>
-              <div className="text-brand-sand mt-1">✓ no Rotator key in runner</div>
+              <div className="text-brand-sand mt-1">✓ no plaintext file required</div>
             </div>
           </BentoCard>
         </div>

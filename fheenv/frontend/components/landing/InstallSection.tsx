@@ -72,7 +72,7 @@ export function InstallSection() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-100">Install fheENV CLI</h3>
-                <p className="text-xs text-slate-400">One command. Auto-detects your platform.</p>
+                <p className="text-xs text-slate-400">Install it with one command.</p>
               </div>
             </div>
 
@@ -115,8 +115,8 @@ export function InstallSection() {
 
           <p className="mt-4 text-xs text-slate-500 flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-green-400/70" />
-            Installs to <code className="text-slate-400">~/.fheenv/bin</code> · configures PATH
-            automatically · no sudo required
+            Installs to <code className="text-slate-400">~/.fheenv/bin</code>, updates PATH, and
+            does not require sudo.
           </p>
         </motion.div>
       </div>

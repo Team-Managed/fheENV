@@ -171,7 +171,7 @@ export function HeroSection() {
 
   return (
     <>
-      {/* Hero text section — scrolls normally */}
+      {/* Hero text section scrolls normally */}
       <section className="relative overflow-hidden bg-brand-ink px-4 pb-4 pt-24 sm:px-6 sm:pt-40">
         {/* Dithering background */}
         <div
@@ -220,8 +220,8 @@ export function HeroSection() {
               <code className="font-mono text-brand-blue bg-brand-blue/10 px-1.5 py-0.5 rounded border border-brand-blue/20">
                 .env
               </code>
-              , encrypted with Fully Homomorphic Encryption. Push, pull, and run secrets — without
-              ever exposing plaintext. <span className="text-slate-400">Not even us.</span>
+              , encrypted before it leaves your machine. Push, pull, and run secrets without
+              exposing plaintext. <span className="text-slate-400">fheENV cannot read it.</span>
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
@@ -242,7 +242,7 @@ export function HeroSection() {
         </div>
       </section>
 
-      {/* Pinned CLI section — sticks while terminal expands + types */}
+      {/* Pinned CLI section sticks while terminal expands and types */}
       <section
         ref={pinSectionRef}
         className="relative z-50 min-h-[100svh] overflow-hidden border-b border-brand-blue/20 bg-brand-ink"
@@ -261,7 +261,7 @@ export function HeroSection() {
         {/* Ambient glow */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-brand-blue/10 blur-[150px] rounded-full pointer-events-none" />
 
-        {/* Terminal — starts centered, animates to fill viewport */}
+        {/* Terminal starts centered, then fills the viewport */}
         <div className="relative z-10 flex min-h-[100svh] items-start justify-center px-4 pt-0 pb-0 will-change-[padding] sm:px-10">
           <div
             ref={terminalRef}
@@ -290,7 +290,7 @@ export function HeroSection() {
                   === Pull Wallet B ===
                 </div>
                 <div className="cli-line w-full break-words text-green-400">
-                  Passphrase to encrypt keyfile (blank = skip):
+                  Private key (input hidden):
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
@@ -298,7 +298,7 @@ export function HeroSection() {
                   <span className="text-slate-500">(mode 0600, unencrypted)</span>
                 </div>
                 <div className="cli-line w-full break-words text-slate-400 pl-3">
-                  Tip: re-run `fheenv login` with a passphrase to encrypt keyfile at rest.
+                  Keep this file private. It contains your signing key.
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
@@ -324,7 +324,7 @@ export function HeroSection() {
                 <div className="cli-line w-full break-words">
                   <span className="text-yellow-400">⚠</span>{" "}
                   <span className="text-yellow-400/90">
-                    Keyfile is unencrypted. Re-run `fheenv login` with a passphrase to encrypt it.
+                    Rotate this environment to replace its current key.
                   </span>
                 </div>
                 <div className="cli-line w-full break-words">
@@ -335,11 +335,12 @@ export function HeroSection() {
                   </span>
                 </div>
                 <div className="cli-line w-full break-words">
+                  <span className="text-brand-blue">$</span>{" "}
+                  <span className="text-slate-200">fheenv rotate --env production</span>
+                </div>
+                <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">
-                    Rotation complete (v4) – <span className="text-cyan-400">0xE36f...6176</span>{" "}
-                    cryptographically locked out
-                  </span>
+                  <span className="text-slate-200">Rotation complete (v4)</span>
                 </div>
                 <div className="cli-line w-full break-words pl-3 text-slate-400">
                   New IPFS CID :{" "}
@@ -356,14 +357,6 @@ export function HeroSection() {
                 <div className="cli-line w-full break-words pl-3 text-slate-400">
                   Re-granted : <span className="text-slate-300">none</span>
                 </div>
-                <div className="cli-line w-full break-words">
-                  <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">
-                    Previous blob unpinned:{" "}
-                    <span className="text-slate-400">QmYvQ14NyF...ENd4BC</span>
-                  </span>
-                </div>
-
                 <div className="cli-line w-full break-words h-4" />
 
                 {/* Wallet B locked out */}
@@ -411,7 +404,7 @@ export function HeroSection() {
         >
           <span>AES-256-GCM client-side</span>
           <span>FHE access control</span>
-          <span>Automatic key rotation</span>
+          <span>Explicit key rotation</span>
           <span>IPFS blob storage</span>
         </div>
       </section>

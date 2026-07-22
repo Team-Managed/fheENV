@@ -181,10 +181,10 @@ export function HowItWorksSection() {
             Get started
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-slate-100 tracking-tight">
-            Up and running in <span className="text-brand-blue">5 minutes.</span>
+            Start with <span className="text-brand-blue">the CLI.</span>
           </h2>
           <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto">
-            Install the CLI, push your secrets, and share with your team.
+            Install fheENV, create a project, and push an environment.
           </p>
         </div>
 
@@ -220,7 +220,7 @@ export function HowItWorksSection() {
               title="Install fheenv"
               description={
                 os === "mac"
-                  ? "One-line install for macOS and Linux. Detects your OS/architecture automatically."
+                  ? "One command installs fheENV for macOS or Linux."
                   : "Run PowerShell as Administrator and execute the install script."
               }
             >
@@ -235,9 +235,9 @@ export function HowItWorksSection() {
               num="02"
               icon={<KeyRound className="size-4 text-brand-sand" />}
               title="Save your wallet"
-              description="One-time per machine. Your private key is stored locally with restricted permissions and optional passphrase encryption."
+              description="Enter your key in a hidden prompt. fheENV saves it locally with mode 0600."
             >
-              <CodeBlock code="fheenv login --key 0xYOUR_PRIVATE_KEY" />
+              <CodeBlock code="fheenv login" />
               <div className="mt-2 font-mono text-[10px] text-slate-500 flex items-center gap-2">
                 <span className="text-green-400">✓</span> Saved to ~/.fheenv/wallet.json
                 (permissions: 0600)
@@ -249,7 +249,7 @@ export function HowItWorksSection() {
               num="03"
               icon={<FolderOpen className="size-4 text-brand-blue" />}
               title="Initialize a project"
-              description="Creates a project on-chain and writes .fheenv.json to your repo. Commit this file — it contains no secrets."
+              description="Create a project on-chain and write its public config to .fheenv.json."
             >
               <CodeBlock
                 code={`cd my-app\nfheenv init \\\n  --name "my-app" \\\n  --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \\\n  --rpc https://sepolia.infura.io/v3/YOUR_KEY \\\n  --chain-id 11155111 \\\n  --pinata-jwt eyJ...`}
@@ -261,7 +261,7 @@ export function HowItWorksSection() {
               num="04"
               icon={<Upload className="size-4 text-green-400" />}
               title="Push your secrets"
-              description="Your .env is AES-encrypted locally, the blob goes to IPFS, and the key is FHE-encrypted on-chain."
+              description="Encrypt the file locally, store the blob on IPFS, and protect its key with FHE."
             >
               <CodeBlock code="fheenv push --env production" />
               <div className="mt-2 space-y-0.5 font-mono text-[10px]">
@@ -279,7 +279,7 @@ export function HowItWorksSection() {
               num="05"
               icon={<Users className="size-4 text-brand-blue" />}
               title="Add your team"
-              description="Grant access by wallet address. They can pull immediately — no key sharing needed."
+              description="Grant access to a wallet without sending the AES key."
             >
               <CodeBlock code="fheenv team add --member 0xTeammateAddress --env production" />
             </StepCard>
@@ -289,7 +289,7 @@ export function HowItWorksSection() {
               num="06"
               icon={<Play className="size-4 text-brand-sand" />}
               title="Pull or run"
-              description="Decrypt and write to .env.local, or inject directly into a process without touching disk."
+              description="Write secrets to .env.local or inject them directly into a process."
             >
               <CodeBlock
                 code={`# Write to disk\nfheenv pull --env production\n\n# Or inject into process (recommended)\nfheenv run --env production -- ${os === "windows" ? "npm start" : "node server.js"}`}
