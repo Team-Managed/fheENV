@@ -43,10 +43,12 @@ fheenv --version
 ```bash
 fheenv login
 # Enter private key: 0x...
+# Enter a passphrase to encrypt the local keyfile
 ```
 
 <Callout type="warn">
-Never pass your key as a CLI flag in production. Use stdin or the `FHEENV_PRIVATE_KEY` env var.
+Never pass your key as a CLI flag in production. Use the interactive prompt for developer machines,
+or a tightly scoped platform secret for automation.
 </Callout>
 </Step>
 
@@ -105,11 +107,15 @@ Secrets exist only in the child process memory. Nothing touches the filesystem. 
 
 <Cards>
   <Card title="CLI Commands" description="All flags and options" href="/docs/cli/commands" />
-  <Card title="Web Dashboard" description="Use the browser UI" href="/docs/dashboard/overview" />
+  <Card
+    title="Web Dashboard"
+    description="Create projects and inspect on-chain evidence"
+    href="/docs/dashboard/overview"
+  />
   <Card
     title="Team Access"
     description="Share secrets with teammates"
-    href="/docs/dashboard/team-access"
+    href="/docs/cli/commands#fheenv-team-add"
   />
   <Card title="CI/CD Integration" description="Use in GitHub Actions" href="/docs/cli/ci-cd" />
 </Cards>

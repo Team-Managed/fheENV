@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Terminal } from "lucide-react";
@@ -22,7 +22,7 @@ const PlaintextEnv = () => (
       { key: "STRIPE_SECRET_KEY", val: "sk_live_AbCdEfGhIjKlMnOp" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
-        <span style={{ color: "#2DD4BF" }}>{key}</span>
+        <span style={{ color: "#6EACDA" }}>{key}</span>
         <span className="text-slate-500">=</span>
         <span className="text-slate-300">{val}</span>
       </div>
@@ -50,13 +50,13 @@ const EncryptedEnv = () => (
       { key: "STRIPE_SECRET_KEY", val: "0x9a8b7c6d5e4f3a2b…" },
     ].map(({ key, val }) => (
       <div key={key} className="flex flex-wrap gap-x-0.5">
-        <span style={{ color: "#2DD4BF" }}>{key}</span>
+        <span style={{ color: "#6EACDA" }}>{key}</span>
         <span className="text-slate-500">=</span>
         <span className="text-slate-600">{val}</span>
       </div>
     ))}
-    <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-aqua/70 border border-aqua/20 rounded-full px-2 py-0.5">
-      <span className="w-1.5 h-1.5 rounded-full bg-aqua/70 animate-pulse" />
+    <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-brand-blue/70 border border-brand-blue/20 rounded-full px-2 py-0.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue/70 animate-pulse" />
       FHE encrypted · On-chain
     </div>
   </motion.div>
@@ -67,7 +67,7 @@ const Cursor = () => (
   <motion.span
     animate={{ opacity: [1, 0] }}
     transition={{ repeat: Infinity, duration: 0.7 }}
-    className="inline-block w-[7px] h-[14px] bg-aqua/70 rounded-sm ml-0.5 align-middle"
+    className="inline-block w-[7px] h-[14px] bg-brand-blue/70 rounded-sm ml-0.5 align-middle"
   />
 );
 
@@ -75,8 +75,8 @@ const Cursor = () => (
 function PromptLine({ cmd, show, done }: { cmd: string; show: boolean; done: boolean }) {
   if (!show) return null;
   return (
-    <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs min-w-0 overflow-hidden">
-      <span className="font-bold select-none" style={{ color: "#2DD4BF" }}>
+    <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
+      <span className="font-bold select-none" style={{ color: "#6EACDA" }}>
         ~/my-app ➜
       </span>
       <motion.span
@@ -123,7 +123,6 @@ function OutputLine({
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroDeviceMockup({ className }: { className?: string }) {
   const [step, setStep] = useState(0);
-  const cycleRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -165,7 +164,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
         "relative w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col",
         "border border-white/[0.06] bg-[#0d1117]",
         "shadow-[0_32px_64px_-16px_rgba(45,212,191,0.12),0_0_0_1px_rgba(45,212,191,0.06)]",
-        "hover:border-aqua/25 transition-colors duration-500",
+        "hover:border-brand-blue/25 transition-colors duration-500",
         className,
       )}
     >
@@ -183,7 +182,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
       </div>
 
       {/* Split body */}
-      <div className="flex flex-col md:flex-row h-[640px] md:h-[440px]">
+      <div className="flex flex-col md:flex-row h-[500px] md:h-[440px]">
         {/* ── Left: .env file pane ── */}
         <div className="w-full md:w-[42%] bg-[#0d1117] border-b md:border-b-0 md:border-r border-white/[0.06] flex flex-col shrink-0">
           <div className="px-4 py-2 border-b border-white/[0.06] flex items-center gap-2">
@@ -205,11 +204,11 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
           <div className="px-4 py-2 border-b border-white/[0.06] flex items-center gap-2">
             <span className="text-[10px] font-mono text-slate-500">bash</span>
           </div>
-          <div className="p-4 flex flex-col gap-1.5 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 flex flex-col gap-1.5 overflow-y-auto">
             {/* idle cursor */}
             {step === 0 && (
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                <span className="font-bold" style={{ color: "#6EACDA" }}>
                   ~/my-app ➜
                 </span>
                 <Cursor />
@@ -259,7 +258,7 @@ export function HeroDeviceMockup({ className }: { className?: string }) {
                 transition={{ delay: 1 }}
                 className="flex items-center gap-1.5 font-mono text-[11px] pt-1.5"
               >
-                <span className="font-bold" style={{ color: "#2DD4BF" }}>
+                <span className="font-bold" style={{ color: "#6EACDA" }}>
                   ~/my-app
                 </span>
                 <span className="text-slate-500">➜</span>

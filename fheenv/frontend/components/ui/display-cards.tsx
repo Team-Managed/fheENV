@@ -32,7 +32,12 @@ export function DisplayCard({
       )}
     >
       <div>
-        <span className="relative inline-block rounded-full bg-indigo-50 border border-indigo-100 p-2">
+        <span
+          className={cn(
+            "relative inline-block rounded-full bg-indigo-50 border border-indigo-100 p-2",
+            iconClassName,
+          )}
+        >
           {icon}
         </span>
         <p className={cn("text-lg font-bold", titleClassName)}>{title}</p>

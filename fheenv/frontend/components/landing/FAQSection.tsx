@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { HelpCircle } from "lucide-react";
 
 export function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -9,38 +8,38 @@ export function FAQSection() {
   const faqs = [
     {
       q: "What is Fully Homomorphic Encryption?",
-      a: "FHE allows computations on encrypted data without decrypting it first. Your AES key is stored on-chain as FHE ciphertexts — even blockchain node operators and our servers cannot read your secrets. Only addresses you explicitly grant access to can decrypt via the Threshold Network.",
+      a: "FHE works with encrypted data without exposing its contents. fheENV uses it to protect each environment's AES key on-chain.",
     },
     {
       q: "Who holds the decryption keys?",
-      a: "Only you and the team members you grant access to via your wallet. The AES key is split into two halves, each FHE-encrypted as euint128 on-chain. Decryption happens locally through the Threshold Network — no one else ever sees plaintext.",
+      a: "Only wallets you approve can decrypt the AES key through the Threshold Network. Decryption happens on the user's device.",
     },
     {
       q: "Is there a CLI tool?",
-      a: "Yes! Install with one command: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash. Then use fheenv push, fheenv pull, fheenv run (inject secrets into processes without writing to disk), and fheenv rotate (re-key after revoking access).",
+      a: "Yes. Use it to push, pull, run, rotate, and manage wallet access.",
     },
     {
       q: "Is there a web dashboard?",
-      a: "Yes — connect your wallet at fheenv.vercel.app to create projects, push/pull secrets, view and edit variables, manage team access, and see a full on-chain audit log. All encryption happens in your browser.",
+      a: "Yes. Connect a wallet to create projects and inspect public on-chain activity. Secret operations remain in the CLI.",
     },
     {
       q: "What happens when someone leaves the team?",
-      a: "Revoke their access with fheenv team remove, then run fheenv rotate to re-encrypt with a fresh AES key. The old ciphertexts become useless to the removed member since they never receive FHE.allow on the new handles.",
+      a: "Remove their access, then rotate the environment. Rotation creates a new AES key that excludes the revoked wallet.",
     },
     {
-      q: "Is this open source?",
-      a: "Yes — licensed under Elastic License 2.0. You can self-host, fork, contribute, and use it freely for your own projects. The only restriction is you cannot resell it as a competing managed service.",
+      q: "Can I self-host it?",
+      a: "Yes. The Elastic License 2.0 allows self-hosting, modification, and contributions. It does not allow a competing managed service.",
     },
   ];
 
   return (
-    <section id="faq" className="py-28 relative">
+    <section id="faq" className="relative pt-10 sm:pt-16">
       {/* Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.04)_0%,transparent_60%)] pointer-events-none" />
 
       <div className="max-w-3xl mx-auto px-6 relative z-10">
         <div className="text-center mb-16">
-          <p className="font-mono text-xs font-semibold tracking-widest text-aqua uppercase mb-4">
+          <p className="font-mono text-xs font-semibold tracking-widest text-brand-blue uppercase mb-4">
             Got questions?
           </p>
           <h2 className="text-4xl font-bold text-slate-100">
@@ -53,7 +52,7 @@ export function FAQSection() {
             <motion.div
               key={i}
               whileHover={{ scale: 1.005 }}
-              className="rounded-xl border border-white/8 bg-white/[0.03] hover:border-aqua/25 transition-all cursor-pointer overflow-hidden"
+              className="rounded-xl border border-white/8 bg-white/[0.03] hover:border-brand-blue/25 transition-all cursor-pointer overflow-hidden"
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
             >
               <div className="flex justify-between items-center p-5 text-slate-100 font-semibold">
@@ -61,7 +60,7 @@ export function FAQSection() {
                 <motion.span
                   animate={{ rotate: openIdx === i ? 45 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="text-aqua text-xl ml-4 shrink-0"
+                  className="text-brand-blue text-xl ml-4 shrink-0"
                 >
                   +
                 </motion.span>
@@ -87,23 +86,23 @@ export function FAQSection() {
       </div>
 
       {/* Footer */}
-      <div className="mt-28 pt-8 border-t border-white/8">
+      <div className="mt-12 border-t border-white/8 py-8 sm:mt-16">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-mono text-lg font-bold text-slate-100">
-            <span className="text-aqua">fhe</span>ENV
+            <span className="text-brand-blue">fhe</span>ENV
           </span>
           <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <a href="/docs" className="hover:text-aqua transition-colors">
+            <a href="/docs" className="hover:text-brand-blue transition-colors">
               Docs
             </a>
             <a
               href="https://github.com/Team-Managed/fheENV"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-aqua transition-colors"
+              className="hover:text-brand-blue transition-colors"
             >
               GitHub
             </a>

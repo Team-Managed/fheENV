@@ -30,18 +30,6 @@ const ARC_START = polar(152);
 const ARC_END = polar(28);
 const ARC_D = `M ${ARC_START.x.toFixed(1)},${ARC_START.y.toFixed(1)} A ${R},${R} 0 0,1 ${ARC_END.x.toFixed(1)},${ARC_END.y.toFixed(1)}`;
 
-// Radial mask that carves a dome shape matching the arc geometry.
-// Arc center is at CY/VB_H = 420/300 = 140% down from top of container.
-const DOME_MASK = [
-  "radial-gradient(",
-  "ellipse 92% 108% at 50% 142%,", // ellipse centered where arc center is
-  "rgba(0,0,0,0.85) 0%,",
-  "rgba(0,0,0,0.75) 40%,",
-  "rgba(0,0,0,0.3)  62%,",
-  "transparent 72%",
-  ")",
-].join(" ");
-
 export function HeroArcVisual() {
   const containerRef = useRef<HTMLDivElement>(null);
   const arcRef = useRef<SVGPathElement>(null);
@@ -98,7 +86,6 @@ export function HeroArcVisual() {
         {/* Radial dashed lines from arc to icon centers */}
         {ICONS.map((ic) => {
           const p = polar(ic.angle);
-          const outer = polar(ic.angle + 0); // same point — line goes inward from icon
           const inner = {
             x: CX + (R - 22) * Math.cos((ic.angle * Math.PI) / 180),
             y: CY - (R - 22) * Math.sin((ic.angle * Math.PI) / 180),
@@ -123,7 +110,7 @@ export function HeroArcVisual() {
           return (
             <g key={ic.label}>
               <circle cx={p.x} cy={p.y} r={7} fill="rgba(45,212,191,0.07)" />
-              <circle cx={p.x} cy={p.y} r={3} fill="#2DD4BF" opacity={0.9} />
+              <circle cx={p.x} cy={p.y} r={3} fill="#6EACDA" opacity={0.9} />
             </g>
           );
         })}

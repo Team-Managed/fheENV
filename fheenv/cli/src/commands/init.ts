@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
-import { readConfig, writeConfig, type FheEnvConfig } from "../lib/config";
+import { writeConfig, type FheEnvConfig } from "../lib/config";
 import { createClients, loadAccountKey } from "../lib/wallet";
 import { createProject } from "../lib/contracts-node";
 import { type Address } from "viem";

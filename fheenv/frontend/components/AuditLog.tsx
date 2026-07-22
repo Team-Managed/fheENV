@@ -1,185 +1,315 @@
 "use client";
-import { useEffect, useState } from "react";
-import { usePublicClient } from "wagmi";
-import { REGISTRY_ADDRESS } from "@/lib/contracts";
-import { formatDistanceToNow } from "date-fns";
 
-// ── Event ABIs (minimal, for getLogs) ────────────────────────────────────────
-const EVENTS = [
-  {
-    label: "Environment Updated",
+import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
+import { decodeEventLog, type Hex } from "viem";
+import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
+
+const BLOCKSCOUT_API = "https://eth-sepolia.blockscout.com/api/v2";
+
+type EventName =
+  "ProjectCreated" | "EnvironmentUpdated" | "AccessGranted" | "AccessRevoked" | "OwnerAdded";
+
+const EVENT_STYLES: Record<EventName, { label: string; color: string; dot: string }> = {
+  ProjectCreated: { label: "Project Created", color: "text-brand-blue", dot: "bg-brand-blue" },
+  EnvironmentUpdated: {
+    label: "Key Rotated",
     color: "text-indigo-400",
     dot: "bg-indigo-400",
-    // keccak256("EnvironmentUpdated(uint256,bytes32,string,uint256)")
-    topic: "0x63fb4d7e58f02d38af288abddf4dc348f2e8cb499d4d925a0a824ae061eeb73c" as `0x${string}`,
   },
-  {
-    label: "Access Granted",
-    color: "text-green-400",
-    dot: "bg-green-400",
-    // keccak256("AccessGranted(uint256,bytes32,address)")
-    topic: "0x7901bc0b5970f2d4954caeb7f443382e198a9eca0bd48cf52d65413ab9e2b971" as `0x${string}`,
-  },
-  {
-    label: "Access Revoked",
-    color: "text-red-400",
-    dot: "bg-red-400",
-    // keccak256("AccessRevoked(uint256,bytes32,address)")
-    topic: "0x44fde7990b0868c66623a80253e32e4fd439aaf2775eb1a94b4d5862f42d1aa4" as `0x${string}`,
-  },
-  {
-    label: "Owner Added",
-    color: "text-yellow-400",
-    dot: "bg-yellow-400",
-    // keccak256("OwnerAdded(uint256,address)")
-    topic: "0xab7a51f59a55e3b65bbabf99457f8955ff12366d20e368988c35d2eab9bd8df9" as `0x${string}`,
-  },
-] as const;
+  AccessGranted: { label: "Access Granted", color: "text-green-400", dot: "bg-green-400" },
+  AccessRevoked: { label: "Access Revoked", color: "text-red-400", dot: "bg-red-400" },
+  OwnerAdded: { label: "Owner Added", color: "text-cyan-400", dot: "bg-cyan-400" },
+};
 
-interface LogEntry {
+const EVENT_TYPES: Record<EventName, string> = {
+  ProjectCreated: "project_created",
+  EnvironmentUpdated: "rotation",
+  AccessGranted: "access_granted",
+  AccessRevoked: "access_revoked",
+  OwnerAdded: "owner_added",
+};
+
+interface BlockscoutLog {
+  block_number: number;
+  block_timestamp: string;
+  data: Hex;
+  index: number;
+  topics: (Hex | null)[];
+  transaction_hash: Hex;
+}
+
+interface BlockscoutResponse {
+  items: BlockscoutLog[];
+  next_page_params: Record<string, string | number> | null;
+}
+
+interface BlockscoutTransaction {
+  from?: { hash?: string } | string;
+}
+
+interface AuditEntry {
+  eventName: EventName;
   label: string;
   color: string;
   dot: string;
-  blockNumber: bigint;
-  txHash: `0x${string}`;
-  timestamp?: number;
-  detail: string;
+  blockNumber: number;
+  timestamp: string;
+  transactionHash: Hex;
+  logIndex: number;
+  actor: string;
+  target: string;
+  environment: string;
+  newCid: string;
+  version: string;
+  expiresAt: string;
 }
 
 type Props = { projectId: bigint };
 
+function shortHex(value: string) {
+  return value ? `${value.slice(0, 8)}...${value.slice(-6)}` : "";
+}
+
+function csvCell(value: string | number) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+async function fetchRegistryLogs(signal: AbortSignal) {
+  const logs: BlockscoutLog[] = [];
+  let pageUrl = `${BLOCKSCOUT_API}/addresses/${REGISTRY_ADDRESS}/logs`;
+
+  while (pageUrl) {
+    const response = await fetch(pageUrl, { signal });
+    if (!response.ok) throw new Error("Could not load indexed on-chain events.");
+
+    const page = (await response.json()) as BlockscoutResponse;
+    logs.push(...page.items);
+
+    if (!page.next_page_params) break;
+    const query = new URLSearchParams(
+      Object.entries(page.next_page_params).map(([key, value]) => [key, String(value)]),
+    );
+    pageUrl = `${BLOCKSCOUT_API}/addresses/${REGISTRY_ADDRESS}/logs?${query}`;
+  }
+
+  return logs;
+}
+
+async function fetchTransactionActor(transactionHash: Hex, signal: AbortSignal) {
+  const response = await fetch(`${BLOCKSCOUT_API}/transactions/${transactionHash}`, { signal });
+  if (!response.ok) return "";
+  const transaction = (await response.json()) as BlockscoutTransaction;
+  return typeof transaction.from === "string" ? transaction.from : (transaction.from?.hash ?? "");
+}
+
+function decodeAuditEntry(log: BlockscoutLog, projectId: bigint): AuditEntry | null {
+  const topics = log.topics.filter((topic): topic is Hex => topic !== null);
+
+  try {
+    const decoded = decodeEventLog({
+      abi: REGISTRY_ABI,
+      data: log.data,
+      topics: topics as [Hex, ...Hex[]],
+      strict: true,
+    });
+
+    if (!("projectId" in decoded.args) || decoded.args.projectId !== projectId) return null;
+    if (!(decoded.eventName in EVENT_STYLES)) return null;
+
+    const eventName = decoded.eventName as EventName;
+    let actor = "";
+    let target = "";
+    let environment = "";
+    let newCid = "";
+    let version = "";
+
+    switch (decoded.eventName) {
+      case "ProjectCreated":
+        actor = decoded.args.owner;
+        target = decoded.args.owner;
+        break;
+      case "EnvironmentUpdated":
+        environment = decoded.args.envHash;
+        newCid = decoded.args.blobCid;
+        version = decoded.args.version.toString();
+        break;
+      case "AccessGranted":
+      case "AccessRevoked":
+        environment = decoded.args.envHash;
+        target = decoded.args.member;
+        break;
+      case "OwnerAdded":
+        target = decoded.args.newOwner;
+        break;
+      default:
+        return null;
+    }
+
+    return {
+      eventName,
+      ...EVENT_STYLES[eventName],
+      blockNumber: log.block_number,
+      timestamp: log.block_timestamp,
+      transactionHash: log.transaction_hash,
+      logIndex: log.index,
+      actor,
+      target,
+      environment,
+      newCid,
+      version,
+      expiresAt: "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function AuditLog({ projectId }: Props) {
-  const publicClient = usePublicClient();
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!publicClient || !REGISTRY_ADDRESS) return;
+    const controller = new AbortController();
 
-    async function fetchLogs() {
+    async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
-
-        const allLogs: LogEntry[] = [];
-
-        for (const ev of EVENTS) {
-          const raw = await publicClient!.getLogs({
-            address: REGISTRY_ADDRESS,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ...({ topics: [ev.topic, projectIdHex], fromBlock: 0n } as any),
-          });
-
-          for (const l of raw) {
-            // Build a short detail string from topics
-            let detail = "";
-            if (l.topics[3]) {
-              // third indexed param — usually an address
-              detail = "0x" + l.topics[3].slice(26);
-            } else if (l.topics[2]) {
-              detail = l.topics[2].slice(0, 18) + "…";
-            }
-
-            allLogs.push({
-              label: ev.label,
-              color: ev.color,
-              dot: ev.dot,
-              blockNumber: l.blockNumber ?? 0n,
-              txHash: l.transactionHash ?? ("0x" as `0x${string}`),
-              detail,
-            });
-          }
-        }
-
-        // Sort newest first
-        allLogs.sort((a, b) => (a.blockNumber > b.blockNumber ? -1 : 1));
-
-        // Fetch block timestamps for the most recent 20
-        const recent = allLogs.slice(0, 20);
-        const blocks = await Promise.all(
-          [...new Set(recent.map((l) => l.blockNumber))].map((bn) =>
-            publicClient!.getBlock({ blockNumber: bn }),
-          ),
+        const entries = (await fetchRegistryLogs(controller.signal))
+          .map((log) => decodeAuditEntry(log, projectId))
+          .filter((entry): entry is AuditEntry => entry !== null)
+          .sort(
+            (left, right) => right.blockNumber - left.blockNumber || right.logIndex - left.logIndex,
+          );
+        const actors = await Promise.all(
+          entries.map(async (entry) => ({
+            transactionHash: entry.transactionHash,
+            actor:
+              entry.actor ||
+              (await fetchTransactionActor(entry.transactionHash, controller.signal)),
+          })),
         );
-        const tsMap = new Map(blocks.map((b) => [b.number, Number(b.timestamp)]));
-        recent.forEach((l) => {
-          l.timestamp = tsMap.get(l.blockNumber);
-        });
-
-        setLogs(recent);
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Failed to load audit log");
+        const actorsByTransaction = new Map(
+          actors.map((entry) => [entry.transactionHash, entry.actor]),
+        );
+        setLogs(
+          entries.map((entry) => ({
+            ...entry,
+            actor: actorsByTransaction.get(entry.transactionHash) ?? entry.actor,
+          })),
+        );
+      } catch (caught: unknown) {
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error ? caught.message : "Could not load audit events.");
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
-    fetchLogs();
-  }, [publicClient, projectId]);
+    void load();
+    return () => controller.abort();
+  }, [projectId]);
+
+  function downloadCsv() {
+    const headers = [
+      "Timestamp",
+      "Event type",
+      "Actor address",
+      "Subject address",
+      "Environment hash",
+      "New CID",
+      "Version",
+      "Tx hash",
+      "Project ID",
+    ];
+    const rows = logs.map((log) =>
+      [
+        log.timestamp,
+        EVENT_TYPES[log.eventName],
+        log.actor,
+        log.target,
+        log.environment,
+        log.newCid,
+        log.version,
+        log.transactionHash,
+        projectId.toString(),
+      ]
+        .map(csvCell)
+        .join(","),
+    );
+    const blob = new Blob([[headers.join(","), ...rows].join("\n") + "\n"], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fheenv-project-${projectId}-audit.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--surface-border)",
-        borderRadius: "0.875rem",
-        padding: "1.5rem",
-      }}
+    <section
+      className="rounded-xl border border-white/8 bg-white/3 p-6"
+      aria-labelledby="audit-log-heading"
     >
-      <p
-        className="text-xs font-semibold uppercase tracking-widest mb-5"
-        style={{ color: "var(--text-muted)" }}
-      >
-        Audit Log
-      </p>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <h2
+          id="audit-log-heading"
+          className="text-xs font-semibold uppercase tracking-widest text-slate-400"
+        >
+          On-chain Audit Evidence
+        </h2>
+        <button
+          type="button"
+          onClick={downloadCsv}
+          disabled={logs.length === 0}
+          className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-brand-blue/60 hover:text-brand-blue disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download className="size-3.5" /> Export CSV
+        </button>
+      </div>
 
       {loading && (
-        <p className="text-xs font-mono animate-pulse" style={{ color: "var(--aqua)" }}>
-          Fetching on-chain events…
+        <p className="animate-pulse font-mono text-xs text-brand-blue">
+          Loading indexed on-chain events...
         </p>
       )}
-      {error && <p className="text-xs text-red-400 font-mono">{error}</p>}
+      {error && <p className="font-mono text-xs text-red-400">{error}</p>}
       {!loading && !error && logs.length === 0 && (
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          No events recorded yet for this project.
-        </p>
+        <p className="text-xs text-slate-500">No on-chain events recorded for this project.</p>
       )}
 
-      {!loading && logs.length > 0 && (
+      {!loading && !error && logs.length > 0 && (
         <ol className="space-y-3">
-          {logs.map((l, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${l.dot}`} />
-              <div className="flex-1 min-w-0">
-                <span className={`text-xs font-semibold ${l.color}`}>{l.label}</span>
-                {l.detail && (
-                  <span
-                    className="ml-2 text-xs font-mono truncate"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {l.detail}
-                  </span>
-                )}
-                <div
-                  className="flex items-center gap-2 mt-0.5 text-xs"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <span className="font-mono">#{l.blockNumber.toString()}</span>
-                  {l.timestamp && (
-                    <span>
-                      · {formatDistanceToNow(new Date(l.timestamp * 1000), { addSuffix: true })}
-                    </span>
+          {logs.map((log) => (
+            <li key={`${log.transactionHash}-${log.logIndex}`} className="flex items-start gap-3">
+              <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${log.dot}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className={`text-xs font-semibold ${log.color}`}>{log.label}</span>
+                  {log.version && (
+                    <span className="font-mono text-xs text-slate-500">v{log.version}</span>
                   )}
+                  {log.target && (
+                    <span className="font-mono text-xs text-slate-500">{shortHex(log.target)}</span>
+                  )}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <time dateTime={log.timestamp}>{new Date(log.timestamp).toLocaleString()}</time>
+                  <span className="font-mono">#{log.blockNumber}</span>
+                  {log.actor && <span className="font-mono">by {shortHex(log.actor)}</span>}
                   <a
-                    href={`https://sepolia.etherscan.io/tx/${l.txHash}`}
+                    href={`https://sepolia.etherscan.io/tx/${log.transactionHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors"
-                    style={{ color: "var(--aqua)" }}
+                    className="text-brand-blue transition-colors hover:text-brand-sand"
                   >
-                    ↗ tx
+                    View transaction
                   </a>
                 </div>
               </div>
@@ -187,6 +317,6 @@ export function AuditLog({ projectId }: Props) {
           ))}
         </ol>
       )}
-    </div>
+    </section>
   );
 }

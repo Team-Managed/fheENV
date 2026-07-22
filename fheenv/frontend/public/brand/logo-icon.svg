@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#020617"/>
+      <stop offset="0%" stop-color="#03346E"/>
+      <stop offset="100%" stop-color="#021526"/>
     </linearGradient>
     <linearGradient id="strokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0.1"/>
+      <stop offset="0%" stop-color="#6EACDA" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#E2E2B6" stop-opacity="0.18"/>
     </linearGradient>
     <linearGradient id="aqua" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2DD4BF"/>
-      <stop offset="100%" stop-color="#0D9488"/>
+      <stop offset="0%" stop-color="#6EACDA"/>
+      <stop offset="100%" stop-color="#03346E"/>
     </linearGradient>
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="6" result="blur" />
@@ -22,15 +22,15 @@
   <rect width="512" height="512" rx="120" fill="url(#bg)" stroke="url(#strokeGrad)" stroke-width="2" />
 
   <!-- Abstract grid (subtle tech feel) -->
-  <g opacity="0.15" stroke="#2DD4BF" stroke-width="1.5">
+  <g opacity="0.2" stroke="#6EACDA" stroke-width="1.5">
     <line x1="128" y1="80" x2="128" y2="432" />
     <line x1="384" y1="80" x2="384" y2="432" />
     <line x1="80" y1="128" x2="432" y2="128" />
     <line x1="80" y1="384" x2="432" y2="384" />
-    <circle cx="128" cy="128" r="3" fill="#2DD4BF"/>
-    <circle cx="384" cy="128" r="3" fill="#2DD4BF"/>
-    <circle cx="128" cy="384" r="3" fill="#2DD4BF"/>
-    <circle cx="384" cy="384" r="3" fill="#2DD4BF"/>
+    <circle cx="128" cy="128" r="3" fill="#6EACDA"/>
+    <circle cx="384" cy="128" r="3" fill="#6EACDA"/>
+    <circle cx="128" cy="384" r="3" fill="#6EACDA"/>
+    <circle cx="384" cy="384" r="3" fill="#6EACDA"/>
   </g>
 
   <!-- THE LOCK -->
@@ -42,18 +42,18 @@
     <rect x="136" y="240" width="240" height="180" rx="36" fill="url(#aqua)" />
     
     <!-- Lock Inner Plate -->
-    <rect x="156" y="260" width="200" height="140" rx="20" fill="#0F172A" />
+    <rect x="156" y="260" width="200" height="140" rx="20" fill="#021526" />
 
     <!-- Clean Code Keyhole < • > -->
     <g transform="translate(256, 330)">
       <!-- Left bracket < -->
-      <path d="M -18 -20 L -38 0 L -18 20" fill="none" stroke="#2DD4BF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M -18 -20 L -38 0 L -18 20" fill="none" stroke="#E2E2B6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
       
       <!-- Right bracket > -->
-      <path d="M 18 -20 L 38 0 L 18 20" fill="none" stroke="#2DD4BF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M 18 -20 L 38 0 L 18 20" fill="none" stroke="#E2E2B6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
 
       <!-- Center encryption dot -->
-      <circle cx="0" cy="0" r="10" fill="#0EA5E9" filter="url(#glow)" />
+      <circle cx="0" cy="0" r="10" fill="#E2E2B6" filter="url(#glow)" />
     </g>
   </g>
 </svg>

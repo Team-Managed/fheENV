@@ -108,23 +108,6 @@ const Texts: React.FC<Pick<MorphingTextProps, "texts">> = ({ texts }) => {
   );
 };
 
-const SvgFilters: React.FC = () => (
-  <svg id="filters" className="fixed h-0 w-0" preserveAspectRatio="xMidYMid slice">
-    <defs>
-      <filter id="threshold">
-        <feColorMatrix
-          in="SourceGraphic"
-          type="matrix"
-          values="1 0 0 0 0
-                  0 1 0 0 0
-                  0 0 1 0 0
-                  0 0 0 255 -140"
-        />
-      </filter>
-    </defs>
-  </svg>
-);
-
 export const MorphingText: React.FC<MorphingTextProps> = ({ texts, className, style }) => (
   <div className={cn("relative w-full leading-none font-bold", className)} style={style}>
     <Texts texts={texts} />
