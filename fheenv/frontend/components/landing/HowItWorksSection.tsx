@@ -3,18 +3,9 @@ import React, { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Apple,
-  MonitorDot,
-  Download,
-  KeyRound,
-  FolderOpen,
-  Upload,
-  Users,
-  Play,
-  Copy,
-  Check,
-} from "lucide-react";
+import { FaApple, FaLinux, FaWindows } from "react-icons/fa6";
+import { Download, KeyRound, FolderOpen, Upload, Users, Play, Copy, Check } from "lucide-react";
+import { type Platform } from "@/components/landing/platform";
 
 /* ------------------------------------------------------------------ */
 /*  OS Tab switcher                                                    */
@@ -136,8 +127,13 @@ function StepCard({
 /*  Main section                                                       */
 /* ------------------------------------------------------------------ */
 
-export function HowItWorksSection() {
-  const [os, setOs] = useState<"mac" | "windows">("mac");
+export function HowItWorksSection({
+  platform: os,
+  onPlatformChange: setOs,
+}: {
+  platform: Platform;
+  onPlatformChange: (platform: Platform) => void;
+}) {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -155,12 +151,12 @@ export function HowItWorksSection() {
   }, []);
 
   const installCmd =
-    os === "mac"
+    os !== "windows"
       ? "curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash"
       : "irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex";
 
   const verifyCmd =
-    os === "mac"
+    os !== "windows"
       ? "source ~/.zshrc\nfheenv --version"
       : "# Open a new terminal, then:\nfheenv --version";
 
@@ -193,13 +189,19 @@ export function HowItWorksSection() {
           <OsTab
             active={os === "mac"}
             onClick={() => setOs("mac")}
-            icon={<Apple className="size-4" />}
-            label="macOS / Linux"
+            icon={<FaApple className="size-4" />}
+            label="macOS"
+          />
+          <OsTab
+            active={os === "linux"}
+            onClick={() => setOs("linux")}
+            icon={<FaLinux className="size-4" />}
+            label="Linux"
           />
           <OsTab
             active={os === "windows"}
             onClick={() => setOs("windows")}
-            icon={<MonitorDot className="size-4" />}
+            icon={<FaWindows className="size-4" />}
             label="Windows"
           />
         </div>
@@ -220,8 +222,10 @@ export function HowItWorksSection() {
               title="Install fheenv"
               description={
                 os === "mac"
-                  ? "One command installs fheENV for macOS or Linux."
-                  : "Run PowerShell as Administrator and execute the install script."
+                  ? "One command installs fheENV for macOS."
+                  : os === "linux"
+                    ? "One command installs fheENV for Linux."
+                    : "Run PowerShell as Administrator and execute the install script."
               }
             >
               <CodeBlock code={installCmd} />

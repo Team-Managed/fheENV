@@ -25,6 +25,11 @@
   --foreground: #f8fafc;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
 @theme inline {
   --color-brand-ink: var(--brand-ink);
   --color-brand-navy: var(--brand-navy);
@@ -47,6 +52,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html:not(.dark) #nd-docs-layout {
+  background: var(--color-fd-background);
+}
+
+#nd-sidebar a[aria-label="Open fheENV on GitHub"] {
+  flex: 1;
+  width: auto;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+}
+
+#nd-sidebar a[aria-label="Open fheENV on GitHub"]::after {
+  content: "GitHub";
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 html,
 body {
   -ms-overflow-style: none;
@@ -57,4 +80,10 @@ body {
   display: none;
   width: 0;
   height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

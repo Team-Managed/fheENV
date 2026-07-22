@@ -1,19 +1,30 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { Dithering } from "@paper-design/shaders-react";
 import { MorphingText } from "@/components/ui/morphing-text";
 import { CrimeTapeMarquee } from "@/components/landing/CrimeTapeMarquee";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, ShieldCheck, Terminal } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Copy, Minus, ShieldCheck, Square, Terminal, X } from "lucide-react";
+import { INSTALL_COMMANDS, type Platform } from "@/components/landing/platform";
 
-export function HeroSection() {
+export function HeroSection({ platform }: { platform: Platform }) {
   const pinSectionRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalBodyRef = useRef<HTMLDivElement>(null);
   const terminalContentRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const installCommand = INSTALL_COMMANDS[platform];
+  const prompt = platform === "windows" ? "PS C:\\acme-api>" : "~/acme-api $";
+
+  const copyInstallCommand = async () => {
+    await navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -29,26 +40,11 @@ export function HeroSection() {
     const cliLines = terminal.querySelectorAll(".cli-line");
     if (cliLines.length === 0) return;
 
-    const wrapper = terminal.parentElement;
-    if (!wrapper) return;
-
-    const navbar = document.querySelector<HTMLElement>("[data-site-navbar]");
     const terminalCaption = pinSection.querySelector<HTMLElement>("[data-terminal-caption]");
     const media = gsap.matchMedia();
 
     media.add("(prefers-reduced-motion: no-preference)", () => {
       gsap.set(cliLines, { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
-
-      const setNavbarVisible = (visible: boolean) => {
-        if (!navbar) return;
-        navbar.style.pointerEvents = visible ? "" : "none";
-        gsap.to(navbar, {
-          autoAlpha: visible ? 1 : 0,
-          y: visible ? 0 : -16,
-          duration: 0.2,
-          overwrite: true,
-        });
-      };
 
       const timeline = gsap.timeline({
         scrollTrigger: {
@@ -59,25 +55,8 @@ export function HeroSection() {
           scrub: true,
           anticipatePin: 1,
           invalidateOnRefresh: true,
-          onEnter: () => setNavbarVisible(false),
-          onEnterBack: () => setNavbarVisible(false),
-          onLeave: () => setNavbarVisible(true),
-          onLeaveBack: () => setNavbarVisible(true),
         },
       });
-
-      timeline.to(
-        wrapper,
-        {
-          paddingTop: 0,
-          paddingRight: 0,
-          paddingBottom: 0,
-          paddingLeft: 0,
-          duration: 0.25,
-          ease: "none",
-        },
-        0,
-      );
 
       if (terminalCaption) {
         timeline.to(
@@ -94,13 +73,11 @@ export function HeroSection() {
       timeline.to(
         terminal,
         {
-          maxWidth: "100%",
-          width: "100%",
-          height: "100svh",
+          maxWidth: "92rem",
+          width: "70vw",
+          height: "70svh",
           minHeight: 0,
-          borderRadius: 0,
-          borderColor: "transparent",
-          boxShadow: "none",
+          borderRadius: "1rem",
           duration: 0.25,
           ease: "none",
         },
@@ -110,7 +87,7 @@ export function HeroSection() {
       timeline.to(
         terminalBody,
         {
-          maxHeight: "calc(100svh - 40px)",
+          maxHeight: "calc(70svh - 94px)",
           duration: 0.25,
           ease: "none",
         },
@@ -140,17 +117,12 @@ export function HeroSection() {
 
       return () => {
         timeline.kill();
-        if (navbar) {
-          gsap.killTweensOf(navbar);
-          gsap.set(navbar, { clearProps: "opacity,transform,visibility" });
-          navbar.style.pointerEvents = "";
-        }
       };
     });
 
     media.add("(prefers-reduced-motion: reduce)", () => {
       gsap.set(cliLines, { clearProps: "transform,visibility,opacity,clipPath" });
-      gsap.set([wrapper, terminal], { clearProps: "all" });
+      gsap.set(terminal, { clearProps: "all" });
     });
 
     let active = true;
@@ -235,7 +207,7 @@ export function HeroSection() {
                 href="/docs"
                 className="inline-flex h-11 w-full max-w-60 items-center justify-center gap-2 rounded-full border border-brand-blue/40 bg-brand-ink/70 px-6 text-sm font-medium text-slate-100 backdrop-blur-sm transition-all hover:border-brand-sand/50 hover:text-brand-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sand sm:w-auto"
               >
-                <Terminal className="size-3.5" /> See how it works
+                <BookOpen className="size-3.5" /> Documentation
               </Link>
             </div>
           </div>
@@ -262,21 +234,58 @@ export function HeroSection() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-brand-blue/10 blur-[150px] rounded-full pointer-events-none" />
 
         {/* Terminal starts centered, then fills the viewport */}
-        <div className="relative z-10 flex min-h-[100svh] items-start justify-center px-4 pt-0 pb-0 will-change-[padding] sm:px-10">
+        <div className="relative z-10 flex min-h-[100svh] items-center justify-center px-4 py-6 sm:px-10">
           <div
             ref={terminalRef}
             className="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0a0a] shadow-[0_0_80px_rgba(110,172,218,0.08)] will-change-[max-width,width,height,border-radius] md:rounded-2xl"
           >
             {/* Terminal Header */}
-            <div className="flex h-10 shrink-0 items-center border-b border-white/[0.06] bg-[#111] px-4">
-              <div className="flex gap-2">
-                <div className="size-3 rounded-full bg-[#ff5f56]" />
-                <div className="size-3 rounded-full bg-[#ffbd2e]" />
-                <div className="size-3 rounded-full bg-[#27c93f]" />
+            <div
+              className={`relative flex h-10 shrink-0 items-center border-b border-white/[0.06] px-4 ${
+                platform === "windows" ? "bg-[#202020]" : platform === "linux" ? "bg-[#272727]" : "bg-[#111]"
+              }`}
+            >
+              {platform === "mac" && (
+                <div className="flex gap-2">
+                  <div className="size-3 rounded-full bg-[#ff5f56]" />
+                  <div className="size-3 rounded-full bg-[#ffbd2e]" />
+                  <div className="size-3 rounded-full bg-[#27c93f]" />
+                </div>
+              )}
+              {platform === "linux" && (
+                <div className="flex gap-1.5">
+                  <div className="size-3 rounded-full border border-white/20 bg-white/15" />
+                  <div className="size-3 rounded-full border border-white/20 bg-white/10" />
+                  <div className="size-3 rounded-full border border-white/20 bg-[#e95420]/70" />
+                </div>
+              )}
+              <div className="absolute left-1/2 flex h-6 -translate-x-1/2 items-center justify-center gap-2 rounded-md px-3 font-mono text-[11px] text-slate-500">
+                <Terminal className="size-3" />
+                {platform === "windows" ? "Windows PowerShell" : `${platform}:~`}
               </div>
-              <div className="mx-auto flex h-6 items-center justify-center gap-2 rounded-md px-3 text-[11px] text-slate-500 font-mono">
-                <Terminal className="size-3" /> macbook:~
-              </div>
+              {platform === "windows" && (
+                <div className="ml-auto -mr-4 flex h-10 text-slate-400">
+                  <span className="flex w-12 items-center justify-center"><Minus className="size-4 stroke-[2.5]" /></span>
+                  <span className="flex w-12 items-center justify-center"><Square className="size-3.5 stroke-[2.5]" /></span>
+                  <span className="flex w-12 items-center justify-center transition-colors hover:bg-[#c42b1c] hover:text-white"><X className="size-4 stroke-[2.5]" /></span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0d1117] px-4 py-3 font-mono text-[10px] sm:px-8 sm:text-[11px]">
+              <span className="shrink-0 text-brand-blue">{platform === "windows" ? "PS&gt;" : "$"}</span>
+              <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-slate-200">
+                {installCommand}
+              </code>
+              <button
+                type="button"
+                onClick={copyInstallCommand}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.05] px-2 py-1.5 text-slate-300 transition-colors hover:border-brand-blue/30 hover:bg-brand-blue/10 hover:text-white"
+                aria-label="Copy install command"
+              >
+                {copied ? <Check className="size-3 text-green-400" /> : <Copy className="size-3" />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
             </div>
 
             {/* Terminal Body */}
@@ -285,111 +294,69 @@ export function HeroSection() {
               className="max-h-[520px] flex-1 overflow-hidden p-4 font-mono text-[11px] leading-[1.75] text-slate-300 sm:p-8 sm:text-[13px]"
             >
               <div ref={terminalContentRef} className="pb-16 will-change-transform">
-                {/* Pull Wallet B */}
-                <div className="cli-line w-full break-words text-brand-blue font-bold">
-                  === Pull Wallet B ===
+                <div className="cli-line w-full break-words border-y border-brand-blue/20 bg-brand-blue/[0.07] px-3 py-2 text-[10px] font-bold tracking-[0.16em] text-brand-sand sm:text-xs">
+                  01 / CREATE A SHARED ENVIRONMENT
                 </div>
-                <div className="cli-line w-full break-words text-green-400">
-                  Private key (input hidden):
+                <div className="cli-line w-full break-words">
+                  <span className="text-brand-blue">{prompt}</span>{" "}
+                  <span className="text-slate-200">fheenv login</span>
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">Wallet saved to ~/.fheenv/wallet.json</span>{" "}
-                  <span className="text-slate-500">(mode 0600, unencrypted)</span>
+                  <span className="text-slate-200">Wallet secured locally</span>
                 </div>
-                <div className="cli-line w-full break-words text-slate-400 pl-3">
-                  Keep this file private. It contains your signing key.
-                </div>
-                <div className="cli-line w-full break-words">
-                  <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
-                  <span className="text-slate-500">(permissions: 0600)</span>
-                </div>
-                <div className="cli-line w-full break-words pl-3 text-slate-400">
-                  Version: 3 | Updated: 2026-07-09T17:43:48.000Z
-                </div>
-                <div className="cli-line w-full break-words text-slate-200">
-                  DB_PASSWORD=<span className="text-pink-400">supersecret</span>
-                </div>
-                <div className="cli-line w-full break-words text-slate-200">
-                  API_KEY=<span className="text-pink-400">abc123</span>
-                </div>
-
                 <div className="cli-line w-full break-words h-4" />
-
-                {/* Remove Wallet B */}
-                <div className="cli-line w-full break-words text-brand-blue font-bold">
-                  === Remove Wallet B ===
-                </div>
                 <div className="cli-line w-full break-words">
-                  <span className="text-yellow-400">⚠</span>{" "}
-                  <span className="text-yellow-400/90">
-                    Rotate this environment to replace its current key.
-                  </span>
+                  <span className="text-brand-blue">{prompt}</span>{" "}
+                  <span className="text-slate-200">fheenv init --name acme-api</span>
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">Project created · .fheenv.json written</span>
+                </div>
+                <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words border-y border-brand-blue/20 bg-brand-blue/[0.07] px-3 py-2 text-[10px] font-bold tracking-[0.16em] text-brand-sand sm:text-xs">
+                  02 / ENCRYPT AND PUSH PRODUCTION
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-brand-blue">{prompt}</span>{" "}
+                  <span className="text-slate-200">fheenv push --env production</span>
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-green-400">✓</span>{" "}
+                  <span className="text-slate-200">production encrypted locally · uploaded to IPFS</span>
+                </div>
+                <div className="cli-line w-full break-words h-4" />
+                <div className="cli-line w-full break-words border-y border-brand-blue/20 bg-brand-blue/[0.07] px-3 py-2 text-[10px] font-bold tracking-[0.16em] text-brand-sand sm:text-xs">
+                  03 / SHARE WITHOUT SENDING SECRETS
+                </div>
+                <div className="cli-line w-full break-words">
+                  <span className="text-brand-blue">{prompt}</span>{" "}
                   <span className="text-slate-200">
-                    Access revoked for <span className="text-cyan-400">0xE36f...6176</span> from env
-                    &quot;production&quot;
+                    fheenv team add --member 0xA11ce...9F42 --env production
                   </span>
-                </div>
-                <div className="cli-line w-full break-words">
-                  <span className="text-brand-blue">$</span>{" "}
-                  <span className="text-slate-200">fheenv rotate --env production</span>
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">Rotation complete (v4)</span>
-                </div>
-                <div className="cli-line w-full break-words pl-3 text-slate-400">
-                  New IPFS CID :{" "}
-                  <span className="text-slate-300">
-                    QmPSE4yd8Ey6nAamRt3vZ9T6jLljsoL9omus5d5f7TpbE4
-                  </span>
-                </div>
-                <div className="cli-line w-full break-words pl-3 text-slate-400">
-                  Previous CID :{" "}
-                  <span className="text-slate-300">
-                    QmYvQ14NyFXHoefYAAUUEoDRCFM9BheUWsW3fma8ENd4BC
-                  </span>
-                </div>
-                <div className="cli-line w-full break-words pl-3 text-slate-400">
-                  Re-granted : <span className="text-slate-300">none</span>
+                  <span className="text-slate-200">Access granted to teammate wallet</span>
                 </div>
                 <div className="cli-line w-full break-words h-4" />
-
-                {/* Wallet B locked out */}
-                <div className="cli-line w-full break-words text-brand-blue font-bold">
-                  === Wallet B locked out ===
+                <div className="cli-line w-full break-words border-y border-brand-blue/20 bg-brand-blue/[0.07] px-3 py-2 text-[10px] font-bold tracking-[0.16em] text-brand-sand sm:text-xs">
+                  04 / PULL ON A SECOND COMPUTER
+                </div>
+                <div className="cli-line w-full break-words text-slate-500">
+                  # After installing and signing in on your teammate&apos;s laptop
                 </div>
                 <div className="cli-line w-full break-words">
-                  <span className="text-red-400 font-bold">✗ Pull failed</span>
-                </div>
-                <div className="cli-line w-full break-words text-red-400">
-                  Error: sealOutput request failed: permit_denied
-                </div>
-                <div className="cli-line w-full break-words text-yellow-400 font-bold text-base">
-                  LOCKED OUT ✓
-                </div>
-
-                <div className="cli-line w-full break-words h-4" />
-
-                {/* Wallet A still works */}
-                <div className="cli-line w-full break-words text-brand-blue font-bold">
-                  === Wallet A still works ===
+                  <span className="text-brand-blue">{prompt}</span>{" "}
+                  <span className="text-slate-200">fheenv pull --env production --output .env.local</span>
                 </div>
                 <div className="cli-line w-full break-words">
                   <span className="text-green-400">✓</span>{" "}
-                  <span className="text-slate-200">Decrypted env written to .env.local</span>{" "}
-                  <span className="text-slate-500">(permissions: 0600)</span>
+                  <span className="text-slate-200">.env.local restored · version 1</span>
                 </div>
-
-                <div className="cli-line w-full break-words h-4" />
-
                 <div className="cli-line w-full break-words flex items-center gap-1.5">
-                  <span className="text-green-400 font-semibold">~/fheENV</span>
-                  <span className="text-brand-blue">$</span>
+                  <span className="text-green-400 font-semibold">{prompt}</span>
                   <span className="inline-block w-2 h-4 rounded-sm animate-pulse bg-brand-blue/60" />
                 </div>
               </div>
