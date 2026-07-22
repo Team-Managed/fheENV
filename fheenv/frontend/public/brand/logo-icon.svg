@@ -1,59 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">fheENV</title><desc id="desc">An encrypted environment lock</desc>
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#03346E"/>
-      <stop offset="100%" stop-color="#021526"/>
+    <linearGradient id="background" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#03346E"/><stop offset="1" stop-color="#021526"/>
     </linearGradient>
-    <linearGradient id="strokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6EACDA" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#E2E2B6" stop-opacity="0.18"/>
+    <linearGradient id="metal" x1="176" y1="138" x2="336" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E2E2B6"/><stop offset=".52" stop-color="#6EACDA"/><stop offset="1" stop-color="#427EAF"/>
     </linearGradient>
-    <linearGradient id="aqua" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6EACDA"/>
-      <stop offset="100%" stop-color="#03346E"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
-
-  <!-- Base -->
-  <rect width="512" height="512" rx="120" fill="url(#bg)" stroke="url(#strokeGrad)" stroke-width="2" />
-
-  <!-- Abstract grid (subtle tech feel) -->
-  <g opacity="0.2" stroke="#6EACDA" stroke-width="1.5">
-    <line x1="128" y1="80" x2="128" y2="432" />
-    <line x1="384" y1="80" x2="384" y2="432" />
-    <line x1="80" y1="128" x2="432" y2="128" />
-    <line x1="80" y1="384" x2="432" y2="384" />
-    <circle cx="128" cy="128" r="3" fill="#6EACDA"/>
-    <circle cx="384" cy="128" r="3" fill="#6EACDA"/>
-    <circle cx="128" cy="384" r="3" fill="#6EACDA"/>
-    <circle cx="384" cy="384" r="3" fill="#6EACDA"/>
+  <rect width="512" height="512" rx="120" fill="url(#background)"/>
+  <rect x="34" y="34" width="444" height="444" rx="98" fill="none" stroke="#6EACDA" stroke-opacity=".24" stroke-width="4"/>
+  <g fill="none" stroke="#6EACDA" stroke-opacity=".24" stroke-width="5">
+    <path d="M96 144h76m168 0h76M96 368h76m168 0h76"/><path d="M144 96v76m0 168v76M368 96v76m0 168v76"/>
   </g>
-
-  <!-- THE LOCK -->
-  <g transform="translate(0, 5)">
-    <!-- Shackle (Perfect semicircle top) -->
-    <path d="M 184 240 V 170 A 72 72 0 0 1 328 170 V 240" fill="none" stroke="url(#aqua)" stroke-width="36" stroke-linecap="round" />
-    
-    <!-- Lock Body -->
-    <rect x="136" y="240" width="240" height="180" rx="36" fill="url(#aqua)" />
-    
-    <!-- Lock Inner Plate -->
-    <rect x="156" y="260" width="200" height="140" rx="20" fill="#021526" />
-
-    <!-- Clean Code Keyhole < • > -->
-    <g transform="translate(256, 330)">
-      <!-- Left bracket < -->
-      <path d="M -18 -20 L -38 0 L -18 20" fill="none" stroke="#E2E2B6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-      
-      <!-- Right bracket > -->
-      <path d="M 18 -20 L 38 0 L 18 20" fill="none" stroke="#E2E2B6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-
-      <!-- Center encryption dot -->
-      <circle cx="0" cy="0" r="10" fill="#E2E2B6" filter="url(#glow)" />
-    </g>
+  <g transform="translate(0 8)">
+    <path d="M180 246v-72a76 76 0 0 1 152 0v72" fill="none" stroke="url(#metal)" stroke-width="34" stroke-linecap="round"/>
+    <rect x="126" y="246" width="260" height="188" rx="42" fill="url(#metal)"/>
+    <rect x="151" y="271" width="210" height="138" rx="26" fill="#021526"/>
+    <path d="m236 322-18 18 18 18m40-36 18 18-18 18M256 307v66" fill="none" stroke="#6EACDA" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="256" cy="340" r="15" fill="#E2E2B6"/>
   </g>
 </svg>
