@@ -75,10 +75,16 @@ The CLI needs an Ethereum private key to sign transactions and decrypt FHE handl
 #### Option A — `fheenv login` (interactive / developer use)
 
 ```bash
-node dist/index.js login --key 0xYOUR_PRIVATE_KEY
+# Interactive: key is not echoed to the terminal
+fheenv login
+
+# Pipe from an env var: avoids shell history entirely
+echo $PRIVATE_KEY | fheenv login
 ```
 
 Saves the key to `~/.fheenv/wallet.json` with `chmod 600`. All subsequent commands read from there automatically. Only needed once per machine.
+
+> **⚠ Deprecated:** `fheenv login --key 0x...` is still accepted for backward compatibility but prints a warning — the key is visible in `ps aux` output and written to shell history.
 
 #### Option B — `FHEENV_PRIVATE_KEY` env var (CI/CD)
 
