@@ -8,7 +8,7 @@ If you discover a security vulnerability, **please do NOT open a public issue.**
 
 Instead, report it privately:
 
-1. **Email:** security@fheenv.dev (or kunalmanishshah@gmail.com until we set up the alias)
+1. **Email:** security@fheenv.com
 2. **GitHub:** Use [private vulnerability reporting](https://github.com/Team-Managed/fheENV/security/advisories/new)
 
 ### What to include

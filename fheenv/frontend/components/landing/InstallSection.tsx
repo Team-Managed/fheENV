@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Terminal, Monitor, Copy, Check, Download } from "lucide-react";
+import { Copy, Check, Download } from "lucide-react";
+import { FaApple, FaLinux, FaWindows } from "react-icons/fa6";
 
 type Platform = "mac" | "linux" | "windows";
 
@@ -10,21 +11,21 @@ const INSTALL_COMMANDS: Record<
   { label: string; command: string; icon: React.ReactNode }
 > = {
   mac: {
-    label: "macOS / Linux",
+    label: "macOS",
     command:
       "curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash",
-    icon: <Terminal className="size-3.5" />,
+    icon: <FaApple className="size-3.5" />,
   },
   linux: {
-    label: "macOS / Linux",
+    label: "Linux",
     command:
       "curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash",
-    icon: <Terminal className="size-3.5" />,
+    icon: <FaLinux className="size-3.5" />,
   },
   windows: {
     label: "Windows (PowerShell)",
     command: "irm https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.ps1 | iex",
-    icon: <Monitor className="size-3.5" />,
+    icon: <FaWindows className="size-3.5" />,
   },
 };
 
@@ -78,17 +79,18 @@ export function InstallSection() {
 
             {/* Platform tabs */}
             <div className="flex gap-1 bg-white/[0.04] rounded-lg p-1 border border-white/[0.06]">
-              {(["mac", "windows"] as Platform[]).map((p) => (
+              {(["mac", "linux", "windows"] as Platform[]).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPlatform(p)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    platform === p || (platform === "linux" && p === "mac")
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    platform === p
                       ? "bg-brand-blue/15 text-brand-blue border border-brand-blue/25"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  {p === "mac" ? "macOS / Linux" : "Windows"}
+                  {INSTALL_COMMANDS[p].icon}
+                  {p === "windows" ? "Windows" : INSTALL_COMMANDS[p].label}
                 </button>
               ))}
             </div>
