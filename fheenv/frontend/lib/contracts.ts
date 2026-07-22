@@ -23,9 +23,6 @@ export const REGISTRY_ABI = parseAbi([
   "event EnvironmentUpdated(uint256 indexed projectId, bytes32 indexed envHash, string blobCid, uint256 version)",
   "event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
-  "event AccessGrantedWithExpiry(uint256 indexed projectId, bytes32 indexed envHash, address indexed member, uint256 expiresAt)",
-  "event RotatorGranted(uint256 indexed projectId, address indexed rotator)",
-  "event RotatorRevoked(uint256 indexed projectId, address indexed rotator)",
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
 ]);
 

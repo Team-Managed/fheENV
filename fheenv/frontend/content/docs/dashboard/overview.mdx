@@ -13,10 +13,10 @@ view of projects and their public on-chain evidence.
 - **Create projects** on-chain with one click
 - **List owned projects** from the registry
 - **Review on-chain evidence** for rotations and access changes
-- **Export public evidence** using the SOC 2-compatible CSV columns
+- **Export public on-chain events** as CSV
 
 Secret push, pull, rotation, and team access are currently CLI workflows. The dashboard does not
-read `~/.fheenv/audit.log`, decrypted values, wallet keyfiles, or private keys.
+read decrypted values, wallet keyfiles, or private keys.
 
 ## Connect Wallet
 
@@ -27,7 +27,7 @@ If you're on the wrong network, the app will prompt you to switch.
 
 ## Project List
 
-After connecting, you'll see projects where your wallet is an owner. A project page shows its
-registry metadata and public evidence indexed from Sepolia. The complete audit trail, including
-local `pull` and `run` activity, remains in the CLI audit log and can be exported with
-`fheenv export-audit`.
+After connecting, you'll see projects where your wallet is an owner. A project page shows registry
+metadata and public events indexed from Sepolia. The CSV includes only data emitted on-chain plus
+the transaction sender indexed by Blockscout; it does not infer local `pull` or `run` activity, old
+CIDs, or IPFS unpinning.

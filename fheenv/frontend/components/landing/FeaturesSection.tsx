@@ -60,7 +60,7 @@ function AuditLogCard() {
       event: "key_rotated",
       wallet: "0x50BD..8B90",
       env: "production",
-      detail: "→ QmPSE4..pbE4 ✓ unpinned",
+      detail: "→ QmPSE4..pbE4 ✓ rotation recorded",
       color: "text-yellow-400",
     },
     {
@@ -301,7 +301,7 @@ export function FeaturesSection() {
             <div className="space-y-1 font-mono text-[10px]">
               <div className="text-yellow-400">✓ key_rotated [team_remove]</div>
               <div className="text-slate-500">New CID: QmPSE4..pbE4</div>
-              <div className="text-slate-500">✓ Previous blob unpinned</div>
+              <div className="text-slate-500">✓ New FHE handles issued</div>
             </div>
           </BentoCard>
 

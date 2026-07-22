@@ -8,14 +8,10 @@ import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
 const BLOCKSCOUT_API = "https://eth-sepolia.blockscout.com/api/v2";
 
 type EventName =
-  | "EnvironmentUpdated"
-  | "AccessGranted"
-  | "AccessRevoked"
-  | "AccessGrantedWithExpiry"
-  | "RotatorGranted"
-  | "RotatorRevoked";
+  "ProjectCreated" | "EnvironmentUpdated" | "AccessGranted" | "AccessRevoked" | "OwnerAdded";
 
 const EVENT_STYLES: Record<EventName, { label: string; color: string; dot: string }> = {
+  ProjectCreated: { label: "Project Created", color: "text-brand-blue", dot: "bg-brand-blue" },
   EnvironmentUpdated: {
     label: "Key Rotated",
     color: "text-indigo-400",
@@ -23,30 +19,15 @@ const EVENT_STYLES: Record<EventName, { label: string; color: string; dot: strin
   },
   AccessGranted: { label: "Access Granted", color: "text-green-400", dot: "bg-green-400" },
   AccessRevoked: { label: "Access Revoked", color: "text-red-400", dot: "bg-red-400" },
-  AccessGrantedWithExpiry: {
-    label: "Timed Access Granted",
-    color: "text-green-400",
-    dot: "bg-green-400",
-  },
-  RotatorGranted: {
-    label: "Rotator Granted",
-    color: "text-cyan-400",
-    dot: "bg-cyan-400",
-  },
-  RotatorRevoked: {
-    label: "Rotator Revoked",
-    color: "text-red-400",
-    dot: "bg-red-400",
-  },
+  OwnerAdded: { label: "Owner Added", color: "text-cyan-400", dot: "bg-cyan-400" },
 };
 
-const SOC2_EVENT_TYPES: Record<EventName, "rotation" | "access_granted" | "access_revoked"> = {
+const EVENT_TYPES: Record<EventName, string> = {
+  ProjectCreated: "project_created",
   EnvironmentUpdated: "rotation",
   AccessGranted: "access_granted",
   AccessRevoked: "access_revoked",
-  AccessGrantedWithExpiry: "access_granted",
-  RotatorGranted: "access_granted",
-  RotatorRevoked: "access_revoked",
+  OwnerAdded: "owner_added",
 };
 
 interface BlockscoutLog {
@@ -61,6 +42,10 @@ interface BlockscoutLog {
 interface BlockscoutResponse {
   items: BlockscoutLog[];
   next_page_params: Record<string, string | number> | null;
+}
+
+interface BlockscoutTransaction {
+  from?: { hash?: string } | string;
 }
 
 interface AuditEntry {
@@ -111,6 +96,13 @@ async function fetchRegistryLogs(signal: AbortSignal) {
   return logs;
 }
 
+async function fetchTransactionActor(transactionHash: Hex, signal: AbortSignal) {
+  const response = await fetch(`${BLOCKSCOUT_API}/transactions/${transactionHash}`, { signal });
+  if (!response.ok) return "";
+  const transaction = (await response.json()) as BlockscoutTransaction;
+  return typeof transaction.from === "string" ? transaction.from : (transaction.from?.hash ?? "");
+}
+
 function decodeAuditEntry(log: BlockscoutLog, projectId: bigint): AuditEntry | null {
   const topics = log.topics.filter((topic): topic is Hex => topic !== null);
 
@@ -126,14 +118,17 @@ function decodeAuditEntry(log: BlockscoutLog, projectId: bigint): AuditEntry | n
     if (!(decoded.eventName in EVENT_STYLES)) return null;
 
     const eventName = decoded.eventName as EventName;
-    const actor = "";
+    let actor = "";
     let target = "";
     let environment = "";
     let newCid = "";
     let version = "";
-    let expiresAt = "";
 
     switch (decoded.eventName) {
+      case "ProjectCreated":
+        actor = decoded.args.owner;
+        target = decoded.args.owner;
+        break;
       case "EnvironmentUpdated":
         environment = decoded.args.envHash;
         newCid = decoded.args.blobCid;
@@ -144,14 +139,8 @@ function decodeAuditEntry(log: BlockscoutLog, projectId: bigint): AuditEntry | n
         environment = decoded.args.envHash;
         target = decoded.args.member;
         break;
-      case "AccessGrantedWithExpiry":
-        environment = decoded.args.envHash;
-        target = decoded.args.member;
-        expiresAt = new Date(Number(decoded.args.expiresAt) * 1000).toISOString();
-        break;
-      case "RotatorGranted":
-      case "RotatorRevoked":
-        target = decoded.args.rotator;
+      case "OwnerAdded":
+        target = decoded.args.newOwner;
         break;
       default:
         return null;
@@ -169,7 +158,7 @@ function decodeAuditEntry(log: BlockscoutLog, projectId: bigint): AuditEntry | n
       environment,
       newCid,
       version,
-      expiresAt,
+      expiresAt: "",
     };
   } catch {
     return null;
@@ -195,7 +184,23 @@ export function AuditLog({ projectId }: Props) {
           .sort(
             (left, right) => right.blockNumber - left.blockNumber || right.logIndex - left.logIndex,
           );
-        setLogs(entries);
+        const actors = await Promise.all(
+          entries.map(async (entry) => ({
+            transactionHash: entry.transactionHash,
+            actor:
+              entry.actor ||
+              (await fetchTransactionActor(entry.transactionHash, controller.signal)),
+          })),
+        );
+        const actorsByTransaction = new Map(
+          actors.map((entry) => [entry.transactionHash, entry.actor]),
+        );
+        setLogs(
+          entries.map((entry) => ({
+            ...entry,
+            actor: actorsByTransaction.get(entry.transactionHash) ?? entry.actor,
+          })),
+        );
       } catch (caught: unknown) {
         if (!controller.signal.aborted) {
           setError(caught instanceof Error ? caught.message : "Could not load audit events.");
@@ -213,31 +218,25 @@ export function AuditLog({ projectId }: Props) {
     const headers = [
       "Timestamp",
       "Event type",
-      "Trigger source",
       "Actor address",
-      "Environment",
-      "Removed member",
-      "Old CID",
+      "Subject address",
+      "Environment hash",
       "New CID",
+      "Version",
       "Tx hash",
-      "Unpin status",
       "Project ID",
-      "Source",
     ];
     const rows = logs.map((log) =>
       [
         log.timestamp,
-        SOC2_EVENT_TYPES[log.eventName],
-        "",
+        EVENT_TYPES[log.eventName],
         log.actor,
-        log.environment,
         log.target,
-        "",
+        log.environment,
         log.newCid,
+        log.version,
         log.transactionHash,
-        "",
         projectId.toString(),
-        "on_chain",
       ]
         .map(csvCell)
         .join(","),
@@ -299,15 +298,11 @@ export function AuditLog({ projectId }: Props) {
                   {log.target && (
                     <span className="font-mono text-xs text-slate-500">{shortHex(log.target)}</span>
                   )}
-                  {log.expiresAt && (
-                    <span className="text-xs text-slate-500">
-                      expires {new Date(log.expiresAt).toLocaleString()}
-                    </span>
-                  )}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <time dateTime={log.timestamp}>{new Date(log.timestamp).toLocaleString()}</time>
                   <span className="font-mono">#{log.blockNumber}</span>
+                  {log.actor && <span className="font-mono">by {shortHex(log.actor)}</span>}
                   <a
                     href={`https://sepolia.etherscan.io/tx/${log.transactionHash}`}
                     target="_blank"

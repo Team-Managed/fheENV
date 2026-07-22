@@ -114,15 +114,21 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projectIds.map((id) => (
-            <ProjectCard
-              key={id.toString()}
-              projectId={id}
-              address={address!}
-              onClick={() => router.push(`/project/${id}`)}
-            />
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projectIds.map((id) => (
+              <ProjectCard
+                key={id.toString()}
+                projectId={id}
+                address={address!}
+                onClick={() => router.push(`/project/${id}`)}
+              />
+            ))}
+          </div>
+          <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            Only projects owned by this wallet are shown. Create a project or connect an owner
+            wallet if this list is empty.
+          </p>
         </div>
       )}
 
