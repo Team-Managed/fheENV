@@ -66,6 +66,15 @@ jobs:
           FHEENV_PINATA_JWT: ${{ secrets.FHEENV_PINATA_JWT }}
         run: node cli/dist/index.js rotate-check
 
+      - name: Notify on success
+        if: success() && env.FHEENV_NOTIFY_WEBHOOK != ''
+        env:
+          FHEENV_NOTIFY_WEBHOOK: ${{ secrets.FHEENV_NOTIFY_WEBHOOK }}
+        run: |
+          curl -s -X POST "$FHEENV_NOTIFY_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"✅ fheENV scheduled rotation completed — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+
       - name: Notify on failure
         if: failure() && env.FHEENV_NOTIFY_WEBHOOK != ''
         env:
