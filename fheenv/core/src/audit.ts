@@ -43,7 +43,7 @@ export interface AuditEvent {
   /** For key_rotated: new IPFS CID */
   newCid?: string;
   /** For key_rotated: unpin status of the previous blob */
-  unpinStatus?: "success" | "pending" | "failed";
+  unpinStatus?: "success" | "pending" | "failed" | "not_attempted";
   /** For key_rotated: member removed that triggered this rotation */
   removedMember?: string;
 }

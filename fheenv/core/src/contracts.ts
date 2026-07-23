@@ -345,7 +345,7 @@ export async function updateEnvironment(
   },
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -365,6 +365,7 @@ export async function updateEnvironment(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function grantAccessWithExpiry(
@@ -375,7 +376,7 @@ export async function grantAccessWithExpiry(
   expiresAt: bigint,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -388,6 +389,7 @@ export async function grantAccessWithExpiry(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function grantAccess(
@@ -397,7 +399,7 @@ export async function grantAccess(
   member: Address,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -410,6 +412,7 @@ export async function grantAccess(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function revokeAccess(
@@ -419,7 +422,7 @@ export async function revokeAccess(
   member: Address,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -432,6 +435,7 @@ export async function revokeAccess(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function batchGrantAccess(
@@ -441,11 +445,12 @@ export async function batchGrantAccess(
   members: Address[],
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
-  if (members.length === 0) return;
+): Promise<string[]> {
+  if (members.length === 0) return [];
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
+  const hashes: string[] = [];
   // Contract caps batch at 100; split if needed
   for (let i = 0; i < members.length; i += 100) {
     const chunk = members.slice(i, i + 100);
@@ -458,7 +463,9 @@ export async function batchGrantAccess(
       chain: walletClient.chain ?? null,
     });
     await publicClient.waitForTransactionReceipt({ hash });
+    hashes.push(hash);
   }
+  return hashes;
 }
 
 /**
@@ -523,7 +530,7 @@ export async function addRotator(
   rotator: Address,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -536,6 +543,7 @@ export async function addRotator(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function removeRotator(
@@ -544,7 +552,7 @@ export async function removeRotator(
   rotator: Address,
   walletClient: WalletClient,
   publicClient: PublicClient,
-): Promise<void> {
+): Promise<string> {
   const account = walletClient.account;
   if (!account) throw new Error("WalletClient has no account");
 
@@ -557,6 +565,7 @@ export async function removeRotator(
     chain: walletClient.chain ?? null,
   });
   await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
 
 export async function isRotator(

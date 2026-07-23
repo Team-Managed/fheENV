@@ -38,6 +38,8 @@ export interface RotateEnvironmentResult {
   newVersion: bigint;
   /** Members who were re-granted access on the new FHE handles */
   membersRegranted: Address[];
+  /** Transaction hash of the updateEnvironment call — for audit evidence (§4.8) */
+  txHash: string;
 }
 
 /**
@@ -103,7 +105,7 @@ export async function rotateEnvironment(
   const encLow = await fheEncryptUint128(fheClient, keyLow, account.address, chainId);
 
   // 6. Write new environment to chain (issues fresh FHE handles, abandons old ones)
-  await updateEnvironment(
+  const txHash = await updateEnvironment(
     registryAddress,
     {
       projectId,
@@ -134,6 +136,7 @@ export async function rotateEnvironment(
     previousCid,
     newVersion: currentEnv.version + 1n,
     membersRegranted: membersToRegrant,
+    txHash,
   };
 }
 
