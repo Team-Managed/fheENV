@@ -113,6 +113,9 @@ jobs:
           }
       - run: pnpm install --frozen-lockfile
         working-directory: fheenv
+      - name: Build @fheenv/core (required before CLI typecheck)
+        run: pnpm --filter @fheenv/core build
+        working-directory: fheenv
       - run: npx tsc --noEmit
         working-directory: fheenv/cli
       - run: pnpm run build

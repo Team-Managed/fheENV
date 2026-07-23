@@ -1,0 +1,85 @@
+name: Scheduled Key Rotation
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required to request a GitHub OIDC JWT, which the Lit Action uses to
+  # authenticate the workflow before releasing the signing key.
+  id-token: write
+
+jobs:
+  rotate:
+    name: Rotate overdue environments
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: fheenv/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: fheenv
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @fheenv/core and CLI
+        working-directory: fheenv
+        run: |
+          pnpm --filter @fheenv/core build
+          pnpm --filter fheenv build
+
+      - name: Request GitHub OIDC token
+        id: oidc
+        run: |
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=fheenv-rotator" | jq -r .value)
+          echo "::add-mask::$TOKEN"
+          echo "jwt=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Run rotation check (signed via Lit Action)
+        working-directory: fheenv
+        env:
+          # Lit Action CID — public, not a secret. Changing this value would
+          # point at a different action whose CID-derived address doesn't hold
+          # the Rotator role, so the rotation would fail on-chain.
+          FHEENV_LIT_ACTION_CID: ${{ vars.FHEENV_LIT_ACTION_CID }}
+          # Lit API usage key — meters API calls but is NOT the signing key.
+          # Leaking it alone cannot produce a valid signature: the Lit Action
+          # also requires a valid GitHub OIDC JWT with the correct repo and
+          # workflow claims.
+          FHEENV_LIT_API_KEY: ${{ secrets.FHEENV_LIT_API_KEY }}
+          # Short-lived OIDC JWT (expires in ~5 min). Even if intercepted,
+          # the audience is pinned to "fheenv-rotator" and the Lit Action
+          # verifies the repo + workflow claims.
+          GITHUB_OIDC_JWT: ${{ steps.oidc.outputs.jwt }}
+          FHEENV_PINATA_JWT: ${{ secrets.FHEENV_PINATA_JWT }}
+        run: node cli/dist/index.js rotate-check
+
+      - name: Notify on success
+        if: success() && env.FHEENV_NOTIFY_WEBHOOK != ''
+        env:
+          FHEENV_NOTIFY_WEBHOOK: ${{ secrets.FHEENV_NOTIFY_WEBHOOK }}
+        run: |
+          curl -s -X POST "$FHEENV_NOTIFY_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"✅ fheENV scheduled rotation completed — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+
+      - name: Notify on failure
+        if: failure() && env.FHEENV_NOTIFY_WEBHOOK != ''
+        env:
+          FHEENV_NOTIFY_WEBHOOK: ${{ secrets.FHEENV_NOTIFY_WEBHOOK }}
+        run: |
+          curl -s -X POST "$FHEENV_NOTIFY_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"⚠️ fheENV scheduled rotation failed — check the run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"

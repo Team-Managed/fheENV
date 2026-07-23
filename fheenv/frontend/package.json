@@ -26,6 +26,7 @@
     "mermaid": "^11.16.0",
     "motion": "^12.42.2",
     "next": "16.2.10",
+    "posthog-js": "^1.398.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-icons": "^5.7.0",

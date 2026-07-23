@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "@cofhe/sdk": ["../node_modules/@cofhe/sdk/dist/core.d.ts"],
+      "@cofhe/sdk/node": ["../node_modules/@cofhe/sdk/dist/node.d.ts"],
+      "@cofhe/sdk/chains": ["../node_modules/@cofhe/sdk/dist/chains.d.ts"],
+      "@cofhe/sdk/adapters": ["../node_modules/@cofhe/sdk/dist/adapters.d.ts"],
+      "@cofhe/sdk/permits": ["../node_modules/@cofhe/sdk/dist/permits.d.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

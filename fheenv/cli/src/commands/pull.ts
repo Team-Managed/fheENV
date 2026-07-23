@@ -8,6 +8,8 @@ import { aesDecryptNode, joinUint128ToAesKeyNode } from "../lib/aes-node";
 import { fetchFromIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheDecryptUint128 } from "../lib/fhe-node";
+import { logAuditEvent } from "../lib/audit";
+import { captureCliUsage } from "../lib/posthog";
 import { type Address } from "viem";
 
 export interface PullOptions {
@@ -22,7 +24,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
 
   const spinner = ora(`Pulling env "${envName}"...`).start();
   try {
-    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
+    const { publicClient, walletClient, account } = createClients(config.rpcUrl, config.chainId);
     const registryAddress = config.registryAddress as Address;
     const projectId = BigInt(config.projectId);
 
@@ -73,6 +75,13 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
         ).toISOString()}`,
       ),
     );
+    logAuditEvent({
+      actor: account.address,
+      action: "env_pulled",
+      projectId: config.projectId.toString(),
+      envName,
+    });
+    captureCliUsage("pull", config.projectId);
   } catch (err) {
     spinner.fail("Pull failed");
     throw err;

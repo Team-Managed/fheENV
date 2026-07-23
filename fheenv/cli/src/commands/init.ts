@@ -37,7 +37,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   try {
     const { publicClient, walletClient } = createClients(opts.rpcUrl, opts.chainId);
 
-    const projectId = await createProject(
+    const { projectId, blockNumber } = await createProject(
       opts.registry as Address,
       opts.name,
       walletClient,
@@ -50,10 +50,11 @@ export async function initCommand(opts: InitOptions): Promise<void> {
       rpcUrl: opts.rpcUrl,
       chainId: opts.chainId,
       pinataJwt: opts.pinataJwt,
+      deployedAtBlock: Number(blockNumber),
     };
     writeConfig(config);
 
-    spinner.succeed(chalk.green(`Project created! ID: ${projectId}`));
+    spinner.succeed(chalk.green(`Project created! ID: ${projectId} (block: ${blockNumber})`));
     console.log(chalk.cyan("  .fheenv.json written to current directory."));
     if (opts.envName) {
       console.log(chalk.dim(`  Next: fheenv push --env ${opts.envName}`));
