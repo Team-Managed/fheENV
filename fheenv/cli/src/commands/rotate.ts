@@ -59,6 +59,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
       triggerSource: "manual_cli" as const,
       previousCid: result.previousCid,
       newCid: result.newCid,
+      txHash: result.txHash,
       unpinStatus: "pending" as const,
     };
     logAuditEvent(auditPayload);

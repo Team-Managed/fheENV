@@ -128,9 +128,6 @@ export async function rotateCheckCommand(): Promise<void> {
       // Unpin previous blob after graceMinutes
       let unpinStatus: "success" | "failed" = "success";
       try {
-        if (graceMinutes > 0) {
-          await new Promise((r) => setTimeout(r, graceMinutes * 60 * 1000));
-        }
         await unpinFromIPFSNode(result.previousCid, config.pinataJwt);
         console.log(chalk.dim(`  Unpinned : ${result.previousCid}`));
       } catch {
@@ -146,6 +143,7 @@ export async function rotateCheckCommand(): Promise<void> {
         triggerSource: "scheduled" as const,
         previousCid: result.previousCid,
         newCid: result.newCid,
+        txHash: result.txHash,
         unpinStatus,
       };
       logAuditEvent(successPayload);
@@ -161,7 +159,7 @@ export async function rotateCheckCommand(): Promise<void> {
         envName,
         triggerSource: "scheduled" as const,
         previousCid,
-        unpinStatus: "failed" as const,
+        unpinStatus: "not_attempted" as const,
       };
       logAuditEvent(failPayload);
       capturePosthogEvent(failPayload);

@@ -40,7 +40,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
   // ── Step 1: Logistic revocation ──────────────────────────────────────────
   const revokeSpinner = ora(`Revoking access for ${memberAddress}...`).start();
   try {
-    await revokeAccess(
+    const revokeTxHash = await revokeAccess(
       registryAddress,
       projectId,
       envName,
@@ -58,6 +58,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       projectId: String(config.projectId),
       envName,
       target: memberAddress,
+      txHash: revokeTxHash,
     });
   } catch (err) {
     revokeSpinner.fail("Revoke access failed");
@@ -199,6 +200,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
     removedMember: memberAddress,
     previousCid: rotateResult.previousCid,
     newCid: rotateResult.newCid,
+    txHash: rotateResult.txHash,
     unpinStatus,
   };
   logAuditEvent(auditPayload);
