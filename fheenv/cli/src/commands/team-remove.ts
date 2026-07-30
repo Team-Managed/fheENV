@@ -93,7 +93,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
           `  fheenv rotate --env ${envName} --file <path-to-env-file>\n`,
       ),
     );
-    return;
+    throw new Error(`Partial failure: revokeAccess succeeded but cannot auto-rotate because env file was not found at ${envFilePath}.`);
   }
   const envContent = fs.readFileSync(envFilePath, "utf-8");
 
