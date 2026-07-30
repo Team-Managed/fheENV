@@ -1,6 +1,6 @@
 import { createCofheConfig, createCofheClient } from "@cofhe/sdk/node";
-import { getChainById, chains } from "@cofhe/sdk/chains";
-import { Encryptable, FheTypes, type CofheClient } from "@cofhe/sdk";
+import { getChainById } from "@cofhe/sdk/chains";
+import { Encryptable, FheTypes } from "@cofhe/sdk";
 import { type PublicClient, type WalletClient } from "viem";
 import { type InEuint128 } from "./contracts-node";
 
@@ -14,23 +14,28 @@ export interface FheEncryptedUint128 {
   signature: `0x${string}`;
 }
 
+type NodeCofheClient = ReturnType<typeof createCofheClient>;
+
 export async function createFheClient(
   chainId: number,
   publicClient: PublicClient,
   walletClient: WalletClient,
-): Promise<CofheClient> {
+): Promise<NodeCofheClient> {
   const chain = getChainById(chainId);
   if (!chain) {
-    throw new Error(`Unsupported chain ${chainId}. Supported: ${Object.keys(chains).join(", ")}`);
+    throw new Error(`Unsupported chain ${chainId}.`);
   }
   const config = createCofheConfig({ supportedChains: [chain] });
   const client = createCofheClient(config);
-  await client.connect(publicClient, walletClient);
+  await client.connect(
+    publicClient as unknown as Parameters<typeof client.connect>[0],
+    walletClient as unknown as Parameters<typeof client.connect>[1],
+  );
   return client;
 }
 
 export async function fheEncryptUint128(
-  client: CofheClient,
+  client: NodeCofheClient,
   value: bigint,
   account: `0x${string}`,
   chainId: number,
@@ -49,7 +54,7 @@ export async function fheEncryptUint128(
 }
 
 export async function fheDecryptUint128(
-  client: CofheClient,
+  client: NodeCofheClient,
   ctHash: bigint,
   chainId: number,
   _publicClient: PublicClient,

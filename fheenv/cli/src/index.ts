@@ -23,31 +23,13 @@ program
 program
   .command("login")
   .description("Save your Ethereum private key to ~/.fheenv/wallet.json")
-  .option("-k, --key <privateKey>", "0x-prefixed private key (omit to read from stdin)")
+  .option(
+    "-k, --key <privateKey>",
+    "(deprecated) inline private key — visible in shell history. Use stdin or FHEENV_PRIVATE_KEY instead",
+  )
   .action(async (opts) => {
     try {
-      let key = opts.key as string | undefined;
-      if (!key) {
-        // Read from stdin (supports piping or interactive prompt)
-        if (process.stdin.isTTY) {
-          process.stdout.write(chalk.cyan("Enter private key: "));
-        }
-        key = await new Promise<string>((resolve) => {
-          let data = "";
-          process.stdin.setEncoding("utf-8");
-          process.stdin.on("data", (chunk) => (data += chunk));
-          process.stdin.on("end", () => resolve(data.trim()));
-          if (process.stdin.isTTY) {
-            process.stdin.once("data", (chunk) => {
-              resolve((data + chunk).trim());
-              process.stdin.pause();
-            });
-          } else {
-            process.stdin.resume();
-          }
-        });
-      }
-      await loginCommand(key);
+      await loginCommand({ key: opts.key as string | undefined });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

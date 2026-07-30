@@ -1,55 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
-  <defs>
-    <!-- Background Gradient for the Icon -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC"/>
-      <stop offset="100%" stop-color="#F1F5F9"/>
-    </linearGradient>
-
-    <linearGradient id="glowStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#CBD5E1" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#94A3B8" stop-opacity="0.2"/>
-    </linearGradient>
-
-    <!-- Aqua primary gradient -->
-    <linearGradient id="aqua" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2DD4BF"/>
-      <stop offset="100%" stop-color="#0D9488"/>
-    </linearGradient>
-
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-
-  <!-- Lock Icon (Left) -->
-  <g transform="translate(40, 20) scale(0.3125)">
-    <rect width="512" height="512" rx="120" fill="url(#bgGrad)" stroke="url(#glowStrokeGrad)" stroke-width="4" />
-    <g opacity="0.4" stroke="#94A3B8" stroke-width="1.5">
-      <line x1="128" y1="80" x2="128" y2="432" /><line x1="384" y1="80" x2="384" y2="432" />
-      <line x1="80" y1="128" x2="432" y2="128" /><line x1="80" y1="384" x2="432" y2="384" />
-      <circle cx="128" cy="128" r="3" fill="#94A3B8"/>
-      <circle cx="384" cy="128" r="3" fill="#94A3B8"/>
-      <circle cx="128" cy="384" r="3" fill="#94A3B8"/>
-      <circle cx="384" cy="384" r="3" fill="#94A3B8"/>
-    </g>
-    <g transform="translate(0, 5)">
-      <path d="M 184 240 V 170 A 72 72 0 0 1 328 170 V 240" fill="none" stroke="url(#aqua)" stroke-width="36" stroke-linecap="round" />
-      <rect x="136" y="240" width="240" height="180" rx="36" fill="url(#aqua)" />
-      <rect x="156" y="260" width="200" height="140" rx="20" fill="#FFFFFF" />
-      <g transform="translate(256, 330)">
-        <path d="M -18 -20 L -38 0 L -18 20" fill="none" stroke="#2DD4BF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M 18 -20 L 38 0 L 18 20" fill="none" stroke="#2DD4BF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="0" cy="0" r="10" fill="#0EA5E9" filter="url(#glow)" />
-      </g>
-    </g>
-  </g>
-
-  <!-- Text Section -->
-  <g transform="translate(240, 125)">
-    <text font-family="Space Grotesk, sans-serif, monospace" font-weight="700" font-size="96" letter-spacing="-3">
-      <tspan fill="#2DD4BF">fhe</tspan><tspan fill="#0F172A">ENV</tspan>
-    </text>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-labelledby="title desc">
+  <title id="title">fheENV</title><desc id="desc">Encrypted environment variables</desc>
+  <defs><linearGradient id="metal" x1="70" y1="48" x2="145" y2="150" gradientUnits="userSpaceOnUse"><stop stop-color="#03346E"/><stop offset="1" stop-color="#6EACDA"/></linearGradient></defs>
+  <rect x="20" y="20" width="160" height="160" rx="40" fill="#F7FAFC"/>
+  <rect x="31" y="31" width="138" height="138" rx="32" fill="none" stroke="#03346E" stroke-opacity=".18" stroke-width="2"/>
+  <path d="M74 103V78a26 26 0 0 1 52 0v25" fill="none" stroke="url(#metal)" stroke-width="12" stroke-linecap="round"/>
+  <rect x="56" y="103" width="88" height="62" rx="15" fill="url(#metal)"/>
+  <rect x="64" y="111" width="72" height="46" rx="9" fill="#F7FAFC"/>
+  <path d="m92 126-10 8 10 8m16-16 10 8-10 8M100 119v30" fill="none" stroke="#03346E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="100" cy="134" r="6" fill="#E2E2B6"/>
+  <text x="220" y="123" font-family="Outfit, Arial, sans-serif" font-size="94" font-weight="700" letter-spacing="-4"><tspan fill="#03346E">fhe</tspan><tspan fill="#021526">ENV</tspan></text>
 </svg>

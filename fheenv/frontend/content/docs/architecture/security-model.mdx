@@ -1,6 +1,6 @@
 ---
 title: Security Model
-description: Threat model, trust assumptions, and security guarantees of fheENV
+description: Threat model, implemented guarantees, and operational limits of fheENV
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
@@ -12,93 +12,55 @@ import { Callout } from "fumadocs-ui/components/callout";
   Policy](https://github.com/Team-Managed/fheENV/blob/main/SECURITY.md) for responsible disclosure.
 </Callout>
 
-## Core Guarantee
+## Core model
 
-**No entity other than explicitly authorized wallet addresses can read your secrets.** This
-includes:
+Environment content is encrypted locally with a fresh AES-256-GCM key. The encrypted blob is
+uploaded to IPFS; the AES key is split into two FHE ciphertext handles stored on Sepolia. A
+permitted wallet decrypts the handles through the threshold network and decrypts the blob locally.
 
-- The fheENV team
-- Fhenix node operators
-- IPFS gateway providers
-- Ethereum validators
-- Anyone with access to the deployed contract
+## What is protected
 
-This guarantee is **mathematical**, not policy-based. It relies on the hardness of the cryptographic
-primitives used.
+| Threat                    | Current protection                              |
+| ------------------------- | ----------------------------------------------- |
+| IPFS or gateway access    | The blob is AES-256-GCM encrypted               |
+| Public chain inspection   | The AES key is stored as FHE ciphertext handles |
+| fheENV service compromise | No fheENV server stores plaintext               |
+| Network interception      | HTTPS plus encrypted application data           |
 
-## Threat Model
+## Important limits
 
-### What We Protect Against
+- A compromised client can expose its key and any plaintext it decrypts.
+- `~/.fheenv/wallet.json` is a plaintext private-key JSON file protected by filesystem mode `0600`;
+  it is not passphrase-encrypted.
+- The contract has no `revokeAllow` operation. `team remove` only marks a member inactive. You must
+  run `fheenv rotate` with the source environment file to replace old FHE handles.
+- Rotation cannot make plaintext or old encrypted blobs already copied by a former member disappear.
+- The current contract supports project creation, owner addition, environment updates, grants, and
+  revocations. It does not provide expiring grants, a Rotator role, scheduled rotation, or Lit/OIDC
+  signing.
 
-| Threat                      | Protection                                                                      |
-| --------------------------- | ------------------------------------------------------------------------------- |
-| Server compromise           | No server holds plaintext — encryption is client-side                           |
-| Database breach             | IPFS blobs are AES-encrypted; AES keys are FHE-encrypted                        |
-| Insider threat (our team)   | We never have access to plaintext or decryption keys                            |
-| Network eavesdropping       | All data in transit is encrypted (TLS + application-level)                      |
-| Supply chain attack on IPFS | Blobs are worthless without the AES key                                         |
-| Blockchain data exposure    | On-chain data is FHE ciphertext — computationally indistinguishable from random |
-| Revoked member access       | Key rotation generates fresh ciphertexts the member can't decrypt               |
-
-### What We Don't Protect Against
-
-| Threat                      | Why                                                    | Mitigation                                             |
-| --------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
-| Compromised client machine  | If your device is owned, secrets in memory are exposed | Use hardware wallets, keep systems patched             |
-| Social engineering          | Tricking an owner into granting access                 | Verify addresses carefully before granting             |
-| Threshold Network collusion | If majority of threshold nodes collude                 | Use reputable, decentralized threshold operators       |
-| Smart contract bugs         | Immutable contract, no upgrade path                    | Thorough testing (34 test cases), public audit invited |
-| Key loss                    | If you lose your private key, you lose access          | Back up wallet seed phrases securely                   |
-
-## Cryptographic Assumptions
-
-1. **AES-256-GCM is secure** — no known practical attacks against AES-256
-2. **FHE scheme is semantically secure** — ciphertexts reveal nothing about plaintext
-3. **Threshold Network is honest-majority** — fewer than 2/3 of nodes collude
-4. **Ethereum consensus is live** — transactions get included and state is correct
-5. **IPFS CIDs are content-addressed** — integrity verified by hash
-
-## Access Control Model
+## Access control
 
 ```
-Project Owner ──► Can push, pull, grant, revoke, rotate
-       │
-       ├── Co-Owner (addOwner) ──► Same permissions as owner
-       │
-       └── Member (grantAccess) ──► Can pull/decrypt only
+Project owner ──► create projects, update environments, grant/revoke members, add owners
+Member        ──► decrypt an environment when permitted on its current FHE handles
 ```
 
-- **Owners** are set on-chain and can only be added (no removeOwner for safety)
-- **Members** have per-environment, per-project access
-- **FHE.allow** is the cryptographic gate — without it, Threshold Network refuses decryption
+Owners are stored on-chain. Members are tracked per project and environment. The FHE permission on a
+handle is the cryptographic gate, so rotating after a removal is essential.
 
-## Revocation Guarantees
+## Data at rest
 
-| Action         | Immediate Effect                       | After Rotation                                   |
-| -------------- | -------------------------------------- | ------------------------------------------------ |
-| `revokeAccess` | `hasAccess()` returns false            | N/A                                              |
-| `revokeAccess` | FHE permit on **old** handles persists | Old handles orphaned                             |
-| `rotate`       | New ciphertext handles created         | Revoked member has no `FHE.allow` on new handles |
+| Data                       | Location                | Protection                |
+| -------------------------- | ----------------------- | ------------------------- |
+| `.env` plaintext           | Local machine           | Local filesystem controls |
+| Encrypted environment blob | IPFS                    | AES-256-GCM               |
+| AES key handles            | Sepolia                 | FHE ciphertexts           |
+| Wallet private key         | `~/.fheenv/wallet.json` | Filesystem mode `0600`    |
 
-**Always rotate after revoking.** The CLI prominently warns about this.
+## Audit evidence
 
-## Data at Rest
-
-| Data                      | Location                | Encrypted?        | Readable By                                  |
-| ------------------------- | ----------------------- | ----------------- | -------------------------------------------- |
-| `.env` plaintext          | Your machine only       | No (local)        | You                                          |
-| AES-encrypted blob        | IPFS                    | Yes (AES-256-GCM) | No one without AES key                       |
-| AES key (as euint128 × 2) | Sepolia chain           | Yes (FHE)         | Only permitted wallets via Threshold Network |
-| `.fheenv.json`            | Your repo               | No                | Anyone (contains no secrets)                 |
-| Wallet private key        | `~/.fheenv/wallet.json` | No                | You (file is `chmod 600`)                    |
-
-## Comparison to Alternatives
-
-| Feature               | fheENV                   | Doppler/Vault               | AWS Secrets Manager |
-| --------------------- | ------------------------ | --------------------------- | ------------------- |
-| Server sees plaintext | Never                    | Yes (at rest, they encrypt) | Yes (KMS-wrapped)   |
-| Trust model           | Zero-trust (math)        | Trust the provider          | Trust AWS           |
-| Key management        | User-controlled (wallet) | Provider-managed            | AWS KMS             |
-| Audit trail           | On-chain (immutable)     | Provider logs (mutable)     | CloudTrail          |
-| Access control        | Wallet-based, on-chain   | Email/RBAC                  | IAM policies        |
-| Open source           | Yes (ELv2)               | Partially                   | No                  |
+The dashboard exports public on-chain events: project creation, owner addition, environment updates,
+access grants, and access revocations. It derives the transaction sender from the public chain
+indexer. The contract does not emit a prior CID or IPFS unpin status, so those are not represented
+as authoritative audit evidence.

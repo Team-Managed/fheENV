@@ -18,10 +18,10 @@
     "commander": "^12.0.0",
     "form-data": "^4.0.0",
     "ora": "^5.4.0",
-    "viem": "^2.0.0"
+    "viem": "^2.55.4"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^24.13.3",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   }

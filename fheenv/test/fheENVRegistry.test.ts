@@ -1,19 +1,22 @@
 import hre from "hardhat";
-import { CofheClient, Encryptable } from "@cofhe/sdk";
+import { Encryptable } from "@cofhe/sdk";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import type { FheENVRegistry } from "../typechain-types/contracts";
 
 describe("fheENVRegistry", function () {
   this.timeout(60000);
 
-  let cofheClient: CofheClient;
-  let memberCofheClient: CofheClient;
+  type TestCofheClient = Awaited<ReturnType<typeof hre.cofhe.createClientWithBatteries>>;
+
+  let cofheClient: TestCofheClient;
+  let memberCofheClient: TestCofheClient;
   let owner: HardhatEthersSigner;
   let member: HardhatEthersSigner;
   let stranger: HardhatEthersSigner;
   let member2: HardhatEthersSigner;
   let member3: HardhatEthersSigner;
-  let registry: any;
+  let registry: FheENVRegistry;
 
   const AES_KEY_HIGH = BigInt("0xdeadbeefcafebabe1234567890abcdef");
   const AES_KEY_LOW = BigInt("0xfeedfacebadf00d123456789abcdef01");
@@ -41,7 +44,7 @@ describe("fheENVRegistry", function () {
 
   beforeEach(async function () {
     const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
-    registry = await Factory.deploy();
+    registry = (await Factory.deploy()) as unknown as FheENVRegistry;
     await registry.waitForDeployment();
   });
 
