@@ -148,6 +148,7 @@ export function HeroArcVisual() {
                   boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                 }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`https://cdn.simpleicons.org/${ic.slug}/${ic.hex}`}
                   alt={ic.label}

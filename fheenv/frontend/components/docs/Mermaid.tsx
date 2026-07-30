@@ -10,6 +10,8 @@ export function Mermaid({ chart }: { chart: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Clear the previous render while the chart or theme is regenerated.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSvg("");
     import("mermaid").then((m) => {
       m.default.initialize({

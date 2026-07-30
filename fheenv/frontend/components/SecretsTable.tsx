@@ -95,7 +95,9 @@ export function SecretsTable({ projectId, envName }: Props) {
         .withPermit()
         .onPoll((ctx) =>
           setLoadingMsg(
-            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(ctx.elapsedMs / 1000)}s`,
+            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(
+              ctx.elapsedMs / 1000,
+            )}s`,
           ),
         )
         .execute();
@@ -196,8 +198,7 @@ export function SecretsTable({ projectId, envName }: Props) {
       // 4. FHE-encrypt new key halves
       setSaveMsg("FHE-encrypting AES key…");
       const { cofheClient, Encryptable } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(publicClient, walletClient);
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
 
       const [encHigh, encLow] = await cofheClient
