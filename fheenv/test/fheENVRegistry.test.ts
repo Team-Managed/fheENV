@@ -4,7 +4,7 @@ import { Encryptable, FheTypes } from "@cofhe/sdk";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import type { FheENVRegistry } from "../typechain-types/contracts";
-import type { FheENVRegistryV2 } from "../typechain-types/contracts/test/fheENVRegistryV2";
+import type { FheENVRegistryV2 } from "../typechain-types/contracts/test/FheENVRegistryV2";
 
 describe("fheENVRegistry", function () {
   this.timeout(60000);
@@ -441,7 +441,7 @@ describe("fheENVRegistry", function () {
   });
 
   it("39. owner can transfer proxy ownership via OwnableUpgradeable", async function () {
-    await registry.transferOwnership(member.address);
+    await registry["transferOwnership(address)"](member.address);
     expect(await registry.owner()).to.equal(member.address);
   });
 

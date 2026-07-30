@@ -8,6 +8,8 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "prepare-upgrade": "hardhat run scripts/prepare-upgrade.ts",
+    "verify-upgrade": "hardhat run scripts/verify-upgrade.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
