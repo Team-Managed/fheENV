@@ -1,12 +1,10 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { errorWithCause } from "./errors";
 
 export type AuditAction =
-  | "member_revoked"
-  | "rotation_completed"
-  | "rotation_failed"
-  | "rotation_skipped";
+  "member_revoked" | "rotation_completed" | "rotation_failed" | "rotation_skipped";
 
 export interface AuditEvent {
   timestamp?: string;
@@ -36,10 +34,7 @@ const AUDIT_HEADERS: (keyof AuditEvent)[] = [
 
 export const DEFAULT_AUDIT_PATH = path.join(os.homedir(), ".fheenv", "audit.log");
 
-export function appendAuditEvent(
-  event: AuditEvent,
-  logPath = DEFAULT_AUDIT_PATH,
-): void {
+export function appendAuditEvent(event: AuditEvent, logPath = DEFAULT_AUDIT_PATH): void {
   try {
     fs.mkdirSync(path.dirname(logPath), { recursive: true, mode: 0o700 });
     const record = { ...event, timestamp: event.timestamp ?? new Date().toISOString() };
@@ -50,7 +45,7 @@ export function appendAuditEvent(
     fs.chmodSync(logPath, 0o600);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Unable to write local audit record: ${message}`);
+    throw errorWithCause(`Unable to write local audit record: ${message}`, error);
   }
 }
 

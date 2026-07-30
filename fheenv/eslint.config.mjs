@@ -30,4 +30,21 @@ export default tseslint.config(
       "no-console": "off",
     },
   },
+  {
+    files: ["cli/test/**/*.js"],
+    languageOptions: {
+      globals: {
+        afterEach: "readonly",
+        beforeEach: "readonly",
+        Buffer: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        process: "readonly",
+        require: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 );

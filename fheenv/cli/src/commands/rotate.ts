@@ -3,7 +3,7 @@ import path from "path";
 import chalk from "chalk";
 import ora from "ora";
 import type { Address } from "viem";
-import { readConfig } from "../lib/config";
+import { readConfig, requireDeployedAtBlock } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { generateAesKeyNode, aesEncryptNode, splitAesKeyToUint128Node } from "../lib/aes-node";
 import { uploadToIPFSNode } from "../lib/ipfs-node";
@@ -16,12 +16,14 @@ import {
 import { createFheClient, fheEncryptUint128, toInEuint128 } from "../lib/fhe-node";
 import {
   PartialRotationError,
+  grantMembersInBatches,
   regrantCurrentMembers,
   rotateEnvironment,
   type RotationResult,
 } from "../lib/rotation";
 import { appendAuditEvent, type AuditEvent } from "../lib/audit";
 import { captureAnalytics } from "../lib/analytics";
+import { errorWithCause } from "../lib/errors";
 
 export interface RotateOptions {
   envName?: string;
@@ -47,10 +49,12 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         projectId,
         envName,
         publicClient,
-        BigInt(config.deployedAtBlock),
+        requireDeployedAtBlock(config),
       );
     const grantMembers = (members: Address[]) =>
-      batchGrantAccess(registryAddress, projectId, envName, members, walletClient, publicClient);
+      grantMembersInBatches(members, (batch) =>
+        batchGrantAccess(registryAddress, projectId, envName, batch, walletClient, publicClient),
+      );
 
     if (opts.regrantOnly) {
       spinner.text = "Regranting current members on the latest FHE handles...";
@@ -147,7 +151,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         });
       } catch (auditError) {
         const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
-        throw new Error(`${error.message}\n${auditMessage}`);
+        throw errorWithCause(`${error.message}\n${auditMessage}`, error);
       }
     } else {
       try {
@@ -161,7 +165,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
       } catch (auditError) {
         const operationMessage = error instanceof Error ? error.message : String(error);
         const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
-        throw new Error(`${operationMessage}\n${auditMessage}`);
+        throw errorWithCause(`${operationMessage}\n${auditMessage}`, error);
       }
     }
     throw error;

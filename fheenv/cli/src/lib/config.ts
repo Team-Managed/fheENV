@@ -9,7 +9,7 @@ export interface FheEnvConfig {
   rpcUrl: string;
   chainId: number;
   pinataJwt: string;
-  deployedAtBlock: number;
+  deployedAtBlock?: number;
 }
 
 export function readConfig(): FheEnvConfig {
@@ -17,14 +17,17 @@ export function readConfig(): FheEnvConfig {
   if (!fs.existsSync(configPath)) {
     throw new Error(`No ${CONFIG_FILE} found. Run \`fheenv init\` first.`);
   }
-  const config = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Partial<FheEnvConfig>;
+  return JSON.parse(fs.readFileSync(configPath, "utf-8")) as FheEnvConfig;
+}
+
+export function requireDeployedAtBlock(config: FheEnvConfig): bigint {
   if (!Number.isInteger(config.deployedAtBlock) || (config.deployedAtBlock ?? -1) < 0) {
     throw new Error(
       "deployedAtBlock is missing or invalid in .fheenv.json. " +
         "Set it to the registry proxy deployment block before replaying access events.",
     );
   }
-  return config as FheEnvConfig;
+  return BigInt(config.deployedAtBlock as number);
 }
 
 export function writeConfig(config: FheEnvConfig): void {

@@ -111,4 +111,21 @@ describe("rotation service", function () {
     assert.deepEqual(granted, [retained]);
     assert.deepEqual(result, [retained]);
   });
+
+  it("splits member grants at the contract batch limit", async function () {
+    const { grantMembersInBatches } = require("../src/lib/rotation");
+    const members = Array.from(
+      { length: 201 },
+      (_, index) => `0x${index.toString(16).padStart(40, "0")}`,
+    );
+    const batches = [];
+
+    await grantMembersInBatches(members, async (batch) => batches.push(batch));
+
+    assert.deepEqual(
+      batches.map((batch) => batch.length),
+      [100, 100, 1],
+    );
+    assert.deepEqual(batches.flat(), members);
+  });
 });

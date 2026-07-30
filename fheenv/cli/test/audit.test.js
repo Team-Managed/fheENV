@@ -2,11 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const {
-  appendAuditEvent,
-  exportAuditRecords,
-  toCsvCell,
-} = require("../src/lib/audit");
+const { appendAuditEvent, exportAuditRecords, toCsvCell } = require("../src/lib/audit");
 
 describe("local audit records", function () {
   it("throws when a required audit write fails", function () {

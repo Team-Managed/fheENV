@@ -33,6 +33,25 @@ describe("team removal", function () {
     );
   });
 
+  it("preserves idempotent recovery guidance after a partial rotation", async function () {
+    const { PartialRotationError } = require("../src/lib/rotation");
+
+    await assert.rejects(
+      removeMemberAndRotate(options, {
+        revoke: async () => undefined,
+        rotate: async () => {
+          throw new PartialRotationError(
+            "member regrant failed",
+            "bafy-new",
+            2n,
+            "fheenv rotate --env production --regrant-only",
+          );
+        },
+      }),
+      /fheenv rotate --env production --regrant-only/,
+    );
+  });
+
   it("requires an explicit noRotate flag to skip rotation", async function () {
     let rotated = false;
 

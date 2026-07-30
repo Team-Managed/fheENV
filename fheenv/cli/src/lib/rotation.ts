@@ -45,6 +45,15 @@ export class PartialRotationError extends Error {
   }
 }
 
+export async function grantMembersInBatches(
+  members: Address[],
+  grantBatch: (members: Address[]) => Promise<void>,
+): Promise<void> {
+  for (let offset = 0; offset < members.length; offset += 100) {
+    await grantBatch(members.slice(offset, offset + 100));
+  }
+}
+
 export async function rotateEnvironment(
   input: RotationInput,
   dependencies: RotationDependencies,
@@ -58,9 +67,7 @@ export async function rotateEnvironment(
 
   const activeMembers = await dependencies.getActiveMembers();
   const excluded = new Set((input.excludeMembers ?? []).map((member) => member.toLowerCase()));
-  const membersToRegrant = activeMembers.filter(
-    (member) => !excluded.has(member.toLowerCase()),
-  );
+  const membersToRegrant = activeMembers.filter((member) => !excluded.has(member.toLowerCase()));
 
   const key = dependencies.generateAesKey();
   const encryptedBlob = dependencies.encryptBlob(input.envContent, key);

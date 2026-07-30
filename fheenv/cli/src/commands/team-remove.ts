@@ -7,6 +7,8 @@ import { revokeAccess } from "../lib/contracts-node";
 import { rotateCommand } from "./rotate";
 import { appendAuditEvent } from "../lib/audit";
 import { captureAnalytics } from "../lib/analytics";
+import { errorWithCause } from "../lib/errors";
+import { PartialRotationError } from "../lib/rotation";
 
 export interface TeamRemoveOptions {
   envName?: string;
@@ -47,10 +49,15 @@ export async function removeMemberAndRotate(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `Member revoked but rotation failed: ${message}\n` +
-        `Recovery: fheenv rotate --env ${(opts.envName ?? "production").toLowerCase()} ` +
-        `--file ${opts.envFile ?? ".env"}`,
+    const recoveryCommand =
+      error instanceof PartialRotationError
+        ? error.recoveryCommand
+        : `fheenv rotate --env ${(opts.envName ?? "production").toLowerCase()} --file ${
+            opts.envFile ?? ".env"
+          }`;
+    throw errorWithCause(
+      `Member revoked but rotation failed: ${message}\nRecovery: ${recoveryCommand}`,
+      error,
     );
   }
 
@@ -133,7 +140,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       } catch (auditError) {
         const operationMessage = error instanceof Error ? error.message : String(error);
         const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
-        throw new Error(`${operationMessage}\n${auditMessage}`);
+        throw errorWithCause(`${operationMessage}\n${auditMessage}`, error);
       }
     }
     throw error;

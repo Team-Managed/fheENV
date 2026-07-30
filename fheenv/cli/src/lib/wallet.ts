@@ -7,12 +7,7 @@ import {
   type Chain,
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  scryptSync,
-} from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -90,17 +85,13 @@ export function saveWallet(
   writeWalletAtomically(walletPath, encryptWallet(privateKey, passphrase));
 }
 
-export function loadWallet(
-  passphrase: string,
-  walletPath = KEYFILE_PATH,
-): `0x${string}` {
+export function loadWallet(passphrase: string, walletPath = KEYFILE_PATH): `0x${string}` {
   if (!fs.existsSync(walletPath)) {
     throw new Error("No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY.");
   }
 
   const keyfile = JSON.parse(fs.readFileSync(walletPath, "utf8")) as
-    | EncryptedKeyfile
-    | LegacyKeyfile;
+    EncryptedKeyfile | LegacyKeyfile;
   if (!("version" in keyfile) || keyfile.version !== 2) {
     throw new Error(
       "Found a legacy plaintext wallet. Run `fheenv login --migrate` before continuing.",
@@ -110,11 +101,7 @@ export function loadWallet(
 
   try {
     const key = scryptSync(passphrase, Buffer.from(keyfile.salt, "hex"), 32, SCRYPT_OPTIONS);
-    const decipher = createDecipheriv(
-      "aes-256-gcm",
-      key,
-      Buffer.from(keyfile.iv, "hex"),
-    );
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(keyfile.iv, "hex"));
     decipher.setAuthTag(Buffer.from(keyfile.authTag, "hex"));
     const privateKey = Buffer.concat([
       decipher.update(Buffer.from(keyfile.ciphertext, "hex")),
@@ -127,14 +114,10 @@ export function loadWallet(
   }
 }
 
-export function migrateLegacyWallet(
-  passphrase: string,
-  walletPath = KEYFILE_PATH,
-): void {
+export function migrateLegacyWallet(passphrase: string, walletPath = KEYFILE_PATH): void {
   if (!fs.existsSync(walletPath)) throw new Error("No legacy wallet found to migrate.");
   const legacy = JSON.parse(fs.readFileSync(walletPath, "utf8")) as
-    | EncryptedKeyfile
-    | LegacyKeyfile;
+    EncryptedKeyfile | LegacyKeyfile;
   if ("version" in legacy) throw new Error("Wallet is already encrypted.");
   assertPrivateKey(legacy.privateKey);
   saveWallet(legacy.privateKey, passphrase, walletPath);
