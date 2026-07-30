@@ -5,6 +5,7 @@ import { readConfig } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { revokeAccess } from "../lib/contracts-node";
 import { rotateCommand } from "./rotate";
+import { appendAuditEvent } from "../lib/audit";
 
 export interface TeamRemoveOptions {
   envName?: string;
@@ -59,6 +60,8 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
   const config = readConfig();
   const envName = (opts.envName ?? "production").toLowerCase();
   const spinner = ora(`Revoking access for ${opts.member}...`).start();
+  let revoked = false;
+  let memberAuditAttempted = false;
 
   try {
     const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
@@ -72,12 +75,31 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
           walletClient,
           publicClient,
         );
+        revoked = true;
         spinner.succeed(chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`));
       },
-      rotate: rotateCommand,
+      rotate: (options) => rotateCommand({ ...options, trigger: "team_remove" }),
+    });
+
+    memberAuditAttempted = true;
+    appendAuditEvent({
+      action: "member_revoked",
+      projectId: String(config.projectId),
+      environment: envName,
+      target: opts.member,
+      status: "success",
+      trigger: "team_remove",
     });
 
     if (result.rotationSkipped) {
+      appendAuditEvent({
+        action: "rotation_skipped",
+        projectId: String(config.projectId),
+        environment: envName,
+        target: opts.member,
+        status: "skipped",
+        trigger: "team_remove",
+      });
       console.warn(
         chalk.bgYellow.black.bold(
           " Rotation skipped explicitly: the removed member retains access to current ciphertext handles. ",
@@ -94,6 +116,23 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
     );
   } catch (error) {
     if (spinner.isSpinning) spinner.fail("Member removal failed");
+    if (revoked && !memberAuditAttempted) {
+      try {
+        appendAuditEvent({
+          action: "member_revoked",
+          projectId: String(config.projectId),
+          environment: envName,
+          target: opts.member,
+          status: "success",
+          trigger: "team_remove",
+        });
+      } catch (auditError) {
+        const operationMessage = error instanceof Error ? error.message : String(error);
+        const auditMessage =
+          auditError instanceof Error ? auditError.message : String(auditError);
+        throw new Error(`${operationMessage}\n${auditMessage}`);
+      }
+    }
     throw error;
   }
 }

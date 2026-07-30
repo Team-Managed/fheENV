@@ -20,18 +20,21 @@ import {
   rotateEnvironment,
   type RotationResult,
 } from "../lib/rotation";
+import { appendAuditEvent, type AuditEvent } from "../lib/audit";
 
 export interface RotateOptions {
   envName?: string;
   envFile?: string;
   regrantOnly?: boolean;
   excludeMembers?: Address[];
+  trigger?: AuditEvent["trigger"];
 }
 
 export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationResult | void> {
   const config = readConfig();
   const envName = (opts.envName ?? "production").toLowerCase();
   const spinner = ora(`Rotating AES key for env "${envName}"...`).start();
+  let completedResult: RotationResult | undefined;
 
   try {
     const { publicClient, walletClient, account } = createClients(config.rpcUrl, config.chainId);
@@ -111,8 +114,18 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         batchGrantAccess: grantMembers,
       },
     );
+    completedResult = result;
 
     spinner.succeed(chalk.green(`Rotation complete for "${envName}" (v${result.newVersion})`));
+    appendAuditEvent({
+      action: "rotation_completed",
+      projectId: String(config.projectId),
+      environment: envName,
+      previousVersion: String(result.previousVersion),
+      newVersion: String(result.newVersion),
+      status: "success",
+      trigger: opts.trigger ?? "manual",
+    });
     console.log(chalk.dim(`  New IPFS CID : ${result.newCid}`));
     console.log(
       chalk.dim(
@@ -123,9 +136,42 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
     );
     return result;
   } catch (error) {
+    if (completedResult) {
+      spinner.fail("Rotation completed, but the local audit write failed");
+      throw error;
+    }
     spinner.fail("Rotation failed");
     if (error instanceof PartialRotationError) {
       console.error(chalk.red(`  Recovery required: ${error.recoveryCommand}`));
+      try {
+        appendAuditEvent({
+          action: "rotation_failed",
+          projectId: String(config.projectId),
+          environment: envName,
+          newVersion: String(error.newVersion),
+          status: "partial",
+          trigger: opts.trigger ?? "manual",
+        });
+      } catch (auditError) {
+        const auditMessage =
+          auditError instanceof Error ? auditError.message : String(auditError);
+        throw new Error(`${error.message}\n${auditMessage}`);
+      }
+    } else {
+      try {
+        appendAuditEvent({
+          action: "rotation_failed",
+          projectId: String(config.projectId),
+          environment: envName,
+          status: "failed",
+          trigger: opts.trigger ?? "manual",
+        });
+      } catch (auditError) {
+        const operationMessage = error instanceof Error ? error.message : String(error);
+        const auditMessage =
+          auditError instanceof Error ? auditError.message : String(auditError);
+        throw new Error(`${operationMessage}\n${auditMessage}`);
+      }
     }
     throw error;
   }

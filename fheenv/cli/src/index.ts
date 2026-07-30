@@ -11,6 +11,7 @@ import { teamRemoveCommand } from "./commands/team-remove";
 import { teamRemoveOwnerCommand } from "./commands/team-remove-owner";
 import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
+import { exportAuditCommand } from "./commands/export-audit";
 
 const program = new Command();
 
@@ -204,6 +205,25 @@ program
   .action(async () => {
     try {
       await updateCommand();
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("export-audit")
+  .description("Export local operational audit records as CSV")
+  .option("-o, --output <path>", "Write CSV to a file instead of stdout")
+  .option("--from <date>", "Include records on or after this ISO date")
+  .option("--to <date>", "Include records on or before this ISO date")
+  .action((opts) => {
+    try {
+      exportAuditCommand({
+        output: opts.output,
+        from: opts.from,
+        to: opts.to,
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
