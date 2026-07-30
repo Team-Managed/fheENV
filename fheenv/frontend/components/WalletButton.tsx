@@ -6,12 +6,13 @@ import { Wallet, AlertTriangle } from "lucide-react";
 
 export function WalletButton() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
+  const { connectAsync, connectors, error: connectError, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
 
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   if (!mounted)
     return (
@@ -19,6 +20,7 @@ export function WalletButton() {
     );
 
   const isWrongNetwork = isConnected && chainId !== sepolia.id;
+  const hasConnector = connectors.length > 0;
 
   if (isWrongNetwork) {
     return (
@@ -52,7 +54,7 @@ export function WalletButton() {
             {address?.slice(0, 6)}…{address?.slice(-4)}
           </span>
           <span className="text-slate-600">·</span>
-          <span style={{ color: "var(--aqua)" }} className="font-medium">
+          <span style={{ color: "var(--brand-blue)" }} className="font-medium">
             Sepolia
           </span>
         </div>
@@ -69,16 +71,32 @@ export function WalletButton() {
 
   return (
     <button
-      onClick={() => connect({ connector: connectors[0] })}
+      onClick={() => {
+        const connector = connectors[0];
+        if (!connector) return;
+        void connectAsync({ connector }).catch(() => undefined);
+      }}
+      disabled={isPending || !hasConnector}
+      title={
+        connectError?.message ??
+        (!hasConnector ? "Install MetaMask or another browser wallet to continue" : undefined)
+      }
       className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
       style={{
-        background: "var(--aqua)",
+        background: "var(--brand-blue)",
         color: "#030712",
-        boxShadow: "0 0 14px var(--aqua-glow)",
+        boxShadow: "0 0 14px var(--brand-blue-glow)",
+        opacity: isPending || !hasConnector ? 0.7 : 1,
       }}
     >
       <Wallet className="size-4" />
-      Connect Wallet
+      {isPending
+        ? "Connecting..."
+        : connectError
+          ? "Retry Wallet"
+          : hasConnector
+            ? "Connect Wallet"
+            : "Install Wallet"}
     </button>
   );
 }

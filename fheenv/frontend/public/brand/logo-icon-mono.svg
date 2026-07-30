@@ -1,23 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Base -->
-  <rect width="512" height="512" rx="120" fill="#0F172A" />
-
-  <!-- THE LOCK -->
-  <g transform="translate(0, 5)">
-    <!-- Shackle -->
-    <path d="M 184 240 V 170 A 72 72 0 0 1 328 170 V 240" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="36" stroke-linecap="round" />
-    
-    <!-- Lock Body -->
-    <rect x="136" y="240" width="240" height="180" rx="36" fill="#FFFFFF" fill-opacity="0.9" />
-    
-    <!-- Lock Inner Plate -->
-    <rect x="156" y="260" width="200" height="140" rx="20" fill="#0F172A" />
-
-    <!-- Clean Code Keyhole < • > -->
-    <g transform="translate(256, 330)">
-      <path d="M -18 -20 L -38 0 L -18 20" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M 18 -20 L 38 0 L 18 20" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="0" cy="0" r="10" fill="#FFFFFF" fill-opacity="0.9" />
-    </g>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="fheENV">
+  <rect width="512" height="512" rx="120" fill="#021526"/>
+  <path d="M180 254v-72a76 76 0 0 1 152 0v72" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round"/>
+  <rect x="126" y="254" width="260" height="188" rx="42" fill="#fff"/>
+  <rect x="151" y="279" width="210" height="138" rx="26" fill="#021526"/>
+  <path d="m236 330-18 18 18 18m40-36 18 18-18 18M256 315v66" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="348" r="15" fill="#fff"/>
 </svg>

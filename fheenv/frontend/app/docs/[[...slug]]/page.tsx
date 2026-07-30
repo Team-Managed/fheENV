@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { Mermaid } from "@/components/docs/Mermaid";
 import type { ComponentProps, ReactElement } from "react";
+import type { TOCItemType } from "fumadocs-core/toc";
 
 function Pre(props: ComponentProps<"pre">) {
   const child = props.children as ReactElement<{ className?: string; children?: string }>;
@@ -14,8 +15,7 @@ function Pre(props: ComponentProps<"pre">) {
     return <Mermaid chart={child.props.children.trim()} />;
   }
   const DefaultPre = defaultMdxComponents.pre!;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <DefaultPre {...(props as any)} />;
+  return <DefaultPre {...props} />;
 }
 
 const mdxComponents = {
@@ -29,8 +29,13 @@ export default async function Page(props: { params: Promise<{ slug?: string[] }>
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { body: MDX, toc } = page.data as any;
+  interface FumadocsPageData {
+    title: string;
+    description?: string;
+    body: React.ComponentType<{ components: Record<string, unknown> }>;
+    toc: TOCItemType[];
+  }
+  const { body: MDX, toc } = page.data as unknown as FumadocsPageData;
 
   return (
     <DocsPage toc={toc}>

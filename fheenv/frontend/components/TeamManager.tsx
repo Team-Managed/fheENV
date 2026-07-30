@@ -150,7 +150,7 @@ export function TeamManager({ projectId, envName }: Props) {
           className="size-8 rounded-lg flex items-center justify-center"
           style={{ background: "rgba(45,212,191,0.1)" }}
         >
-          <Users className="size-4" style={{ color: "var(--aqua)" }} />
+          <Users className="size-4" style={{ color: "var(--brand-blue)" }} />
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-200">Team Access</p>
@@ -181,14 +181,14 @@ export function TeamManager({ projectId, envName }: Props) {
               }}
               onKeyDown={(e) => e.key === "Enter" && handleGrant()}
               style={inputStyle}
-              onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+              onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
               onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
             />
             <button
               onClick={handleGrant}
               disabled={grantLoading}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all disabled:opacity-40"
-              style={{ background: "var(--aqua)", color: "#030712" }}
+              style={{ background: "var(--brand-blue)", color: "#030712" }}
             >
               {grantLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
               {grantLoading ? "…" : "Grant"}
@@ -196,7 +196,7 @@ export function TeamManager({ projectId, envName }: Props) {
           </div>
           {grantError && <p className="text-xs text-red-400 mt-1.5 font-mono">{grantError}</p>}
           {grantSuccess && (
-            <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--aqua)" }}>
+            <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--brand-blue)" }}>
               Access granted ✓
             </p>
           )}
@@ -221,21 +221,21 @@ export function TeamManager({ projectId, envName }: Props) {
             placeholder={"0xaaa...111\n0xbbb...222"}
             rows={4}
             style={{ ...inputStyle, resize: "none", display: "block", marginBottom: "0.5rem" }}
-            onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+            onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
           />
           <button
             onClick={handleBatchGrant}
             disabled={batchLoading || !batchRaw.trim()}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all disabled:opacity-40"
-            style={{ background: "var(--aqua)", color: "#030712" }}
+            style={{ background: "var(--brand-blue)", color: "#030712" }}
           >
             {batchLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
             {batchLoading ? "Granting…" : "Batch Grant"}
           </button>
           {batchError && <p className="text-xs text-red-400 mt-1.5 font-mono">{batchError}</p>}
           {batchSuccess && (
-            <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--aqua)" }}>
+            <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--brand-blue)" }}>
               Batch access granted ✓
             </p>
           )}

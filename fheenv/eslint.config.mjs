@@ -15,6 +15,7 @@ export default tseslint.config(
       "**/typechain-types/**",
       "**/coverage/**",
       "**/.source/**",
+      "frontend/**",
     ],
   },
   {

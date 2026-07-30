@@ -120,6 +120,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
         id: i,
       });
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIconPositions(newIcons);
   }, [icons, images]);
 
