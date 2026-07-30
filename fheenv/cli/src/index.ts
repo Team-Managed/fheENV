@@ -138,12 +138,19 @@ team
 // ── fheenv team remove ────────────────────────────────────────────────────────
 team
   .command("remove")
-  .description("Revoke an address's access (⚠️  KEY ROTATION REQUIRED — run push after)")
+  .description("Revoke an address and rotate the environment key")
   .requiredOption("-m, --member <address>", "Ethereum address to revoke")
   .option("-e, --env <envName>", "Environment name", "production")
+  .option("-f, --file <path>", "Path to the plaintext env file to re-encrypt", ".env")
+  .option("--no-rotate", "Skip rotation explicitly (removed member keeps current FHE access)")
   .action(async (opts) => {
     try {
-      await teamRemoveCommand({ member: opts.member, envName: opts.env });
+      await teamRemoveCommand({
+        member: opts.member,
+        envName: opts.env,
+        envFile: opts.file,
+        noRotate: Boolean(opts.noRotate),
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
