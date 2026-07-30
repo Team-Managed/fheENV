@@ -45,6 +45,7 @@ function encryptKey(privateKey: string, passphrase: string): KeyfileV2 {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
+    maxmem: 64 * 1024 * 1024,
   });
   const cipher = createCipheriv("aes-256-gcm", derivedKey, iv);
   const ciphertext = Buffer.concat([cipher.update(privateKey, "utf8"), cipher.final()]);
@@ -67,6 +68,7 @@ function decryptKey(keyfile: KeyfileV2, passphrase: string): string {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
+    maxmem: 64 * 1024 * 1024,
   });
   const decipher = createDecipheriv("aes-256-gcm", derivedKey, iv);
   decipher.setAuthTag(authTag);

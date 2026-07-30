@@ -21,36 +21,50 @@ function readStdin(): Promise<string> {
  */
 function promptSecret(promptText: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      terminal: true
-    });
+    process.stdout.write(promptText);
+    let result = "";
 
-    const oldWrite = (rl as any)._writeToOutput;
-    (rl as any)._writeToOutput = function (stringToWrite: string) {
-      if (stringToWrite.startsWith(promptText)) {
-        const secretPart = stringToWrite.slice(promptText.length);
-        const masked = secretPart.replace(/[^ \r\n]/g, "*");
-        oldWrite.call(rl, promptText + masked);
-      } else {
-        oldWrite.call(rl, stringToWrite);
+    const onKeypress = (str: string, key: readline.Key) => {
+      if (key && key.ctrl && key.name === "c") {
+        cleanup();
+        process.stdout.write("\n");
+        reject(new Error("Interrupted"));
+        return;
+      }
+      if (key && (key.name === "return" || key.name === "enter")) {
+        cleanup();
+        process.stdout.write("\n");
+        resolve(result.trim());
+        return;
+      }
+      if (key && key.name === "backspace") {
+        if (result.length > 0) {
+          result = result.slice(0, -1);
+          process.stdout.write("\x1B[1D\x1B[0K");
+        }
+        return;
+      }
+      if (str && (!key || (!key.ctrl && !key.meta))) {
+        // filter printable characters
+        const printable = str.replace(/[^\x20-\x7E]/g, "");
+        if (printable.length > 0) {
+          result += printable;
+          process.stdout.write("*".repeat(printable.length));
+        }
       }
     };
 
-    const onSigint = () => {
-      process.stdout.write("\n");
-      rl.close();
-      reject(new Error("Interrupted"));
+    const cleanup = () => {
+      process.stdin.removeListener("keypress", onKeypress);
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+      process.stdin.pause();
     };
-    process.once("SIGINT", onSigint);
 
-    rl.question(promptText, (answer) => {
-      process.removeListener("SIGINT", onSigint);
-      process.stdout.write("\n");
-      rl.close();
-      resolve(answer.trim());
-    });
+    if (process.stdin.isTTY) process.stdin.setRawMode(true);
+    process.stdin.resume();
+
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.on("keypress", onKeypress);
   });
 }
 
