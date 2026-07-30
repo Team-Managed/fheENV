@@ -8,6 +8,7 @@ import { pullCommand } from "./commands/pull";
 import { runCommand } from "./commands/run";
 import { teamAddCommand } from "./commands/team-add";
 import { teamRemoveCommand } from "./commands/team-remove";
+import { teamRemoveOwnerCommand } from "./commands/team-remove-owner";
 import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
 
@@ -143,6 +144,20 @@ team
   .action(async (opts) => {
     try {
       await teamRemoveCommand({ member: opts.member, envName: opts.env });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── fheenv team remove-owner ──────────────────────────────────────────────────
+team
+  .command("remove-owner")
+  .description("Remove a co-owner from the project (primary owner only)")
+  .requiredOption("-o, --owner <address>", "Ethereum address of the co-owner to remove")
+  .action(async (opts) => {
+    try {
+      await teamRemoveOwnerCommand({ owner: opts.owner });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);

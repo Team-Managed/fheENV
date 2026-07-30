@@ -75,6 +75,7 @@ async function main() {
   console.log("Implementation address:", implementationAddress);
   console.log("Upgrade owner:", upgradeOwner);
   console.log(`NEXT_PUBLIC_REGISTRY_ADDRESS=${proxyAddress}`);
+  console.log(`NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK=${receipt.blockNumber}`);
 
   if (!config.local) {
     const manifest = {

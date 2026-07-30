@@ -1,33 +1,127 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
+import { parseAbiItem } from "viem";
 import { useRouter } from "next/navigation";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
-import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
+import { REGISTRY_ADDRESS, REGISTRY_DEPLOY_BLOCK } from "@/lib/contracts";
+import {
+  reconstructOwnedProjects,
+  type OwnedProject,
+  type ProjectOwnershipEvent,
+} from "@/lib/project-ownership";
 import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen, ScrollText } from "lucide-react";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
+  const publicClient = usePublicClient({ chainId: 11155111 });
   const [showModal, setShowModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
 
-  const {
-    data: nextId,
-    isLoading: loadingCount,
-    error: countError,
-  } = useReadContract({
-    address: REGISTRY_ADDRESS as `0x${string}`,
-    abi: REGISTRY_ABI,
-    functionName: "nextProjectId",
-    chainId: 11155111,
-    query: { enabled: !!REGISTRY_ADDRESS },
-  });
+  const [ownedProjects, setOwnedProjects] = useState<OwnedProject[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectsError, setProjectsError] = useState<Error | null>(null);
+  const configurationError =
+    REGISTRY_DEPLOY_BLOCK === null
+      ? new Error("NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK must be set to the registry deployment block.")
+      : null;
+  const dashboardError = configurationError ?? projectsError;
 
-  const projectIds = Array.from({ length: Number(nextId ?? 0) }, (_, i) => BigInt(i));
+  useEffect(() => {
+    if (!address || !publicClient || !REGISTRY_ADDRESS || REGISTRY_DEPLOY_BLOCK === null) return;
+    const account = address;
+    const client = publicClient;
+    const deployBlock = REGISTRY_DEPLOY_BLOCK;
+    let cancelled = false;
+
+    async function loadProjects() {
+      setLoadingProjects(true);
+      setProjectsError(null);
+      try {
+        const [createdLogs, addedLogs, removedLogs] = await Promise.all([
+          client.getLogs({
+            address: REGISTRY_ADDRESS,
+            event: parseAbiItem(
+              "event ProjectCreated(uint256 indexed projectId, address indexed owner, string name)",
+            ),
+            fromBlock: deployBlock,
+            toBlock: "latest",
+          }),
+          client.getLogs({
+            address: REGISTRY_ADDRESS,
+            event: parseAbiItem(
+              "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
+            ),
+            args: { newOwner: account },
+            fromBlock: deployBlock,
+            toBlock: "latest",
+          }),
+          client.getLogs({
+            address: REGISTRY_ADDRESS,
+            event: parseAbiItem(
+              "event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner)",
+            ),
+            args: { removedOwner: account },
+            fromBlock: deployBlock,
+            toBlock: "latest",
+          }),
+        ]);
+        if (cancelled) return;
+        const events: ProjectOwnershipEvent[] = [];
+        for (const log of createdLogs) {
+          const { projectId, owner, name } = log.args;
+          if (projectId === undefined || owner === undefined || name === undefined) continue;
+          events.push({
+            kind: "created",
+            projectId,
+            owner,
+            name,
+            blockNumber: log.blockNumber,
+            logIndex: log.logIndex,
+          });
+        }
+        for (const log of addedLogs) {
+          const { projectId, newOwner } = log.args;
+          if (projectId === undefined || newOwner === undefined) continue;
+          events.push({
+            kind: "added",
+            projectId,
+            owner: newOwner,
+            blockNumber: log.blockNumber,
+            logIndex: log.logIndex,
+          });
+        }
+        for (const log of removedLogs) {
+          const { projectId, removedOwner } = log.args;
+          if (projectId === undefined || removedOwner === undefined) continue;
+          events.push({
+            kind: "removed",
+            projectId,
+            owner: removedOwner,
+            blockNumber: log.blockNumber,
+            logIndex: log.logIndex,
+          });
+        }
+        setOwnedProjects(reconstructOwnedProjects(events, account));
+        setLoadingProjects(false);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setProjectsError(err instanceof Error ? err : new Error(String(err)));
+          setLoadingProjects(false);
+        }
+      }
+    }
+
+    void loadProjects();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, publicClient]);
 
   return (
     <>
@@ -71,7 +165,7 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-      ) : loadingCount ? (
+      ) : loadingProjects ? (
         <div
           className="text-center py-24 flex flex-col items-center gap-3"
           style={{ color: "var(--text-muted)" }}
@@ -79,20 +173,20 @@ export default function Dashboard() {
           <Loader2 className="size-6 animate-spin" style={{ color: "var(--brand-blue)" }} />
           <p className="text-sm">Reading from Sepolia…</p>
         </div>
-      ) : countError ? (
+      ) : dashboardError ? (
         <div
           className="rounded-xl p-6 flex items-start gap-3"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
         >
           <AlertCircle className="size-5 text-red-400 mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-400">Contract read failed</p>
+            <p className="text-sm font-medium text-red-400">Failed to load projects</p>
             <p className="text-xs mt-1 font-mono break-all" style={{ color: "var(--text-muted)" }}>
-              {countError.message}
+              {dashboardError.message}
             </p>
           </div>
         </div>
-      ) : projectIds.length === 0 ? (
+      ) : ownedProjects.length === 0 ? (
         <div className="text-center py-24 flex flex-col items-center gap-4">
           <div
             className="size-14 rounded-full flex items-center justify-center"
@@ -117,12 +211,11 @@ export default function Dashboard() {
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projectIds.map((id) => (
+            {ownedProjects.map((project) => (
               <ProjectCard
-                key={id.toString()}
-                projectId={id}
-                address={address!}
-                onClick={() => router.push(`/project/${id}`)}
+                key={project.id.toString()}
+                project={project}
+                onClick={() => router.push(`/project/${project.id}`)}
               />
             ))}
           </div>
@@ -146,34 +239,7 @@ export default function Dashboard() {
   );
 }
 
-type ProjectTuple = readonly [string, string, bigint, boolean];
-
-function ProjectCard({
-  projectId,
-  address,
-  onClick,
-}: {
-  projectId: bigint;
-  address: `0x${string}`;
-  onClick: () => void;
-}) {
-  const { data: raw } = useReadContract({
-    address: REGISTRY_ADDRESS,
-    abi: REGISTRY_ABI,
-    functionName: "projects",
-    args: [projectId],
-    chainId: 11155111,
-  });
-  const { data: isOwner } = useReadContract({
-    address: REGISTRY_ADDRESS,
-    abi: REGISTRY_ABI,
-    functionName: "owners",
-    args: [projectId, address],
-    chainId: 11155111,
-  });
-  const project = raw as unknown as ProjectTuple | undefined;
-  // Only show projects where the connected user is an owner
-  if (!project || !project[3] || !isOwner) return null;
+function ProjectCard({ project, onClick }: { project: OwnedProject; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -197,16 +263,16 @@ function ProjectCard({
       >
         <FolderLock className="size-4" style={{ color: "var(--brand-blue)" }} />
       </div>
-      <p className="font-semibold text-slate-100 text-sm">{project[0]}</p>
+      <p className="font-semibold text-slate-100 text-sm">{project.name}</p>
       <p className="text-xs font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>
-        {project[1].slice(0, 6)}…{project[1].slice(-4)}
+        Indexed from registry events
       </p>
       <div
         className="flex items-center justify-between mt-4 pt-4"
         style={{ borderTop: "1px solid var(--surface-border)" }}
       >
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Project #{projectId.toString()}
+          Project #{project.id.toString()}
         </span>
         <span
           className="flex items-center gap-1.5 text-xs font-medium transition-colors"
