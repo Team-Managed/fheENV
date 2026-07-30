@@ -68,7 +68,7 @@ export async function rotatorAddCommand(opts: RotatorAddOptions): Promise<void> 
     console.log(
       chalk.yellow(
         "\n  ⚠  SECURITY: The Rotator address now has FHE decrypt access on all environments\n" +
-          "  it rotates. Store this credential in a KMS or HSM — not a plaintext secret.",
+        "  it rotates. Protect this private key rigorously using GitHub Actions Secrets.\n",
       ),
     );
   } catch (err) {

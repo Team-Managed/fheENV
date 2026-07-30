@@ -41,7 +41,7 @@ program
   });
 
 // ── fheenv init ───────────────────────────────────────────────────────────────
-const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
+const SEPOLIA_REGISTRY = "0xe2aD791258862F628af1b8B5104532F3BceE5ECe";
 const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 const SEPOLIA_CHAIN_ID = 11155111;
 

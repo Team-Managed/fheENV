@@ -26,7 +26,8 @@ export const REGISTRY_ABI = parseAbi([
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
 ]);
 
-const DEFAULT_REGISTRY_ADDRESS: Address = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
+export const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address;
 
-export const REGISTRY_ADDRESS =
-  (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address | undefined) ?? DEFAULT_REGISTRY_ADDRESS;
+if (!REGISTRY_ADDRESS) {
+  throw new Error("Missing NEXT_PUBLIC_REGISTRY_ADDRESS environment variable.");
+}
