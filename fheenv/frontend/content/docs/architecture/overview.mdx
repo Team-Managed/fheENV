@@ -23,12 +23,7 @@ import { Mermaid } from "@/components/docs/Mermaid";
     G -->|Decrypt for wallet| H["Reassembled AES Key"]
     C -->|Fetch blob| I["Encrypted Blob"]
     H -->|AES-GCM decrypt| J[".env plaintext"]
-    I --> J
-    style A fill:#2dd4bf,color:#030712,stroke:#14b8a6
-    style J fill:#2dd4bf,color:#030712,stroke:#14b8a6
-    style F fill:#1e293b,color:#f1f5f9,stroke:#2dd4bf
-    style C fill:#1e293b,color:#f1f5f9,stroke:#94a3b8
-    style G fill:#1e293b,color:#f1f5f9,stroke:#2dd4bf`}
+    I --> J`}
 />
 
 ## Components
@@ -45,7 +40,8 @@ import { Mermaid } from "@/components/docs/Mermaid";
 - **fheENVRegistry.sol** — single contract managing all projects, environments, and access
 - **Optimistic locking** — version numbers prevent concurrent push conflicts
 - **FHE permission management** — `FHE.allow()` grants decrypt access per address
-- **Event-based audit trail** — all actions emit indexed events for transparency
+- **Event-based chain evidence** — environment and access changes emit indexed events
+- **Local structured audit** — CLI access and rotation activity is written as mode-`0600` JSONL
 
 ### 3. Threshold Network Layer
 

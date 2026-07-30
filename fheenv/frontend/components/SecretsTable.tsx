@@ -83,8 +83,10 @@ export function SecretsTable({ projectId, envName }: Props) {
     try {
       setLoadingMsg("Connecting to CoFHE…");
       const { cofheClient, FheTypes } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(
+        publicClient as unknown as Parameters<typeof cofheClient.connect>[0],
+        walletClient as unknown as Parameters<typeof cofheClient.connect>[1],
+      );
       setLoadingMsg("Creating FHE permit…");
       await cofheClient.permits.getOrCreateSelfPermit();
       setLoadingMsg("Requesting decryption from Threshold Network…");
@@ -93,7 +95,9 @@ export function SecretsTable({ projectId, envName }: Props) {
         .withPermit()
         .onPoll((ctx) =>
           setLoadingMsg(
-            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(ctx.elapsedMs / 1000)}s`,
+            `Threshold Network · attempt ${ctx.attemptIndex + 1} · ${Math.round(
+              ctx.elapsedMs / 1000,
+            )}s`,
           ),
         )
         .execute();
@@ -194,13 +198,14 @@ export function SecretsTable({ projectId, envName }: Props) {
       // 4. FHE-encrypt new key halves
       setSaveMsg("FHE-encrypting AES key…");
       const { cofheClient, Encryptable } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(publicClient, walletClient);
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
 
-      const [encHigh, encLow] = (await cofheClient
+      const [encHigh, encLow] = await cofheClient
         .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
-        .execute()) as any;
+        .execute();
+      const inKeyHigh = { ...encHigh, signature: encHigh.signature as `0x${string}` };
+      const inKeyLow = { ...encLow, signature: encLow.signature as `0x${string}` };
 
       // 5. Submit to chain
       setSaveMsg("Submitting to blockchain…");
@@ -208,7 +213,7 @@ export function SecretsTable({ projectId, envName }: Props) {
         address: REGISTRY_ADDRESS,
         abi: REGISTRY_ABI,
         functionName: "updateEnvironment",
-        args: [projectId, envName, encHigh, encLow, cid, version ?? 0n],
+        args: [projectId, envName, inKeyHigh, inKeyLow, cid, version ?? 0n],
         account: address,
       });
       await publicClient.waitForTransactionReceipt({
@@ -237,7 +242,7 @@ export function SecretsTable({ projectId, envName }: Props) {
             className="size-8 rounded-lg flex items-center justify-center"
             style={{ background: "rgba(45,212,191,0.1)" }}
           >
-            <Lock className="size-4" style={{ color: "var(--aqua)" }} />
+            <Lock className="size-4" style={{ color: "var(--brand-blue)" }} />
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-200">Secrets</p>
@@ -263,7 +268,7 @@ export function SecretsTable({ projectId, envName }: Props) {
                 onClick={enterEditMode}
                 title="Edit variables"
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all"
-                style={{ color: "var(--aqua)", border: "1px solid rgba(45,212,191,0.3)" }}
+                style={{ color: "var(--brand-blue)", border: "1px solid rgba(45,212,191,0.3)" }}
               >
                 <Pencil className="size-3.5" /> Edit
               </button>
@@ -282,9 +287,9 @@ export function SecretsTable({ projectId, envName }: Props) {
               disabled={loading || envLoading || !blobCid}
               className="flex items-center gap-1.5 text-xs px-4 py-1.5 rounded-full font-bold transition-all disabled:opacity-40"
               style={{
-                background: "var(--aqua)",
+                background: "var(--brand-blue)",
                 color: "#030712",
-                boxShadow: "0 0 12px var(--aqua-glow)",
+                boxShadow: "0 0 12px var(--brand-blue-glow)",
               }}
             >
               {loading ? (
@@ -300,7 +305,7 @@ export function SecretsTable({ projectId, envName }: Props) {
 
       {/* Loading message */}
       {loading && loadingMsg && (
-        <p className="text-xs font-mono mb-4 animate-pulse" style={{ color: "var(--aqua)" }}>
+        <p className="text-xs font-mono mb-4 animate-pulse" style={{ color: "var(--brand-blue)" }}>
           {loadingMsg}
         </p>
       )}
@@ -363,7 +368,7 @@ export function SecretsTable({ projectId, envName }: Props) {
                     <tr key={key} style={{ borderBottom: "1px solid var(--surface-border)" }}>
                       <td
                         className="px-4 py-2 font-mono font-medium"
-                        style={{ color: "var(--aqua)", whiteSpace: "nowrap" }}
+                        style={{ color: "var(--brand-blue)", whiteSpace: "nowrap" }}
                       >
                         {key}
                       </td>
@@ -377,7 +382,7 @@ export function SecretsTable({ projectId, envName }: Props) {
                               background: "rgba(3,7,18,0.8)",
                               border: "1px solid var(--surface-border)",
                             }}
-                            onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+                            onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
                             onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
                           />
                         ) : revealed[key] ? (
@@ -430,9 +435,9 @@ export function SecretsTable({ projectId, envName }: Props) {
                           style={{
                             background: "rgba(3,7,18,0.8)",
                             border: "1px solid var(--surface-border)",
-                            color: "var(--aqua)",
+                            color: "var(--brand-blue)",
                           }}
-                          onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+                          onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
                           onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
                         />
                       </td>
@@ -447,7 +452,7 @@ export function SecretsTable({ projectId, envName }: Props) {
                             background: "rgba(3,7,18,0.8)",
                             border: "1px solid var(--surface-border)",
                           }}
-                          onFocus={(e) => (e.target.style.borderColor = "var(--aqua)")}
+                          onFocus={(e) => (e.target.style.borderColor = "var(--brand-blue)")}
                           onBlur={(e) => (e.target.style.borderColor = "var(--surface-border)")}
                         />
                       </td>
@@ -456,7 +461,7 @@ export function SecretsTable({ projectId, envName }: Props) {
                           onClick={addRow}
                           disabled={!newKey.trim()}
                           className="transition-colors disabled:opacity-30"
-                          style={{ color: "var(--aqua)" }}
+                          style={{ color: "var(--brand-blue)" }}
                         >
                           <Plus className="size-3.5" />
                         </button>
@@ -474,7 +479,7 @@ export function SecretsTable({ projectId, envName }: Props) {
               {saveMsg && (
                 <p
                   className={`text-xs font-mono mb-3 ${saveMsg.startsWith("Error") ? "text-red-400" : "animate-pulse"}`}
-                  style={saveMsg.startsWith("Error") ? {} : { color: "var(--aqua)" }}
+                  style={saveMsg.startsWith("Error") ? {} : { color: "var(--brand-blue)" }}
                 >
                   {saveMsg}
                 </p>
@@ -485,9 +490,9 @@ export function SecretsTable({ projectId, envName }: Props) {
                   disabled={saving}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all disabled:opacity-40"
                   style={{
-                    background: "var(--aqua)",
+                    background: "var(--brand-blue)",
                     color: "#030712",
-                    boxShadow: "0 0 12px var(--aqua-glow)",
+                    boxShadow: "0 0 12px var(--brand-blue-glow)",
                   }}
                 >
                   {saving ? (
@@ -514,7 +519,7 @@ export function SecretsTable({ projectId, envName }: Props) {
 
           {!editMode && (
             <div className="flex items-center gap-1.5 mt-3.5">
-              <ShieldCheck className="size-3.5" style={{ color: "var(--aqua)" }} />
+              <ShieldCheck className="size-3.5" style={{ color: "var(--brand-blue)" }} />
               <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
                 {Object.keys(displaySecrets).length} variable
                 {Object.keys(displaySecrets).length !== 1 ? "s" : ""} · decrypted locally · never

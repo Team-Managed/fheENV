@@ -9,8 +9,6 @@
     "cli/ci-cd",
     "---Dashboard---",
     "dashboard/overview",
-    "dashboard/push-secrets",
-    "dashboard/team-access",
     "---Architecture---",
     "architecture/overview",
     "architecture/smart-contract",

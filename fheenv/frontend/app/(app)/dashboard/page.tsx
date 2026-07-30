@@ -5,7 +5,7 @@ import { parseAbiItem } from "viem";
 import { useRouter } from "next/navigation";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
 import { REGISTRY_ABI, REGISTRY_ADDRESS, DEPLOY_BLOCK } from "@/lib/contracts";
-import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen } from "lucide-react";
+import { FolderLock, Plus, Loader2, AlertCircle, FolderOpen, ScrollText } from "lucide-react";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const publicClient = usePublicClient({ chainId: 11155111 });
   const [showModal, setShowModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   const clientConnected = mounted && isConnected;
 
@@ -80,7 +81,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Projects</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Each project holds isolated environments with FHE-encrypted secrets.
+            Select a project to review its on-chain audit trail.
           </p>
         </div>
         {clientConnected && (
@@ -88,9 +89,9 @@ export default function Dashboard() {
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
             style={{
-              background: "var(--aqua)",
+              background: "var(--brand-blue)",
               color: "#030712",
-              boxShadow: "0 0 16px var(--aqua-glow)",
+              boxShadow: "0 0 16px var(--brand-blue-glow)",
             }}
           >
             <Plus className="size-4" />
@@ -106,7 +107,7 @@ export default function Dashboard() {
             className="size-14 rounded-full flex items-center justify-center"
             style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
           >
-            <FolderLock className="size-6" style={{ color: "var(--aqua)" }} />
+            <FolderLock className="size-6" style={{ color: "var(--brand-blue)" }} />
           </div>
           <div>
             <p className="font-semibold text-slate-200">Connect your wallet</p>
@@ -120,7 +121,7 @@ export default function Dashboard() {
           className="text-center py-24 flex flex-col items-center gap-3"
           style={{ color: "var(--text-muted)" }}
         >
-          <Loader2 className="size-6 animate-spin" style={{ color: "var(--aqua)" }} />
+          <Loader2 className="size-6 animate-spin" style={{ color: "var(--brand-blue)" }} />
           <p className="text-sm">Reading from Sepolia…</p>
         </div>
       ) : projectsError ? (
@@ -153,20 +154,26 @@ export default function Dashboard() {
           <button
             onClick={() => setShowModal(true)}
             className="mt-1 text-sm font-medium transition-colors"
-            style={{ color: "var(--aqua)" }}
+            style={{ color: "var(--brand-blue)" }}
           >
             Create project →
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ownedProjectIds.map((id) => (
-            <ProjectCard
-              key={id.toString()}
-              projectId={id}
-              onClick={() => router.push(`/project/${id}`)}
-            />
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ownedProjectIds.map((id) => (
+              <ProjectCard
+                key={id.toString()}
+                projectId={id}
+                onClick={() => router.push(`/project/${id}`)}
+              />
+            ))}
+          </div>
+          <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            Only projects owned by this wallet are shown. Create a project or connect an owner
+            wallet if this list is empty.
+          </p>
         </div>
       )}
 
@@ -204,8 +211,8 @@ function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () =>
         border: "1px solid var(--surface-border)",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--aqua)";
-        (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px var(--aqua-glow)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--brand-blue)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px var(--brand-blue-glow)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = "var(--surface-border)";
@@ -216,7 +223,7 @@ function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () =>
         className="size-9 rounded-lg flex items-center justify-center mb-4 transition-colors"
         style={{ background: "rgba(45,212,191,0.1)" }}
       >
-        <FolderLock className="size-4" style={{ color: "var(--aqua)" }} />
+        <FolderLock className="size-4" style={{ color: "var(--brand-blue)" }} />
       </div>
       <p className="font-semibold text-slate-100 text-sm">{project[0]}</p>
       <p className="text-xs font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>
@@ -229,8 +236,12 @@ function ProjectCard({ projectId, onClick }: { projectId: bigint; onClick: () =>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           Project #{projectId.toString()}
         </span>
-        <span className="text-xs font-medium transition-colors" style={{ color: "var(--aqua)" }}>
-          Open →
+        <span
+          className="flex items-center gap-1.5 text-xs font-medium transition-colors"
+          style={{ color: "var(--brand-blue)" }}
+        >
+          <ScrollText className="size-3.5" />
+          View audit trail →
         </span>
       </div>
     </button>

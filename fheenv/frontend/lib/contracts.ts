@@ -1,4 +1,4 @@
-import { parseAbi } from "viem";
+import { parseAbi, type Address } from "viem";
 
 // InEuint128 tuple: (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature)
 // Matches compiled artifact: fheENVRegistry.json -> updateEnvironment inputs
@@ -28,7 +28,10 @@ export const REGISTRY_ABI = parseAbi([
   "event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner)",
 ]);
 
-export const REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "") as `0x${string}`;
+const DEFAULT_REGISTRY_ADDRESS: Address = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
+
+export const REGISTRY_ADDRESS =
+  (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address | undefined) ?? DEFAULT_REGISTRY_ADDRESS;
 
 // Block the registry contract was deployed at. Set NEXT_PUBLIC_DEPLOY_BLOCK to narrow
 // the getLogs range and avoid slow/rate-limited full-history queries on the RPC.
