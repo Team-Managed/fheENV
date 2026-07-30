@@ -401,6 +401,32 @@ After rotation, any removed members' old FHE permits are worthless.
 
 ---
 
+### Automated SOC2 Key Rotation (GitHub Actions)
+
+To stay SOC2 compliant, you should automate key rotation to happen on a schedule or during offboarding. Because `fheenv` uses a strict least-privilege `Rotator` role, you can safely automate this in GitHub Actions without giving CI/CD full ownership of the project.
+
+**1. Generate a Robot Wallet**
+Use the provided script to generate a fresh, secure wallet for GitHub Actions.
+```bash
+npx ts-node scripts/setup-github-rotator.ts
+```
+*(This will output a Robot Address and a Private Key)*
+
+**2. Grant the Rotator Role**
+As the project owner, grant the Robot Address the `Rotator` role on-chain:
+```bash
+fheenv rotator add --address <ROBOT_ADDRESS>
+```
+
+**3. Setup GitHub Actions**
+Add the Robot's Private Key as a GitHub Secret (`FHEENV_PRIVATE_KEY`). The Robot wallet can now safely rotate keys on a schedule using this command in your workflows:
+```bash
+FHEENV_PRIVATE_KEY=${{ secrets.FHEENV_PRIVATE_KEY }} fheenv rotate --env production
+```
+*Note: Ensure the Robot Wallet has a small amount of Sepolia ETH to pay for rotation gas fees!*
+
+---
+
 ### End-to-end workflow example
 
 ```bash
