@@ -19,7 +19,7 @@ import os from "os";
 import chalk from "chalk";
 import ora from "ora";
 import { readConfig } from "../lib/config";
-import { createPublicClient, http, type Address, type PublicClient } from "viem";
+import { createPublicClient, http, decodeEventLog, type Address, type PublicClient } from "viem";
 import { logAuditEvent, type AuditEvent } from "@fheenv/core";
 
 // ── Paths ──────────────────────────────────────────────────────────────────────
@@ -195,6 +195,79 @@ export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<v
 
   const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
 
+  // --- NEW BLOCKSCOUT API LOGIC ---
+  // We use the Blockscout REST API to bypass RPC archive node restrictions and rate limits.
+  // This fetches the entire history in a single HTTP request!
+  const apiUrl = `https://eth-sepolia.blockscout.com/api?module=logs&action=getLogs&address=${registryAddress}&fromBlock=${fromBlock}&toBlock=latest`;
+  
+  try {
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    
+    if (data.status === "1" && Array.isArray(data.result)) {
+      for (const rawLog of data.result) {
+        // Filter out logs that don't belong to our project
+        // The projectId is always the first indexed argument (topics[1]) in our events
+        if (!rawLog.topics || rawLog.topics[1] !== projectIdHex) {
+          continue;
+        }
+
+        let decoded: any = null;
+        let eventName = "";
+
+        // Try to decode against our known ABIs
+        for (const ev of EVENTS) {
+          try {
+            decoded = decodeEventLog({
+              abi: [ev.abi],
+              data: rawLog.data,
+              topics: rawLog.topics,
+            });
+            eventName = ev.name;
+            break;
+          } catch {
+            // Not this event type, try the next one
+          }
+        }
+
+        if (!decoded) continue; // Unrecognized event
+
+        const txHash = rawLog.transactionHash ?? "";
+        const logIdx = rawLog.logIndex ? parseInt(rawLog.logIndex, 16) : undefined;
+        const logId = logIdx !== undefined ? `${txHash}-${logIdx}` : txHash;
+        
+        if (seen.has(logId)) continue;
+        seen.add(logId);
+
+        const args = decoded.args ?? {};
+
+        const record: AuditEvent & { source: string; blockNumber: string } = {
+          source: "on_chain",
+          blockNumber: parseInt(rawLog.blockNumber, 16).toString(),
+          txHash,
+          logIndex: logIdx,
+          actor: "", // not available from log; enriched below
+          action: eventNameToAction(eventName),
+          projectId: config.projectId.toString(),
+          envName: reverseEnvHash(String(args.envHash ?? ""), projectIdHex),
+          target: String(args.member ?? args.rotator ?? ""),
+          newCid: String(args.blobCid ?? ""),
+        };
+
+        logAuditEvent(record);
+        newRecords++;
+      }
+    } else if (data.message === "No records found") {
+      // It's perfectly fine if there are no logs in this range
+    } else {
+      console.warn(chalk.yellow(`\nAPI Warning: ${data.message || "Unknown error from Blockscout"}`));
+    }
+  } catch (err: any) {
+    console.error(chalk.red(`\nFailed to fetch from Blockscout API: ${err.message}`));
+  }
+
+  // --- LEGACY RPC LOGIC (COMMENTED OUT AS FALLBACK) ---
+  /*
   // Set to 2000 to comply with Infura's strict getLogs block range limits
   const MAX_BLOCK_RANGE = 2000n;
 
@@ -263,6 +336,7 @@ export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<v
       }
     }
   }
+  */
 
   writeLastIndexedBlock(latestBlock);
   spinner.succeed(
