@@ -9,6 +9,7 @@ import { fetchFromIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheDecryptUint128 } from "../lib/fhe-node";
 import { type Address } from "viem";
+import { captureAnalytics } from "../lib/analytics";
 
 export interface PullOptions {
   envName?: string;
@@ -66,6 +67,7 @@ export async function pullCommand(opts: PullOptions = {}): Promise<void> {
     fs.writeFileSync(outPath, envContent, { mode: 0o600 });
 
     spinner.succeed(chalk.green(`Decrypted env written to ${outFile} (permissions: 0600)`));
+    await captureAnalytics("environment_pulled", { success: true });
     console.log(
       chalk.dim(
         `  Version: ${envData.version} | Updated: ${new Date(

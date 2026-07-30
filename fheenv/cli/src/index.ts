@@ -12,6 +12,7 @@ import { teamRemoveOwnerCommand } from "./commands/team-remove-owner";
 import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
 import { exportAuditCommand } from "./commands/export-audit";
+import { analyticsCommand } from "./commands/analytics";
 
 const program = new Command();
 
@@ -60,6 +61,7 @@ program
     process.env.FHEENV_PINATA_JWT,
   )
   .option("-e, --env <envName>", "Default environment name", "production")
+  .option("--analytics", "Opt in to anonymous, minimal CLI product analytics")
   .action(async (opts) => {
     try {
       await initCommand({
@@ -69,6 +71,7 @@ program
         chainId: opts.chainId,
         pinataJwt: opts.pinataJwt,
         envName: opts.env,
+        analytics: Boolean(opts.analytics),
       });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -229,5 +232,10 @@ program
       process.exit(1);
     }
   });
+
+const analytics = program.command("analytics").description("Manage anonymous CLI analytics");
+analytics.command("enable").action(() => analyticsCommand("enable"));
+analytics.command("disable").action(() => analyticsCommand("disable"));
+analytics.command("status").action(() => analyticsCommand("status"));
 
 program.parse(process.argv);

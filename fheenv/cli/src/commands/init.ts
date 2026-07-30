@@ -6,6 +6,7 @@ import { createProject } from "../lib/contracts-node";
 import { type Address } from "viem";
 import fs from "fs";
 import path from "path";
+import { captureAnalytics, enableAnalytics } from "../lib/analytics";
 
 export interface InitOptions {
   name: string;
@@ -14,6 +15,7 @@ export interface InitOptions {
   chainId: number;
   pinataJwt: string;
   envName?: string;
+  analytics?: boolean;
 }
 
 export async function initCommand(opts: InitOptions): Promise<void> {
@@ -21,6 +23,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   if (fs.existsSync(configPath)) {
     throw new Error(".fheenv.json already exists. Remove it to re-initialize.");
   }
+  if (opts.analytics) enableAnalytics();
 
   // Validate wallet is loaded
   loadAccountKey();
@@ -56,6 +59,8 @@ export async function initCommand(opts: InitOptions): Promise<void> {
     writeConfig(config);
 
     spinner.succeed(chalk.green(`Project created! ID: ${projectId}`));
+    await captureAnalytics("cli_initialized", { success: true });
+    await captureAnalytics("project_created", { success: true });
     console.log(chalk.cyan("  .fheenv.json written to current directory."));
     if (opts.envName) {
       console.log(chalk.dim(`  Next: fheenv push --env ${opts.envName}`));

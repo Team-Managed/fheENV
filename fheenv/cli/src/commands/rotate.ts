@@ -21,6 +21,7 @@ import {
   type RotationResult,
 } from "../lib/rotation";
 import { appendAuditEvent, type AuditEvent } from "../lib/audit";
+import { captureAnalytics } from "../lib/analytics";
 
 export interface RotateOptions {
   envName?: string;
@@ -49,14 +50,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         BigInt(config.deployedAtBlock),
       );
     const grantMembers = (members: Address[]) =>
-      batchGrantAccess(
-        registryAddress,
-        projectId,
-        envName,
-        members,
-        walletClient,
-        publicClient,
-      );
+      batchGrantAccess(registryAddress, projectId, envName, members, walletClient, publicClient);
 
     if (opts.regrantOnly) {
       spinner.text = "Regranting current members on the latest FHE handles...";
@@ -89,17 +83,14 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         excludeMembers: opts.excludeMembers,
       },
       {
-        getEnvironment: () =>
-          getEnvironment(registryAddress, projectId, envName, publicClient),
+        getEnvironment: () => getEnvironment(registryAddress, projectId, envName, publicClient),
         getActiveMembers: getMembers,
         generateAesKey: generateAesKeyNode,
         encryptBlob: aesEncryptNode,
         splitKey: splitAesKeyToUint128Node,
         uploadBlob: (blob) => uploadToIPFSNode(blob, envName, config.pinataJwt),
         encryptKeyHalf: async (value) =>
-          toInEuint128(
-            await fheEncryptUint128(fheClient, value, account.address, config.chainId),
-          ),
+          toInEuint128(await fheEncryptUint128(fheClient, value, account.address, config.chainId)),
         updateEnvironment: (params) =>
           updateEnvironment(
             registryAddress,
@@ -115,6 +106,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
       },
     );
     completedResult = result;
+    await captureAnalytics("rotation_completed", { success: true });
 
     spinner.succeed(chalk.green(`Rotation complete for "${envName}" (v${result.newVersion})`));
     appendAuditEvent({
@@ -140,6 +132,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
       spinner.fail("Rotation completed, but the local audit write failed");
       throw error;
     }
+    await captureAnalytics("rotation_failed", { success: false });
     spinner.fail("Rotation failed");
     if (error instanceof PartialRotationError) {
       console.error(chalk.red(`  Recovery required: ${error.recoveryCommand}`));
@@ -153,8 +146,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
           trigger: opts.trigger ?? "manual",
         });
       } catch (auditError) {
-        const auditMessage =
-          auditError instanceof Error ? auditError.message : String(auditError);
+        const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
         throw new Error(`${error.message}\n${auditMessage}`);
       }
     } else {
@@ -168,8 +160,7 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<RotationR
         });
       } catch (auditError) {
         const operationMessage = error instanceof Error ? error.message : String(error);
-        const auditMessage =
-          auditError instanceof Error ? auditError.message : String(auditError);
+        const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
         throw new Error(`${operationMessage}\n${auditMessage}`);
       }
     }

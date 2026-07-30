@@ -9,6 +9,7 @@ import { uploadToIPFSNode } from "../lib/ipfs-node";
 import { getEnvironment, updateEnvironment } from "../lib/contracts-node";
 import { createFheClient, fheEncryptUint128, toInEuint128 } from "../lib/fhe-node";
 import { type Address } from "viem";
+import { captureAnalytics } from "../lib/analytics";
 
 export interface PushOptions {
   envFile?: string;
@@ -76,6 +77,7 @@ export async function pushCommand(opts: PushOptions = {}): Promise<void> {
     );
 
     spinner.succeed(chalk.green(`Pushed env "${envName}" to chain (CID: ${blobCid})`));
+    await captureAnalytics("environment_pushed", { success: true });
     console.log(chalk.dim(`  Project: ${config.projectId} | Version: ${currentVersion + 1n}`));
   } catch (err) {
     spinner.fail("Push failed");

@@ -4,6 +4,7 @@ import { readConfig } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { grantAccess } from "../lib/contracts-node";
 import { type Address } from "viem";
+import { captureAnalytics } from "../lib/analytics";
 
 export interface TeamAddOptions {
   envName?: string;
@@ -32,6 +33,7 @@ export async function teamAddCommand(opts: TeamAddOptions): Promise<void> {
     );
 
     spinner.succeed(chalk.green(`Access granted: ${opts.member} can now pull env "${envName}"`));
+    await captureAnalytics("member_added", { success: true });
     console.log(
       chalk.dim(
         `  They will need your CID to fetch the blob, and their address must have FHE decryption access.`,

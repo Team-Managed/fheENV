@@ -6,6 +6,7 @@ import { createClients } from "../lib/wallet";
 import { revokeAccess } from "../lib/contracts-node";
 import { rotateCommand } from "./rotate";
 import { appendAuditEvent } from "../lib/audit";
+import { captureAnalytics } from "../lib/analytics";
 
 export interface TeamRemoveOptions {
   envName?: string;
@@ -90,6 +91,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
       status: "success",
       trigger: "team_remove",
     });
+    await captureAnalytics("member_removed", { success: true });
 
     if (result.rotationSkipped) {
       appendAuditEvent({
@@ -105,7 +107,9 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
           " Rotation skipped explicitly: the removed member retains access to current ciphertext handles. ",
         ),
       );
-      console.warn(chalk.yellow(`Run: fheenv rotate --env ${envName} --file ${opts.envFile ?? ".env"}`));
+      console.warn(
+        chalk.yellow(`Run: fheenv rotate --env ${envName} --file ${opts.envFile ?? ".env"}`),
+      );
       return;
     }
 
@@ -128,8 +132,7 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
         });
       } catch (auditError) {
         const operationMessage = error instanceof Error ? error.message : String(error);
-        const auditMessage =
-          auditError instanceof Error ? auditError.message : String(auditError);
+        const auditMessage = auditError instanceof Error ? auditError.message : String(auditError);
         throw new Error(`${operationMessage}\n${auditMessage}`);
       }
     }
