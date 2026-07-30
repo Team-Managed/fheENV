@@ -50,6 +50,7 @@ export async function rotateCheckCommand(): Promise<void> {
   const nowSecs = Math.floor(Date.now() / 1000);
 
   let anyFailed = false;
+  const unpinPromises: Promise<void>[] = [];
 
   for (const [envName, policy] of Object.entries(config.rotationPolicy)) {
     const expireInDays = policy.expireInDays ?? 90;
@@ -125,29 +126,34 @@ export async function rotateCheckCommand(): Promise<void> {
       console.log(chalk.dim(`  New CID  : ${result.newCid}`));
       console.log(chalk.dim(`  Prev CID : ${result.previousCid}`));
 
-      // Unpin previous blob after graceMinutes
-      let unpinStatus: "success" | "failed" = "success";
-      try {
-        await unpinFromIPFSNode(result.previousCid, config.pinataJwt);
-        console.log(chalk.dim(`  Unpinned : ${result.previousCid}`));
-      } catch {
-        unpinStatus = "failed";
-        console.warn(chalk.yellow(`  Unpin failed for ${result.previousCid} — logged for retry`));
-      }
+      // Run unpin after graceMinutes concurrently, so we don't block the loop
+      const unpinTask = (async () => {
+        console.log(chalk.dim(`  Waiting ${graceMinutes}m before unpinning ${result.previousCid}...`));
+        await new Promise((resolve) => setTimeout(resolve, graceMinutes * 60000));
+        let unpinStatus: "success" | "failed" = "success";
+        try {
+          await unpinFromIPFSNode(result.previousCid, config.pinataJwt);
+          console.log(chalk.dim(`  Unpinned : ${result.previousCid}`));
+        } catch {
+          unpinStatus = "failed";
+          console.warn(chalk.yellow(`  Unpin failed for ${result.previousCid} — logged for retry`));
+        }
 
-      const successPayload = {
-        actor: account.address,
-        action: "key_rotated" as const,
-        projectId: String(config.projectId),
-        envName,
-        triggerSource: "scheduled" as const,
-        previousCid: result.previousCid,
-        newCid: result.newCid,
-        txHash: result.txHash,
-        unpinStatus,
-      };
-      logAuditEvent(successPayload);
-      capturePosthogEvent(successPayload);
+        const successPayload = {
+          actor: account.address,
+          action: "key_rotated" as const,
+          projectId: String(config.projectId),
+          envName,
+          triggerSource: "scheduled" as const,
+          previousCid: result.previousCid,
+          newCid: result.newCid,
+          txHash: result.txHash,
+          unpinStatus,
+        };
+        logAuditEvent(successPayload);
+        capturePosthogEvent(successPayload);
+      })();
+      unpinPromises.push(unpinTask);
     } catch (err) {
       checkSpinner.fail(
         chalk.red(`Rotation FAILED for env "${envName}": ${(err as Error).message}`),
@@ -165,6 +171,11 @@ export async function rotateCheckCommand(): Promise<void> {
       capturePosthogEvent(failPayload);
       anyFailed = true;
     }
+  }
+
+  if (unpinPromises.length > 0) {
+    console.log(chalk.blue(`\nWaiting for ${unpinPromises.length} unpin tasks to complete...`));
+    await Promise.all(unpinPromises);
   }
 
   if (anyFailed) {
