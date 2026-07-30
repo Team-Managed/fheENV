@@ -6,6 +6,7 @@
   "packageManager": "pnpm@11.15.1",
   "scripts": {
     "test": "hardhat test",
+    "test:cli": "TS_NODE_PROJECT=cli/tsconfig.json mocha -r ts-node/register \"cli/test/**/*.test.js\"",
     "compile": "hardhat compile",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "prepare-upgrade": "hardhat run scripts/prepare-upgrade.ts",
