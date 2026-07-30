@@ -27,9 +27,7 @@ export default function Dashboard() {
   const [projectsError, setProjectsError] = useState<Error | null>(null);
   const configurationError =
     REGISTRY_DEPLOY_BLOCK === null
-      ? new Error(
-          "NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK must be set to the registry deployment block.",
-        )
+      ? new Error("NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK must be set to the registry deployment block.")
       : null;
   const dashboardError = configurationError ?? projectsError;
 
