@@ -4,15 +4,7 @@ import { saveWallet } from "../lib/wallet";
 import chalk from "chalk";
 import { createInterface } from "readline";
 
-async function promptPassphrase(label: string): Promise<string> {
-  return new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stderr });
-    rl.question(label, (answer) => {
-      rl.close();
-      resolve(answer);
-    });
-  });
-}
+
 
 /** Read a full line from non-TTY stdin (piped input). */
 function readStdin(): Promise<string> {
@@ -97,9 +89,9 @@ export async function loginCommand(opts: { key?: string }): Promise<void> {
 
   // Only prompt for passphrase in interactive terminal sessions
   if (process.stdin.isTTY && process.stderr.isTTY) {
-    const p1 = await promptPassphrase(chalk.cyan("Passphrase to encrypt keyfile (blank = skip): "));
+    const p1 = await promptSecret(chalk.cyan("Passphrase to encrypt keyfile (blank = skip): "));
     if (p1.trim()) {
-      const p2 = await promptPassphrase(chalk.cyan("Confirm passphrase: "));
+      const p2 = await promptSecret(chalk.cyan("Confirm passphrase: "));
       if (p1 !== p2) throw new Error("Passphrases do not match.");
       passphrase = p1;
     }
