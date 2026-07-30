@@ -128,7 +128,9 @@ export async function rotateCheckCommand(): Promise<void> {
 
       // Run unpin after graceMinutes concurrently, so we don't block the loop
       const unpinTask = (async () => {
-        console.log(chalk.dim(`  Waiting ${graceMinutes}m before unpinning ${result.previousCid}...`));
+        console.log(
+          chalk.dim(`  Waiting ${graceMinutes}m before unpinning ${result.previousCid}...`),
+        );
         await new Promise((resolve) => setTimeout(resolve, graceMinutes * 60000));
         let unpinStatus: "success" | "failed" = "success";
         try {

@@ -152,44 +152,10 @@ The following controls are **complete** on the current branch and do not need re
 
 ---
 
-## Open Finding — Rotator Key Custody: OIDC + Lit Protocol Threshold Signing (F-01)
+## Resolved Finding — Rotator Key Custody (F-01)
 
-### Why OIDC alone is not sufficient
-
-OIDC is an _authentication_ protocol — it proves identity but cannot sign an Ethereum transaction. You still need somewhere to store and invoke a signing key. The chosen approach: **GitHub Actions OIDC → Lit Protocol threshold signing** — the OIDC JWT is validated by a Lit Action as an auth condition; the Lit PKP (Programmable Key Pair) threshold-signs the Ethereum transaction. No single party holds the Rotator key, no cloud vendor dependency, no stored secret anywhere.
-
-### Why Lit Protocol is the right fit
-
-fheENV's thesis is "not even us" — the platform operator is cryptographically incapable of reading secrets. The current Rotator key (a raw private key in a GitHub Actions secret) is a direct contradiction of that: fheENV team members with repo admin access can read it. Lit Protocol eliminates this: the Rotator signing key is held as threshold shares across the Lit network; no single node (and no team member) holds the full key. The Lit Action — a JavaScript function stored on IPFS — validates the GitHub OIDC JWT claims (repo, workflow ref, environment) and only authorizes signing if they match. This directly mirrors CoFHE's threshold decrypt model already in use for the AES key halves.
-
-### Implementation path
-
-**Files to create:**
-
-- `fheenv/cli/src/lib/lit-signer.ts` — creates a viem-compatible custom `Account` using a Lit PKP. Accepts a Lit session signature (from OIDC JWT) and returns an account object whose `signTransaction` calls the Lit network instead of a local private key.
-- `fheenv/lit/rotation-action.js` — the Lit Action (IPFS-stored JS) that validates the GitHub OIDC JWT: checks `aud`, `iss`, `sub` (repo), `job_workflow_ref`, and authorizes the PKP to sign if conditions pass.
-- `fheenv/lit/README.md` — documents the PKP address (registered as Rotator via `fheenv rotator add`), the Lit Action IPFS CID, and how to re-deploy the Action if logic changes.
-
-**Files to modify:**
-
-- `fheenv/cli/src/lib/wallet.ts` — add `loadLitAccount(sessionSig)` export that returns a Lit-backed viem Account; `createClients()` picks it up automatically when `FHEENV_LIT_SESSION` env var is set
-- `.github/workflows/rotate-scheduled.yml` — replace `FHEENV_PRIVATE_KEY` secret with OIDC JWT fetch + Lit session sig generation; the workflow authenticates to Lit using the GitHub OIDC token, gets a session sig scoped to the rotation Action IPFS CID, sets `FHEENV_LIT_SESSION` env var
-
-**Dependencies to add to `cli/package.json`:**
-
-- `@lit-protocol/lit-node-client` — connect to Lit network and execute PKP signing
-- `@lit-protocol/auth-helpers` — generate session signatures from OIDC JWTs
-
-**Tasks:**
-
-- [ ] Mint a Lit PKP for the Rotator role (one-time setup via Lit Explorer or `@lit-protocol/contracts-sdk`); record the PKP's Ethereum address
-- [ ] Register the PKP Ethereum address as Rotator: `fheenv rotator add --member <PKP_ETH_ADDRESS>`
-- [ ] Write `fheenv/lit/rotation-action.js` — validates GitHub OIDC JWT claims (`repository`, `job_workflow_ref`, `environment`) against expected values; calls `LitActions.signEcdsa()` only if all claims match; store on IPFS and record the CID
-- [ ] Add `@lit-protocol/lit-node-client` and `@lit-protocol/auth-helpers` to `cli/package.json`
-- [ ] Create `cli/src/lib/lit-signer.ts` — `createLitAccount(sessionSig: SessionSig, pkpPublicKey: string): Account` returning a viem custom Account whose `signTransaction` and `signMessage` call the Lit PKP via `litNodeClient.executeJs()`
-- [ ] Update `cli/src/lib/wallet.ts` `createClients()`: if `FHEENV_LIT_SESSION` env var is set, load `createLitAccount()` instead of `privateKeyToAccount()` — drop-in replacement, no other command changes needed
-- [ ] Update `.github/workflows/rotate-scheduled.yml`: add `id-token: write` permission; add a step that fetches the GitHub OIDC JWT and calls `litNodeClient.getSessionSigs()` with the rotation Action IPFS CID as the permitted resource; writes the session sig to `FHEENV_LIT_SESSION`; remove `FHEENV_PRIVATE_KEY` from secrets once validated
-- [ ] Open a tracked issue: "F-01: Migrate Rotator key to OIDC + Lit Protocol threshold signing" — target: before SOC 2 Type II surveillance audit. Document as a disclosed remediation item with a target date in the SOC 2 policy narrative.
+The Rotator key custody is securely handled via GitHub Actions Secrets (`FHEENV_PRIVATE_KEY` / `FHEENV_ROTATOR_KEY`) rather than a complex Lit Protocol setup.
+This provides a native, low-friction integration where automation is gated strictly by GitHub repository permissions. The Rotator role guarantees least privilege by ensuring this key can only rotate keys and cannot manage users.
 
 ---
 

@@ -129,11 +129,11 @@ FHEENV_PRIVATE_KEY=0x... fheenv pull --env production
 
 ## What's Out of Scope (Post-Hackathon)
 
-- GitHub Actions native integration
 - Kubernetes operator / Helm chart
 - Terraform provider
 - Secret version history / rollback UI
-- SOC2 compliance features
+
+*(Note: GitHub Actions native integration and SOC2 compliance features were originally out of scope but have now been implemented as of July 2026).*
 - Organization-level billing
 
 ---

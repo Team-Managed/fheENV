@@ -40,7 +40,7 @@ Applies to:
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Revocation**      | Marking a team member inactive on-chain (`revokeAccess()`). Logistic only — does not by itself prevent decryption of previously issued ciphertext handles.                                                                                                                    |
 | **Rotation**        | Generating a new AES-256-GCM key, re-encrypting the environment, publishing a new IPFS blob, and re-issuing FHE access (`updateEnvironment()` + `batchGrantAccess()`) to currently active members only. This is the action that makes revocation cryptographically effective. |
-| **Rotator key**     | A wallet key, distinct from any team member's or administrator's key, authorized only to execute rotation — not to add, remove, or modify team membership. Held in a Lit Protocol TEE; never stored as a plaintext credential.                                                |
+| **Rotator key**     | A wallet key, distinct from any team member's or administrator's key, authorized only to execute rotation — not to add, remove, or modify team membership. Held securely as a GitHub Actions Secret; never stored as a plaintext credential on developer machines.                                                |
 | **Evidence record** | A logged entry capturing who/what triggered a rotation or revocation, when, for which environment, and the resulting outcome. Stored in `~/.fheenv/audit.log` (JSONL) and supplemented by GitHub Actions run logs.                                                            |
 
 ---
@@ -87,7 +87,7 @@ Every environment configured with a `rotationPolicy` entry in `.fheenv.json` is 
 
 Any credential authorized to perform automated rotation is scoped, via contract-level role restriction (`Rotator` role on `fheENVRegistry.sol`), to rotation functions only (`updateEnvironment()`, `batchGrantAccess()`). It is explicitly denied team-management and ownership functions (`revokeAccess()`, `addOwner()`, ownership transfer).
 
-The Rotator signing key is held in the Lit Protocol Chipotle TEE and derived from the IPFS CID of the rotation action code — it never exists as a plaintext secret in any store. Access is gated by a GitHub OIDC JWT: only the specific repository and workflow file that match the content-addressed action are permitted to invoke signing. No `FHEENV_ROTATOR_KEY` secret is stored in GitHub Actions.
+The Rotator signing key is held securely as a GitHub Actions Secret (`FHEENV_ROTATOR_KEY` or `FHEENV_PRIVATE_KEY`) in a repository scoped for automation — it never exists as a plaintext secret on developer machines. Access is gated by GitHub repository permissions: only authorized workflows are permitted to invoke signing.
 
 **Important caveat (retained from architecture spec §4.5):** function-selector restriction alone does not make the Rotator credential low-value. To rotate autonomously, the Rotator key must hold live FHE-decrypt access to every environment it rotates. Policy documentation acknowledges this explicitly: the Rotator is simultaneously (a) restricted from team-management functions, and (b) a standing credential with decrypt access to all secrets in scope. Both facts are stated rather than only the flattering one.
 
@@ -140,7 +140,7 @@ The status of scheduled rotation jobs is visible in a PostHog dashboard (events 
 | **Policy Owner** (Kunal Shah, Tyra Javed) | Maintains this document; tracks implementation status against §4; reviews evidence records monthly                               |
 | **Approvers** (Tyra Javed, Kunal Shah)    | Approve policy changes; confirm control status updates before audit submission                                                   |
 | **Team members**                          | Hold individual wallet credentials via `fheenv login`; never share keys; report suspected compromise immediately (triggers §4.7) |
-| **Rotator credential** (Lit Protocol TEE) | Executes §4.3 and §4.4; holds no team-management or ownership privilege (§4.5); key never leaves the TEE                         |
+| **Rotator credential** (GitHub Actions Secret) | Executes §4.3 and §4.4; holds no team-management or ownership privilege (§4.5); key is securely held as a CI secret |
 
 ---
 

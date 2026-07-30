@@ -1,0 +1,34 @@
+name: Scheduled Key Rotation (SOC 2)
+
+on:
+  schedule:
+    # Run at midnight UTC on the 1st day of every 3rd month (Quarterly / ~90 days)
+    - cron: '0 0 1 */3 *'
+  workflow_dispatch: # Allow manual triggers from the GitHub UI
+
+jobs:
+  rotate-keys:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        working-directory: ./fheenv/cli
+        run: npm install
+
+      - name: Build CLI
+        working-directory: ./fheenv/cli
+        run: npm run build
+
+      - name: Run Key Rotation
+        working-directory: ./
+        env:
+          FHEENV_PRIVATE_KEY: ${{ secrets.FHEENV_PRIVATE_KEY }}
+          FHEENV_PINATA_JWT: ${{ secrets.FHEENV_PINATA_JWT }}
+        run: node fheenv/cli/dist/index.js rotate --env production
