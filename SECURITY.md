@@ -30,9 +30,10 @@ Instead, report it privately:
 | ----------------------------------------- | ------------------------------------------ |
 | Smart contract logic (fheENVRegistry.sol) | Third-party dependencies (report upstream) |
 | CLI key handling & encryption             | Fhenix/CoFHE protocol itself               |
-| Frontend secrets flow                     | Theoretical FHE attacks                    |
-| IPFS upload/download integrity            | Social engineering                         |
-| Access control bypass                     | Testnet-only issues with no mainnet impact |
+| Automated Key Rotation pipeline           | Theoretical FHE attacks                    |
+| Frontend secrets flow                     | Social engineering                         |
+| IPFS upload/download integrity            | Testnet-only issues with no mainnet impact |
+| Access control bypass                     |                                            |
 
 ## Supported Versions
 
@@ -45,6 +46,7 @@ Instead, report it privately:
 
 - AES-256-GCM encryption happens **client-side only**
 - AES keys are stored as FHE ciphertexts — server/operators cannot decrypt
-- Private keys are stored with `chmod 600` permissions
+- Automated Key Rotation is executed by stateless, least-privilege `Rotator` wallets (e.g. GitHub Actions) with zero project ownership rights
+- Private keys are stored with `chmod 600` permissions locally
 - Pinata JWT is server-side only (never exposed to browser)
 - No plaintext secret ever touches any server or chain
