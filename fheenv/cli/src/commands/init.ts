@@ -43,6 +43,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
       walletClient,
       publicClient,
     );
+    const deployedAtBlock = await publicClient.getBlockNumber();
 
     const config: FheEnvConfig = {
       projectId: Number(projectId),
@@ -50,6 +51,7 @@ export async function initCommand(opts: InitOptions): Promise<void> {
       rpcUrl: opts.rpcUrl,
       chainId: opts.chainId,
       pinataJwt: opts.pinataJwt,
+      deployedAtBlock: Number(deployedAtBlock),
     };
     writeConfig(config);
 

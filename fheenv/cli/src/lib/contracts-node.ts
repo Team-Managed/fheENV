@@ -19,6 +19,33 @@ export interface EnvironmentData {
   updatedAt: bigint;
 }
 
+export interface AccessEvent {
+  kind: "grant" | "revoke";
+  member: Address;
+  blockNumber: bigint;
+  logIndex: number;
+}
+
+export function reduceAccessEvents(events: AccessEvent[]): Address[] {
+  const state = new Map<string, { address: Address; active: boolean }>();
+  const ordered = [...events].sort((a, b) =>
+    a.blockNumber === b.blockNumber
+      ? a.logIndex - b.logIndex
+      : a.blockNumber < b.blockNumber
+        ? -1
+        : 1,
+  );
+
+  for (const event of ordered) {
+    state.set(event.member.toLowerCase(), {
+      address: event.member,
+      active: event.kind === "grant",
+    });
+  }
+
+  return [...state.values()].filter(({ active }) => active).map(({ address }) => address);
+}
+
 // ── ABI ───────────────────────────────────────────────────────────────────────
 
 const REGISTRY_ABI = [
@@ -376,6 +403,7 @@ export async function getActiveMembers(
   projectId: bigint,
   envName: string,
   publicClient: PublicClient,
+  fromBlock: bigint,
 ): Promise<Address[]> {
   const envHash = (await publicClient.readContract({
     address: registryAddress,
@@ -396,26 +424,32 @@ export async function getActiveMembers(
       address: registryAddress,
       event: grantedEvent,
       args: { projectId, envHash } as Record<string, unknown>,
-      fromBlock: 0n,
+      fromBlock,
     }),
     publicClient.getLogs({
       address: registryAddress,
       event: revokedEvent,
       args: { projectId, envHash } as Record<string, unknown>,
-      fromBlock: 0n,
+      fromBlock,
     }),
   ]);
 
-  const granted = new Set<Address>(
-    grantedLogs
-      .map((l) => (l.args as Record<string, unknown>).member as Address | undefined)
-      .filter(Boolean) as Address[],
-  );
-  const revoked = new Set<Address>(
-    revokedLogs
-      .map((l) => (l.args as Record<string, unknown>).member as Address | undefined)
-      .filter(Boolean) as Address[],
-  );
+  const normalize = (
+    log: (typeof grantedLogs)[number] | (typeof revokedLogs)[number],
+    kind: AccessEvent["kind"],
+  ): AccessEvent | null => {
+    const member = (log.args as Record<string, unknown>).member as Address | undefined;
+    if (!member) return null;
+    if (log.blockNumber === null || log.logIndex === null) {
+      throw new Error("Access event is missing block ordering metadata.");
+    }
+    return { kind, member, blockNumber: log.blockNumber, logIndex: log.logIndex };
+  };
 
-  return [...granted].filter((addr) => !revoked.has(addr));
+  return reduceAccessEvents(
+    [
+      ...grantedLogs.map((log) => normalize(log, "grant")),
+      ...revokedLogs.map((log) => normalize(log, "revoke")),
+    ].filter((event): event is AccessEvent => event !== null),
+  );
 }

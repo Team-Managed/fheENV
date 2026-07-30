@@ -52,7 +52,13 @@ export async function rotateCommand(opts: RotateOptions = {}): Promise<void> {
 
     // 2. Get current active members (will be re-granted after rotation)
     spinner.text = "Reading current member list from chain events...";
-    const activeMembers = await getActiveMembers(registryAddress, projectId, envName, publicClient);
+    const activeMembers = await getActiveMembers(
+      registryAddress,
+      projectId,
+      envName,
+      publicClient,
+      BigInt(config.deployedAtBlock),
+    );
 
     // 3. Read the local .env file for re-encryption
     const fs = await import("fs");
