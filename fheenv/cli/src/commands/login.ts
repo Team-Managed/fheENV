@@ -49,7 +49,7 @@ function promptSecret(prompt: string): Promise<string> {
       muted = false;
       process.stdout.write("\n");
       rl.close();
-      resolve(answer);
+      resolve(answer.trim());
     });
   });
 }
