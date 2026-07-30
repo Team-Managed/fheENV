@@ -4,8 +4,6 @@ import { saveWallet } from "../lib/wallet";
 import chalk from "chalk";
 import { createInterface } from "readline";
 
-
-
 /** Read a full line from non-TTY stdin (piped input). */
 function readStdin(): Promise<string> {
   return new Promise((resolve) => {
@@ -21,32 +19,34 @@ function readStdin(): Promise<string> {
  * Prompt for a secret value on a TTY without echoing characters.
  * Uses a muted Writable so keystrokes are never written to stdout.
  */
-function promptSecret(prompt: string): Promise<string> {
+function promptSecret(promptText: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    let muted = false;
-    const output = new Writable({
-      write(chunk: unknown, _enc: BufferEncoding, cb: () => void) {
-        if (!muted) process.stdout.write(chunk as Buffer);
-        cb();
-      },
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true
     });
 
-    const rl = readline.createInterface({ input: process.stdin, output, terminal: true });
-
-    process.stdout.write(prompt);
-    muted = true;
+    const oldWrite = (rl as any)._writeToOutput;
+    (rl as any)._writeToOutput = function (stringToWrite: string) {
+      if (stringToWrite.startsWith(promptText)) {
+        const secretPart = stringToWrite.slice(promptText.length);
+        const masked = secretPart.replace(/[^ \r\n]/g, "*");
+        oldWrite.call(rl, promptText + masked);
+      } else {
+        oldWrite.call(rl, stringToWrite);
+      }
+    };
 
     const onSigint = () => {
-      muted = false;
       process.stdout.write("\n");
       rl.close();
       reject(new Error("Interrupted"));
     };
     process.once("SIGINT", onSigint);
 
-    rl.question("", (answer) => {
+    rl.question(promptText, (answer) => {
       process.removeListener("SIGINT", onSigint);
-      muted = false;
       process.stdout.write("\n");
       rl.close();
       resolve(answer.trim());
