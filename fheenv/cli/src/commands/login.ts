@@ -1,6 +1,6 @@
 import * as readline from "readline";
 import { Writable } from "stream";
-import { saveWallet } from "../lib/wallet";
+import { migrateLegacyWallet, saveWallet } from "../lib/wallet";
 import chalk from "chalk";
 
 /** Read a full line from non-TTY stdin (piped input). */
@@ -18,7 +18,7 @@ function readStdin(): Promise<string> {
  * Prompt for a secret value on a TTY without echoing characters.
  * Uses a muted Writable so keystrokes are never written to stdout.
  */
-function promptSecret(prompt: string): Promise<string> {
+export function promptSecret(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     let muted = false;
     const output = new Writable({
@@ -51,7 +51,31 @@ function promptSecret(prompt: string): Promise<string> {
   });
 }
 
-export async function loginCommand(opts: { key?: string }): Promise<void> {
+async function readPassphrase(): Promise<string> {
+  const environmentPassphrase = process.env.FHEENV_KEY_PASSPHRASE;
+  if (environmentPassphrase?.trim()) return environmentPassphrase;
+  if (!process.stdin.isTTY) {
+    throw new Error(
+      "FHEENV_KEY_PASSPHRASE is required for non-interactive encrypted wallet storage.",
+    );
+  }
+
+  const passphrase = await promptSecret(chalk.cyan("? ") + "Wallet passphrase (input hidden): ");
+  if (!passphrase.trim()) throw new Error("Passphrase is required for encrypted wallet storage.");
+  const confirmation = await promptSecret(chalk.cyan("? ") + "Confirm passphrase: ");
+  if (passphrase !== confirmation) throw new Error("Passphrases do not match.");
+  return passphrase;
+}
+
+export async function loginCommand(opts: { key?: string; migrate?: boolean }): Promise<void> {
+  if (opts.migrate) {
+    migrateLegacyWallet(await readPassphrase());
+    console.log(
+      chalk.green("✓ Legacy wallet migrated to AES-256-GCM encrypted storage (permissions: 0600)"),
+    );
+    return;
+  }
+
   let key: string | undefined;
 
   if (process.env.FHEENV_PRIVATE_KEY) {
@@ -82,7 +106,13 @@ export async function loginCommand(opts: { key?: string }): Promise<void> {
   if (!key.match(/^0x[0-9a-fA-F]{64}$/)) {
     throw new Error("Invalid private key format. Must be a 0x-prefixed 32-byte hex string.");
   }
-  saveWallet(key);
-  console.log(chalk.green("\u2713 Wallet saved to ~/.fheenv/wallet.json (permissions: 0600)"));
-  console.log(chalk.yellow("  Keep your private key secure. Never commit it to version control."));
+  saveWallet(key, await readPassphrase());
+  console.log(
+    chalk.green(
+      "\u2713 Wallet saved to ~/.fheenv/wallet.json (AES-256-GCM encrypted, permissions: 0600)",
+    ),
+  );
+  console.log(
+    chalk.dim("  Set FHEENV_KEY_PASSPHRASE through your secure local secret source to unlock it."),
+  );
 }

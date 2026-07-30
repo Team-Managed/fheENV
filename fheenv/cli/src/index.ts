@@ -28,9 +28,13 @@ program
     "-k, --key <privateKey>",
     "(deprecated) inline private key — visible in shell history. Use stdin or FHEENV_PRIVATE_KEY instead",
   )
+  .option("--migrate", "Encrypt an existing legacy plaintext wallet")
   .action(async (opts) => {
     try {
-      await loginCommand({ key: opts.key as string | undefined });
+      await loginCommand({
+        key: opts.key as string | undefined,
+        migrate: Boolean(opts.migrate),
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
