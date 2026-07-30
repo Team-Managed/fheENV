@@ -448,7 +448,7 @@ describe("fheENVRegistry", function () {
     await registry.addOwner(0n, member.address);
     await registry.addOwner(0n, member2.address);
     await expect(registry.connect(member).removeOwner(0n, member2.address)).to.be.revertedWith(
-      "Only primary owner can remove co-owners",
+      "Only primary owner",
     );
   });
 
@@ -472,5 +472,24 @@ describe("fheENVRegistry", function () {
     await expect(
       registry.removeOwner(0n, "0x0000000000000000000000000000000000000000"),
     ).to.be.revertedWith("Invalid address");
+  });
+
+  it("46. only the primary owner can transfer project ownership", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+
+    await expect(
+      registry.connect(member)["transferOwnership(uint256,address)"](0n, stranger.address),
+    ).to.be.revertedWith("Only primary owner");
+  });
+
+  it("47. project transfer emits removal and transfer evidence", async function () {
+    await registry.createProject("MyProject");
+
+    await expect(registry["transferOwnership(uint256,address)"](0n, member.address))
+      .to.emit(registry, "OwnerRemoved")
+      .withArgs(0n, owner.address)
+      .and.to.emit(registry, "ProjectOwnershipTransferred")
+      .withArgs(0n, owner.address, member.address);
   });
 });

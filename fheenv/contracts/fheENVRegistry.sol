@@ -60,6 +60,11 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
     event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
     event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner);
+    event ProjectOwnershipTransferred(
+        uint256 indexed projectId,
+        address indexed previousPrimaryOwner,
+        address indexed newPrimaryOwner
+    );
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -70,6 +75,11 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     modifier projectExists(uint256 projectId) {
         require(projects[projectId].exists, "Project does not exist");
+        _;
+    }
+
+    modifier onlyPrimaryProjectOwner(uint256 projectId) {
+        require(projects[projectId].primaryOwner == msg.sender, "Only primary owner");
         _;
     }
 
@@ -130,8 +140,8 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function removeOwner(uint256 projectId, address ownerToRemove)
         external
         projectExists(projectId)
+        onlyPrimaryProjectOwner(projectId)
     {
-        require(projects[projectId].primaryOwner == msg.sender, "Only primary owner can remove co-owners");
         require(ownerToRemove != address(0), "Invalid address");
         require(ownerToRemove != projects[projectId].primaryOwner, "Cannot remove primary owner");
         require(owners[projectId][ownerToRemove], "Address is not an owner");
@@ -144,14 +154,17 @@ contract fheENVRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function transferOwnership(uint256 projectId, address newOwner)
         external
         projectExists(projectId)
-        onlyProjectOwner(projectId)
+        onlyPrimaryProjectOwner(projectId)
     {
         require(newOwner != address(0), "Invalid address");
         require(newOwner != msg.sender, "Already owner");
+        address previousPrimaryOwner = projects[projectId].primaryOwner;
         owners[projectId][newOwner] = true;
-        owners[projectId][msg.sender] = false;
+        owners[projectId][previousPrimaryOwner] = false;
         projects[projectId].primaryOwner = newOwner;
         emit OwnerAdded(projectId, newOwner);
+        emit OwnerRemoved(projectId, previousPrimaryOwner);
+        emit ProjectOwnershipTransferred(projectId, previousPrimaryOwner, newOwner);
     }
 
     // ─── Environment Management ───────────────────────────────────────────────
