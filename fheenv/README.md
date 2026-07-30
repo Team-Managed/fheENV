@@ -82,7 +82,9 @@ fheenv login
 echo $PRIVATE_KEY | fheenv login
 ```
 
-Saves the key to `~/.fheenv/wallet.json` with `chmod 600`. All subsequent commands read from there automatically. Only needed once per machine.
+Prompts for a wallet passphrase and stores a scrypt-derived,
+AES-256-GCM encrypted keyfile at `~/.fheenv/wallet.json` with permissions
+`0600`.
 
 > **⚠ Deprecated:** `fheenv login --key 0x...` is still accepted for backward compatibility but prints a warning — the key is visible in `ps aux` output and written to shell history.
 
@@ -93,9 +95,12 @@ export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 node dist/index.js pull --env production
 ```
 
-The env var takes priority over the keyfile. Use a scoped read-only wallet for CI pipelines.
+The env var takes priority over the keyfile. Use a narrowly scoped wallet in a
+protected CI secret store. External signer/workload-identity support remains a
+production-readiness gate.
 
-> **Never commit your private key.** The `.fheenv.json` project config (committed) contains no secrets — only the registry address, RPC URL, and project ID.
+> **Never commit credentials.** The current `.fheenv.json` includes the Pinata
+> JWT and must not be committed.
 
 ---
 
@@ -109,11 +114,12 @@ Every command (except `login`) reads this file from the current directory. `fhee
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
   "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
-  "pinataJwt": "eyJhbGc..."
+  "pinataJwt": "eyJhbGc...",
+  "deployedAtBlock": 1234567
 }
 ```
 
-Commit this file to your repo. It contains no secrets.
+Do not commit this file while it contains `pinataJwt`.
 
 ---
 
@@ -124,12 +130,14 @@ Commit this file to your repo. It contains no secrets.
 Save a private key to the local keyfile.
 
 ```bash
-fheenv login --key 0xABC123...
+fheenv login
+fheenv login --migrate
 ```
 
 | Flag                     | Description                         |
 | ------------------------ | ----------------------------------- |
 | `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
+| `--migrate`              | Encrypt a legacy plaintext keyfile  |
 
 Stores at `~/.fheenv/wallet.json` (permissions `0600`).
 
@@ -155,6 +163,7 @@ fheenv init \
 | `--rpc <url>`              | required | Sepolia RPC endpoint            |
 | `--chain-id <id>`          | required | `11155111` for Sepolia          |
 | `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
+| `--analytics`              | disabled | Opt in to minimal CLI analytics |
 
 Creates `.fheenv.json` in the current directory. Run once per project.
 
@@ -249,18 +258,22 @@ Calls `grantAccess(projectId, envName, memberAddress)` on Sepolia. After this, t
 
 #### `fheenv team remove`
 
-Revoke a teammate's access.
+Revoke a teammate and rotate the environment key by default.
 
 ```bash
-fheenv team remove --member 0xTeammateAddress --env production
+fheenv team remove --member 0xTeammateAddress --env production --file .env
 ```
 
-> ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
+The command exits non-zero if revocation succeeds but rotation or member
+regrant fails. `--no-rotate` deliberately leaves access to the current
+ciphertext handles in place.
 
 | Flag                     | Default      | Description                |
 | ------------------------ | ------------ | -------------------------- |
 | `-m, --member <address>` | required     | Ethereum address to revoke |
 | `-e, --env <name>`       | `production` | Environment                |
+| `-f, --file <path>`      | `.env`       | Plaintext source to rotate |
+| `--no-rotate`            | disabled     | Explicitly skip rotation   |
 
 ---
 
@@ -289,6 +302,22 @@ After rotation, any removed members' old FHE permits are worthless — the old c
 | ------------------- | ------------ | ----------------------------- |
 | `-e, --env <name>`  | `production` | Environment to rotate         |
 | `-f, --file <path>` | `.env`       | Local .env file to re-encrypt |
+| `--regrant-only`    | disabled     | Recover member grants only    |
+
+---
+
+#### Local audit and analytics
+
+```bash
+fheenv export-audit --output audit.csv
+fheenv analytics enable
+fheenv analytics status
+fheenv analytics disable
+```
+
+The audit file is local operational evidence, not a durable compliance ledger.
+CLI analytics are disabled by default and exclude wallet, project,
+environment, CID, transaction, argument, path, error, and secret-derived data.
 
 ---
 
@@ -298,7 +327,7 @@ After rotation, any removed members' old FHE permits are worthless — the old c
 # ── Day 1: Setup ──────────────────────────────────────────────────────────────
 
 # 1. Save your wallet (one-time per machine)
-fheenv login --key 0xYOUR_PRIVATE_KEY
+fheenv login
 
 # 2. Initialize a project in your repo
 cd my-app
@@ -328,11 +357,8 @@ fheenv run --env production -- node index.js
 
 # ── Day 4: Someone leaves the team ────────────────────────────────────────────
 
-fheenv team remove --member 0xFormerTeammate --env production
-# ⚠️  CLI warns: rotation required
-
-fheenv rotate --env production
-# → New AES key, new IPFS blob, new FHE handles. Former teammate's old permit is worthless.
+fheenv team remove --member 0xFormerTeammate --env production --file .env
+# → Revokes and rotates. Partial failure exits non-zero with recovery guidance.
 
 # ── CI/CD: no keyfile, no MetaMask ────────────────────────────────────────────
 
@@ -380,6 +406,9 @@ Copy `.env.example` to `.env`:
 | `NEXT_PUBLIC_CHAIN_ID`         | Frontend                | `11155111` (Sepolia)              |
 | `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend                | Sepolia RPC endpoint              |
 | `PINATA_JWT`                   | Frontend (server) + CLI | Pinata JWT for IPFS uploads       |
+| `FHEENV_KEY_PASSPHRASE`        | CLI                     | Encrypted wallet unlock value     |
+| `FHEENV_ANALYTICS_KEY`         | CLI                     | Optional analytics project key    |
+| `NEXT_PUBLIC_POSTHOG_KEY`      | Frontend                | Optional anonymous page views     |
 
 ---
 

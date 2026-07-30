@@ -9,20 +9,24 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 ## `fheenv login`
 
-Save a wallet private key in the local keyfile. The keyfile is plain JSON with permissions `0600`,
-so protect the device and filesystem account that stores it.
+Save a wallet private key in a scrypt-derived, AES-256-GCM encrypted local keyfile with permissions
+`0600`.
 
 ```bash
 fheenv login
 fheenv login --key 0xABC123...
 echo "0x..." | fheenv login
+fheenv login --migrate
 ```
 
 | Flag                     | Description                                                        |
 | ------------------------ | ------------------------------------------------------------------ |
 | `-k, --key <privateKey>` | 0x-prefixed key. Avoid it in shell history; omit it to read stdin. |
+| `--migrate`              | Encrypt an existing legacy plaintext wallet.                       |
 
-`FHEENV_PRIVATE_KEY` overrides the keyfile and is useful for a tightly scoped CI secret.
+Interactive login requests a non-echoing wallet passphrase. Non-interactive use requires
+`FHEENV_KEY_PASSPHRASE`. `FHEENV_PRIVATE_KEY` still overrides the keyfile for tightly scoped
+automation; external signer custody remains a production-readiness gate.
 
 ---
 
@@ -34,14 +38,15 @@ Create an on-chain project and write `.fheenv.json`.
 fheenv init --name "my-app" --pinata-jwt eyJ...
 ```
 
-| Flag                       | Default              | Description              |
-| -------------------------- | -------------------- | ------------------------ |
-| `-n, --name <name>`        | required             | Project name             |
-| `-r, --registry <address>` | Sepolia registry     | Contract address         |
-| `--rpc <url>`              | PublicNode Sepolia   | RPC endpoint             |
-| `--chain-id <id>`          | `11155111`           | Chain ID                 |
-| `--pinata-jwt <jwt>`       | `$FHEENV_PINATA_JWT` | Pinata upload credential |
-| `-e, --env <name>`         | `production`         | Default environment      |
+| Flag                       | Default              | Description                     |
+| -------------------------- | -------------------- | ------------------------------- |
+| `-n, --name <name>`        | required             | Project name                    |
+| `-r, --registry <address>` | Sepolia registry     | Contract address                |
+| `--rpc <url>`              | PublicNode Sepolia   | RPC endpoint                    |
+| `--chain-id <id>`          | `11155111`           | Chain ID                        |
+| `--pinata-jwt <jwt>`       | `$FHEENV_PINATA_JWT` | Pinata upload credential        |
+| `-e, --env <name>`         | `production`         | Default environment             |
+| `--analytics`              | disabled             | Opt in to minimal CLI analytics |
 
 ---
 
@@ -102,18 +107,25 @@ fheenv team add --member 0xTeammate --env production
 
 ## `fheenv team remove`
 
-Mark a member inactive in the registry.
+Revoke a member and rotate the environment key by default.
 
 ```bash
 fheenv team remove --member 0xFormer --env production
-fheenv rotate --env production --file .env
+fheenv team remove --member 0xFormer --env production --file .env
 ```
 
 <Callout type="warn">
-  The contract cannot revoke existing FHE permissions. Run `fheenv rotate` immediately after removal
-  to issue fresh ciphertext handles that exclude the removed wallet. Until rotation succeeds, that
-  wallet can decrypt the old handles.
+  The contract cannot revoke existing FHE permissions. The CLI therefore rotates immediately after
+  revocation. If rotation fails, the command exits non-zero and prints recovery guidance.
+  `--no-rotate` leaves the old handles decryptable by the removed wallet.
 </Callout>
+
+| Flag                     | Default      | Description                              |
+| ------------------------ | ------------ | ---------------------------------------- |
+| `-m, --member <address>` | required     | Wallet address to revoke                 |
+| `-e, --env <name>`       | `production` | Environment                              |
+| `-f, --file <path>`      | `.env`       | Plaintext source used for rotation       |
+| `--no-rotate`            | disabled     | Explicitly skip cryptographic revocation |
 
 ## `fheenv rotate`
 
@@ -124,10 +136,36 @@ fheenv rotate
 fheenv rotate --env staging --file .env.staging
 ```
 
-| Flag                | Default      | Description           |
-| ------------------- | ------------ | --------------------- |
-| `-e, --env <name>`  | `production` | Environment to rotate |
-| `-f, --file <path>` | `.env`       | Local source file     |
+| Flag                | Default      | Description                                 |
+| ------------------- | ------------ | ------------------------------------------- |
+| `-e, --env <name>`  | `production` | Environment to rotate                       |
+| `-f, --file <path>` | `.env`       | Local source file                           |
+| `--regrant-only`    | disabled     | Recover member grants without a new version |
+
+## `fheenv export-audit`
+
+Export the local append-only operational log as deterministic CSV.
+
+```bash
+fheenv export-audit --output audit.csv
+```
+
+This file is local operational evidence. It is not a durable SOC 2 ledger and does not replace
+centralized retention or monitoring.
+
+## `fheenv analytics`
+
+CLI analytics are disabled by default.
+
+```bash
+fheenv analytics enable
+fheenv analytics status
+fheenv analytics disable
+```
+
+Only a random installation ID, CLI version, operating-system family, command success, and optional
+coarse duration bucket may be sent. Wallets, project IDs, environment names, CIDs, transactions,
+arguments, paths, errors, and secret-derived values are excluded.
 
 ## `fheenv update`
 
@@ -139,8 +177,10 @@ fheenv update
 
 ## Environment Variables
 
-| Variable             | Description                                 |
-| -------------------- | ------------------------------------------- |
-| `FHEENV_PRIVATE_KEY` | Raw wallet key; overrides the local keyfile |
-| `FHEENV_PINATA_JWT`  | Pinata JWT used by `init`                   |
-| `FHEENV_RPC`         | RPC URL override                            |
+| Variable                | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `FHEENV_PRIVATE_KEY`    | Raw wallet key; overrides the local keyfile               |
+| `FHEENV_PINATA_JWT`     | Pinata JWT used by `init`                                 |
+| `FHEENV_RPC`            | RPC URL override                                          |
+| `FHEENV_KEY_PASSPHRASE` | Unlocks the encrypted local wallet                        |
+| `FHEENV_ANALYTICS_KEY`  | Optional analytics project key; consent is still required |

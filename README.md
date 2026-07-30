@@ -177,10 +177,12 @@ The CLI needs an Ethereum private key to sign transactions and decrypt FHE handl
 #### Option A — `fheenv login` (interactive / developer use)
 
 ```bash
-fheenv login --key 0xYOUR_PRIVATE_KEY
+fheenv login
 ```
 
-Saves the key to `~/.fheenv/wallet.json` with `chmod 600`. All subsequent commands read from there automatically. Only needed once per machine.
+Prompts without echo for the private key and wallet passphrase. The CLI stores
+only a scrypt-derived, AES-256-GCM encrypted keyfile at
+`~/.fheenv/wallet.json` with permissions `0600`.
 
 #### Option B — `FHEENV_PRIVATE_KEY` env var (CI/CD)
 
@@ -189,9 +191,13 @@ export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 fheenv pull --env production
 ```
 
-The env var takes priority over the keyfile. Use a scoped read-only wallet for CI pipelines.
+The env var takes priority over the keyfile. Use a narrowly scoped wallet and
+your CI provider's protected secret store. External signer/workload-identity
+support remains a production-readiness gate.
 
-> **Never commit your private key.** The `.fheenv.json` project config (committed) contains no secrets — only the registry address, RPC URL, and project ID.
+> **Never commit credentials.** The current `.fheenv.json` includes the Pinata
+> JWT and must not be committed. Removing project-file credentials is tracked
+> separately.
 
 ---
 
@@ -205,11 +211,12 @@ Every command (except `login`) reads this file from the current directory. `fhee
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
   "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
-  "pinataJwt": "eyJhbGc..."
+  "pinataJwt": "eyJhbGc...",
+  "deployedAtBlock": 1234567
 }
 ```
 
-Commit this file to your repo. It contains no secrets.
+Do not commit this file while it contains `pinataJwt`.
 
 ---
 
@@ -220,14 +227,18 @@ Commit this file to your repo. It contains no secrets.
 Save a private key to the local keyfile.
 
 ```bash
-fheenv login --key 0xABC123...
+fheenv login
+fheenv login --migrate
 ```
 
 | Flag                     | Description                         |
 | ------------------------ | ----------------------------------- |
 | `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
+| `--migrate`              | Encrypt a legacy plaintext keyfile  |
 
-Stores at `~/.fheenv/wallet.json` (permissions `0600`).
+Stores an AES-256-GCM encrypted keyfile at `~/.fheenv/wallet.json`
+(permissions `0600`). Non-interactive use requires
+`FHEENV_KEY_PASSPHRASE`.
 
 ---
 
@@ -251,6 +262,7 @@ fheenv init \
 | `--rpc <url>`              | required | Sepolia RPC endpoint            |
 | `--chain-id <id>`          | required | `11155111` for Sepolia          |
 | `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
+| `--analytics`              | disabled | Opt in to minimal CLI analytics |
 
 ---
 
@@ -329,18 +341,22 @@ fheenv team add --member 0xTeammateAddress --env production
 
 #### `fheenv team remove`
 
-Revoke a teammate's access.
+Revoke a teammate and rotate the environment key by default.
 
 ```bash
-fheenv team remove --member 0xTeammateAddress --env production
+fheenv team remove --member 0xTeammateAddress --env production --file .env
 ```
 
-> ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
+The command exits non-zero if revocation succeeds but rotation or member
+regrant fails. `--no-rotate` is an explicit exception: the removed member can
+still decrypt the current ciphertext handles until a later rotation.
 
 | Flag                     | Default      | Description                |
 | ------------------------ | ------------ | -------------------------- |
 | `-m, --member <address>` | required     | Ethereum address to revoke |
 | `-e, --env <name>`       | `production` | Environment                |
+| `-f, --file <path>`      | `.env`       | Plaintext source to rotate |
+| `--no-rotate`            | disabled     | Explicitly skip rotation   |
 
 ---
 
@@ -369,6 +385,24 @@ After rotation, any removed members' old FHE permits are worthless.
 | ------------------- | ------------ | ----------------------------- |
 | `-e, --env <name>`  | `production` | Environment to rotate         |
 | `-f, --file <path>` | `.env`       | Local .env file to re-encrypt |
+| `--regrant-only`    | disabled     | Recover member grants only    |
+
+---
+
+#### Local audit and analytics
+
+```bash
+fheenv export-audit --output audit.csv
+fheenv analytics enable
+fheenv analytics status
+fheenv analytics disable
+```
+
+The audit file is local operational evidence, not a durable compliance ledger.
+CLI analytics are disabled by default and collect only a random installation
+ID, CLI version, OS family, command success, and an optional coarse duration
+bucket. Wallets, projects, environments, CIDs, transactions, arguments, paths,
+errors, and secret-derived data are excluded.
 
 ---
 
@@ -382,7 +416,7 @@ curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh
 source ~/.zshrc
 
 # 2. Save your wallet (one-time per machine)
-fheenv login --key 0xYOUR_PRIVATE_KEY
+fheenv login
 
 # 3. Initialize a project in your repo
 cd my-app
@@ -410,10 +444,8 @@ fheenv run --env production -- node index.js
 
 # ── Day 4: Someone leaves the team ────────────────────────────────────────────
 
-fheenv team remove --member 0xFormerTeammate --env production
-# ⚠️  CLI warns: rotation required
-
-fheenv rotate --env production
+fheenv team remove --member 0xFormerTeammate --env production --file .env
+# → Revokes and rotates. Any partial failure exits non-zero with recovery guidance.
 
 # ── CI/CD: no keyfile, no MetaMask ────────────────────────────────────────────
 

@@ -42,14 +42,20 @@ jobs:
 
 ## Rotation
 
-When a CI wallet no longer needs access, remove it and immediately rotate from a trusted machine
-that has the source environment file:
+When a CI wallet no longer needs access, remove it from a trusted machine that has the source
+environment file. Removal rotates by default:
 
 ```bash
-fheenv team remove --member 0xCI_WALLET --env production
-fheenv rotate --env production --file .env
+fheenv team remove --member 0xCI_WALLET --env production --file .env
 ```
+
+The command exits non-zero if revocation succeeds but rotation or member regrant fails. Follow the
+printed recovery command. `--no-rotate` is an explicit security exception and leaves the removed
+wallet able to decrypt the current ciphertext handles.
 
 The on-chain dashboard provides public evidence of project, ownership, environment, and membership
 changes. It does not read local CLI activity or replace your organization’s logging, review,
 retention, and incident-response controls.
+
+Scheduled unattended rotation is intentionally not included. A production worker must use
+organization-managed signing or workload identity rather than a long-lived raw repository secret.
