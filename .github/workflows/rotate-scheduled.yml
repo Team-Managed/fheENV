@@ -67,7 +67,7 @@ jobs:
         run: node cli/dist/index.js rotate-check
 
       - name: Notify on success
-        if: success() && env.FHEENV_NOTIFY_WEBHOOK != ''
+        if: success() && secrets.FHEENV_NOTIFY_WEBHOOK != ''
         env:
           FHEENV_NOTIFY_WEBHOOK: ${{ secrets.FHEENV_NOTIFY_WEBHOOK }}
         run: |
@@ -76,7 +76,7 @@ jobs:
             -d "{\"text\": \"✅ fheENV scheduled rotation completed — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
 
       - name: Notify on failure
-        if: failure() && env.FHEENV_NOTIFY_WEBHOOK != ''
+        if: failure() && secrets.FHEENV_NOTIFY_WEBHOOK != ''
         env:
           FHEENV_NOTIFY_WEBHOOK: ${{ secrets.FHEENV_NOTIFY_WEBHOOK }}
         run: |
