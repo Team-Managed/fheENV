@@ -12,6 +12,8 @@ export default function LandingPage() {
   const [platform, setPlatform] = useState<Platform>("mac");
 
   useEffect(() => {
+    // Browser platform is unavailable during server rendering.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(detectPlatform());
   }, []);
 

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 
 export function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -95,9 +96,9 @@ export function FAQSection() {
             © {new Date().getFullYear()} fheENV. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-slate-500">
-            <a href="/docs" className="hover:text-brand-blue transition-colors">
+            <Link href="/docs" className="hover:text-brand-blue transition-colors">
               Docs
-            </a>
+            </Link>
             <a
               href="https://github.com/Team-Managed/fheENV"
               target="_blank"
