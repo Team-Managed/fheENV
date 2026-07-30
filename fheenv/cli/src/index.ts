@@ -172,9 +172,14 @@ program
   )
   .option("-e, --env <envName>", "Environment name", "production")
   .option("-f, --file <path>", "Path to .env file to re-encrypt", ".env")
+  .option("--regrant-only", "Regrant current members without creating another version")
   .action(async (opts) => {
     try {
-      await rotateCommand({ envName: opts.env, envFile: opts.file });
+      await rotateCommand({
+        envName: opts.env,
+        envFile: opts.file,
+        regrantOnly: Boolean(opts.regrantOnly),
+      });
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
