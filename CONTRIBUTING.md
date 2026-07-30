@@ -72,17 +72,17 @@ feature/your-feature  ──►  dev  ──►  main
 
 All branches **must** follow this pattern: `<type>/<short-description>`
 
-| Type | Use for |
-|------|---------|
-| `feat/` | New features — `feat/add-remove-owner` |
-| `fix/` | Bug fixes — `fix/cli-key-exposure` |
-| `chore/` | Maintenance, deps, config — `chore/update-pnpm` |
-| `docs/` | Documentation only — `docs/update-cli-usage` |
+| Type        | Use for                                                               |
+| ----------- | --------------------------------------------------------------------- |
+| `feat/`     | New features — `feat/add-remove-owner`                                |
+| `fix/`      | Bug fixes — `fix/cli-key-exposure`                                    |
+| `chore/`    | Maintenance, deps, config — `chore/update-pnpm`                       |
+| `docs/`     | Documentation only — `docs/update-cli-usage`                          |
 | `refactor/` | Code restructure, no behaviour change — `refactor/dashboard-fetching` |
-| `ci/` | CI/CD pipeline changes — `ci/add-lint-step` |
-| `test/` | Adding or updating tests — `test/contract-edge-cases` |
-| `hotfix/` | Urgent production fix — `hotfix/rpc-timeout` |
-| `release/` | Release preparation — `release/v1.1.0` |
+| `ci/`       | CI/CD pipeline changes — `ci/add-lint-step`                           |
+| `test/`     | Adding or updating tests — `test/contract-edge-cases`                 |
+| `hotfix/`   | Urgent production fix — `hotfix/rpc-timeout`                          |
+| `release/`  | Release preparation — `release/v1.1.0`                                |
 
 Branch names that don't match this pattern will **fail CI** and cannot be merged.
 
@@ -108,14 +108,14 @@ Branch names that don't match this pattern will **fail CI** and cannot be merged
 
 Every PR must pass all of the following before it can be merged:
 
-| Check | What it validates |
-|-------|------------------|
-| **Branch name check** | Branch follows `<type>/<description>` naming convention |
-| **Only dev can target main** | PRs to `main` must come from the `dev` branch |
-| **Lint & Format check** | Prettier formatting + ESLint rules pass |
-| **Contracts (compile + test)** | Solidity compiles and all Hardhat tests pass |
-| **CLI (typecheck + build)** | TypeScript compiles and CLI builds successfully |
-| **Frontend (typecheck + build)** | TypeScript compiles and Next.js builds successfully |
+| Check                            | What it validates                                       |
+| -------------------------------- | ------------------------------------------------------- |
+| **Branch name check**            | Branch follows `<type>/<description>` naming convention |
+| **Only dev can target main**     | PRs to `main` must come from the `dev` branch           |
+| **Lint & Format check**          | Prettier formatting + ESLint rules pass                 |
+| **Contracts (compile + test)**   | Solidity compiles and all Hardhat tests pass            |
+| **CLI (typecheck + build)**      | TypeScript compiles and CLI builds successfully         |
+| **Frontend (typecheck + build)** | TypeScript compiles and Next.js builds successfully     |
 
 ## Pull Request Guidelines
 

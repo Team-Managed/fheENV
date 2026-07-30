@@ -199,11 +199,11 @@ export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<v
   // We use the Blockscout REST API to bypass RPC archive node restrictions and rate limits.
   // This fetches the entire history in a single HTTP request!
   const apiUrl = `https://eth-sepolia.blockscout.com/api?module=logs&action=getLogs&address=${registryAddress}&fromBlock=${fromBlock}&toBlock=latest`;
-  
+
   try {
     const res = await fetch(apiUrl);
     const data = await res.json();
-    
+
     if (data.status === "1" && Array.isArray(data.result)) {
       for (const rawLog of data.result) {
         // Filter out logs that don't belong to our project
@@ -235,7 +235,7 @@ export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<v
         const txHash = rawLog.transactionHash ?? "";
         const logIdx = rawLog.logIndex ? parseInt(rawLog.logIndex, 16) : undefined;
         const logId = logIdx !== undefined ? `${txHash}-${logIdx}` : txHash;
-        
+
         if (seen.has(logId)) continue;
         seen.add(logId);
 
@@ -260,7 +260,9 @@ export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<v
     } else if (data.message === "No records found") {
       // It's perfectly fine if there are no logs in this range
     } else {
-      console.warn(chalk.yellow(`\nAPI Warning: ${data.message || "Unknown error from Blockscout"}`));
+      console.warn(
+        chalk.yellow(`\nAPI Warning: ${data.message || "Unknown error from Blockscout"}`),
+      );
     }
   } catch (err: any) {
     console.error(chalk.red(`\nFailed to fetch from Blockscout API: ${err.message}`));

@@ -245,7 +245,11 @@ program
     "Index on-chain events into ~/.fheenv/audit.log (SOC 2 CC7.2 evidence). " +
       "Run before exporting to ensure the log is current.",
   )
-  .option("--tail <blocks>", "Only scan the most recent N blocks (bypasses archive limits on old projects)", parseInt)
+  .option(
+    "--tail <blocks>",
+    "Only scan the most recent N blocks (bypasses archive limits on old projects)",
+    parseInt,
+  )
   .action(async (opts) => {
     try {
       await indexAuditCommand({ tail: opts.tail });

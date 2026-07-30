@@ -2,7 +2,7 @@
  * setup-github-rotator.ts
  *
  * Generates a throwaway "Robot Wallet" for automated GitHub Actions rotation.
- * 
+ *
  * Usage:
  *   npx ts-node scripts/setup-github-rotator.ts
  */

@@ -40,7 +40,7 @@ Applies to:
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Revocation**      | Marking a team member inactive on-chain (`revokeAccess()`). Logistic only — does not by itself prevent decryption of previously issued ciphertext handles.                                                                                                                    |
 | **Rotation**        | Generating a new AES-256-GCM key, re-encrypting the environment, publishing a new IPFS blob, and re-issuing FHE access (`updateEnvironment()` + `batchGrantAccess()`) to currently active members only. This is the action that makes revocation cryptographically effective. |
-| **Rotator key**     | A wallet key, distinct from any team member's or administrator's key, authorized only to execute rotation — not to add, remove, or modify team membership. Held securely as a GitHub Actions Secret; never stored as a plaintext credential on developer machines.                                                |
+| **Rotator key**     | A wallet key, distinct from any team member's or administrator's key, authorized only to execute rotation — not to add, remove, or modify team membership. Held securely as a GitHub Actions Secret; never stored as a plaintext credential on developer machines.            |
 | **Evidence record** | A logged entry capturing who/what triggered a rotation or revocation, when, for which environment, and the resulting outcome. Stored in `~/.fheenv/audit.log` (JSONL) and supplemented by GitHub Actions run logs.                                                            |
 
 ---
@@ -135,12 +135,12 @@ The status of scheduled rotation jobs is visible in a PostHog dashboard (events 
 
 ## 5. Roles & Responsibilities
 
-| Role                                      | Responsibility                                                                                                                   |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Policy Owner** (Kunal Shah, Tyra Javed) | Maintains this document; tracks implementation status against §4; reviews evidence records monthly                               |
-| **Approvers** (Tyra Javed, Kunal Shah)    | Approve policy changes; confirm control status updates before audit submission                                                   |
-| **Team members**                          | Hold individual wallet credentials via `fheenv login`; never share keys; report suspected compromise immediately (triggers §4.7) |
-| **Rotator credential** (GitHub Actions Secret) | Executes §4.3 and §4.4; holds no team-management or ownership privilege (§4.5); key is securely held as a CI secret |
+| Role                                           | Responsibility                                                                                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Policy Owner** (Kunal Shah, Tyra Javed)      | Maintains this document; tracks implementation status against §4; reviews evidence records monthly                               |
+| **Approvers** (Tyra Javed, Kunal Shah)         | Approve policy changes; confirm control status updates before audit submission                                                   |
+| **Team members**                               | Hold individual wallet credentials via `fheenv login`; never share keys; report suspected compromise immediately (triggers §4.7) |
+| **Rotator credential** (GitHub Actions Secret) | Executes §4.3 and §4.4; holds no team-management or ownership privilege (§4.5); key is securely held as a CI secret              |
 
 ---
 

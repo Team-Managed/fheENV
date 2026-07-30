@@ -118,6 +118,7 @@ Provide the user with:
 ### Showcase Image Generation
 
 The `generate_showcase.py` script requires:
+
 - Python 3.8+
 - Dependencies: `pip install -r requirements.txt`
 - Environment variables in `.env` file
@@ -132,6 +133,7 @@ From `references/background_styles.md`:
 **12 Professional Styles Available**:
 
 **Dark Styles** (6):
+
 - void (绝对虚空) - Absolute minimalism, hardcore tech
 - frosted (磨砂穹顶) - Modern breathing space, premium products
 - fluid (流体深渊) - AI-native fluidity, dynamic systems
@@ -140,6 +142,7 @@ From `references/background_styles.md`:
 - led_matrix (数字硬件) - Digital retro, cyberpunk aesthetics
 
 **Light Styles** (6):
+
 - editorial (纸本编辑) - Specialty paper, humanistic brands
 - iridescent (幻彩透砂) - Optical materials, tech hardware
 - morning (晨雾光域) - AI softness, approachable products
@@ -152,6 +155,7 @@ Each style has specific visual characteristics and suitable use cases. Consult t
 ## Common Patterns
 
 ### Pattern: Concentric Circle Dots
+
 ```svg
 <svg viewBox="0 0 100 100">
   <g>
@@ -163,6 +167,7 @@ Each style has specific visual characteristics and suitable use cases. Consult t
 ```
 
 ### Pattern: Geometric Shape with Line Accent
+
 ```svg
 <svg viewBox="0 0 100 100">
   <polygon points="50,30 70,60 30,60" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -171,6 +176,7 @@ Each style has specific visual characteristics and suitable use cases. Consult t
 ```
 
 ### Pattern: Node Network
+
 ```svg
 <svg viewBox="0 0 100 100">
   <path d="M 30 70 Q 50 70, 50 50 T 70 30" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -188,7 +194,8 @@ For more patterns and combinations, see `references/design_patterns.md`.
 
 **PNG export fails**: Verify cairosvg is installed (`pip install cairosvg`)
 
-**Showcase generation fails**: 
+**Showcase generation fails**:
+
 - Check `.env` file has valid `GEMINI_API_KEY`
 - Verify reference PNG exists and is readable
 - Check API quota/rate limits

@@ -337,7 +337,7 @@ fheenv team remove --member 0xTeammateAddress --env production
 
 > ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
 
-| Flag                     | Default      | Description                |
+| Flag | Default | Description |
 | ---
 
 ---
@@ -350,26 +350,26 @@ Grant a wallet address the `Rotator` role for a specific project. A Rotator can 
 fheenv rotator add --address 0xAutomationAddress
 ```
 
-| Flag                        | Default  | Description                                 |
-| --------------------------- | -------- | ------------------------------------------- |
+| Flag                      | Default  | Description                                 |
+| ------------------------- | -------- | ------------------------------------------- |
 | `-a, --address <address>` | required | Ethereum address to grant the Rotator role. |
 
 ---
 
 #### `fheenv rotator remove`
 
-Revoke the `Rotator` role from a wallet address. 
+Revoke the `Rotator` role from a wallet address.
 
 ```bash
 fheenv rotator remove --address 0xAutomationAddress
 ```
 
-| Flag                        | Default  | Description                                  |
-| --------------------------- | -------- | -------------------------------------------- |
-| `-a, --address <address>` | required | Ethereum address to revoke the Rotator role. |
---------------------- | ------------ | -------------------------- |
-| `-m, --member <address>` | required     | Ethereum address to revoke |
-| `-e, --env <name>`       | `production` | Environment                |
+| Flag                      | Default      | Description                                  |
+| ------------------------- | ------------ | -------------------------------------------- |
+| `-a, --address <address>` | required     | Ethereum address to revoke the Rotator role. |
+| ---------------------     | ------------ | --------------------------                   |
+| `-m, --member <address>`  | required     | Ethereum address to revoke                   |
+| `-e, --env <name>`        | `production` | Environment                                  |
 
 ---
 
@@ -407,23 +407,28 @@ To stay SOC2 compliant, you should automate key rotation to happen on a schedule
 
 **1. Generate a Robot Wallet**
 Use the provided script to generate a fresh, secure wallet for GitHub Actions.
+
 ```bash
 npx ts-node scripts/setup-github-rotator.ts
 ```
-*(This will output a Robot Address and a Private Key)*
+
+_(This will output a Robot Address and a Private Key)_
 
 **2. Grant the Rotator Role**
 As the project owner, grant the Robot Address the `Rotator` role on-chain:
+
 ```bash
 fheenv rotator add --address <ROBOT_ADDRESS>
 ```
 
 **3. Setup GitHub Actions**
 Add the Robot's Private Key as a GitHub Secret (`FHEENV_PRIVATE_KEY`). The Robot wallet can now safely rotate keys on a schedule using this command in your workflows:
+
 ```bash
 FHEENV_PRIVATE_KEY=${{ secrets.FHEENV_PRIVATE_KEY }} fheenv rotate --env production
 ```
-*Note: Ensure the Robot Wallet has a small amount of Sepolia ETH to pay for rotation gas fees!*
+
+_Note: Ensure the Robot Wallet has a small amount of Sepolia ETH to pay for rotation gas fees!_
 
 ---
 

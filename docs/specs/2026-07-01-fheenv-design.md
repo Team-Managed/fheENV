@@ -133,7 +133,8 @@ FHEENV_PRIVATE_KEY=0x... fheenv pull --env production
 - Terraform provider
 - Secret version history / rollback UI
 
-*(Note: GitHub Actions native integration and SOC2 compliance features were originally out of scope but have now been implemented as of July 2026).*
+_(Note: GitHub Actions native integration and SOC2 compliance features were originally out of scope but have now been implemented as of July 2026)._
+
 - Organization-level billing
 
 ---
