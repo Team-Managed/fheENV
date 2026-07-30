@@ -1,9 +1,10 @@
 import hre from "hardhat";
 import { upgrades } from "hardhat";
-import { Encryptable } from "@cofhe/sdk";
+import { Encryptable, FheTypes } from "@cofhe/sdk";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import type { FheENVRegistry } from "../typechain-types/contracts";
+import type { FheENVRegistryV2 } from "../typechain-types/contracts/test/fheENVRegistryV2";
 
 describe("fheENVRegistry", function () {
   this.timeout(60000);
@@ -298,7 +299,7 @@ describe("fheENVRegistry", function () {
     await registry.createProject("MyProject");
     await expect(
       registry.connect(stranger)["transferOwnership(uint256,address)"](0n, member.address),
-    ).to.be.revertedWith("Not a project owner");
+    ).to.be.revertedWith("Only primary owner");
   });
 
   it("30. multiple projects are isolated from each other", async function () {
@@ -387,36 +388,56 @@ describe("fheENVRegistry", function () {
     ).to.be.reverted;
   });
 
-  it("37. upgrade preserves all project and environment state", async function () {
-    // Populate state before upgrade
+  it("37. upgrades to different bytecode and preserves state plus FHE access", async function () {
     await registry.createProject("pre-upgrade-project");
     const { high, low } = await encryptAesKey();
     await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, 0n);
     await registry.grantAccess(0n, "production", member.address);
 
     const proxyAddress = await registry.getAddress();
-    const nextIdBefore = await registry.nextProjectId();
-    const [, , cidBefore, verBefore] = await registry.getEnvironment(0n, "production");
-    const hasAccessBefore = await registry.hasAccess(0n, "production", member.address);
+    const implementationBefore = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    const [highHandle] = await registry.getEnvironment(0n, "production");
+    const decryptedBefore = await memberCofheClient
+      .decryptForView(highHandle, FheTypes.Uint128)
+      .execute();
+    expect(decryptedBefore).to.equal(AES_KEY_HIGH);
 
-    // Upgrade to the same implementation (simulates a no-op patch)
-    const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
-    await upgrades.upgradeProxy(proxyAddress, Factory, { kind: "uups" });
+    const V2 = await hre.ethers.getContractFactory("fheENVRegistryV2");
+    const upgraded = (await upgrades.upgradeProxy(proxyAddress, V2, {
+      kind: "uups",
+      call: { fn: "initializeV2", args: [42n] },
+      unsafeAllow: ["missing-initializer-call"],
+    })) as unknown as FheENVRegistryV2;
+    await upgraded.waitForDeployment();
 
-    // Proxy address must not change
-    expect(await registry.getAddress()).to.equal(proxyAddress);
+    const implementationAfter = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    expect(implementationAfter).to.not.equal(implementationBefore);
+    expect(await upgraded.getAddress()).to.equal(proxyAddress);
+    expect(await upgraded.implementationVersion()).to.equal(2n);
+    expect(await upgraded.upgradeMarker()).to.equal(42n);
+    expect(await upgraded.nextProjectId()).to.equal(1n);
+    expect(await upgraded.owners(0n, owner.address)).to.equal(true);
+    expect(await upgraded.hasAccess(0n, "production", member.address)).to.equal(true);
 
-    // All state must survive the upgrade
-    expect(await registry.nextProjectId()).to.equal(nextIdBefore);
-    const [, , cidAfter, verAfter] = await registry.getEnvironment(0n, "production");
-    expect(cidAfter).to.equal(cidBefore);
-    expect(verAfter).to.equal(verBefore);
-    expect(await registry.hasAccess(0n, "production", member.address)).to.equal(hasAccessBefore);
-    expect(await registry.owners(0n, owner.address)).to.equal(true);
+    const [highAfter, , cidAfter, versionAfter] = await upgraded.getEnvironment(0n, "production");
+    expect(highAfter).to.equal(highHandle);
+    expect(cidAfter).to.equal(BLOB_CID);
+    expect(versionAfter).to.equal(1n);
+    const decryptedAfter = await memberCofheClient
+      .decryptForView(highAfter, FheTypes.Uint128)
+      .execute();
+    expect(decryptedAfter).to.equal(AES_KEY_HIGH);
   });
 
   it("38. re-initializing the proxy reverts (initializer guard)", async function () {
     await expect(registry.initialize(stranger.address)).to.be.reverted;
+  });
+
+  it("implementation initialization is disabled", async function () {
+    const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
+    const implementation = await Factory.deploy();
+    await implementation.waitForDeployment();
+    await expect(implementation.initialize(owner.address)).to.be.reverted;
   });
 
   it("39. owner can transfer proxy ownership via OwnableUpgradeable", async function () {
