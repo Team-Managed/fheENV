@@ -34,6 +34,8 @@ export interface AuditEvent {
   target?: string;
   /** On-chain transaction hash confirming the action */
   txHash?: string;
+  /** On-chain log index for differentiating multiple events in the same transaction */
+  logIndex?: number;
   /** ISO 8601 expiry time for time-limited member_granted grants */
   expiresAt?: string;
   /** For key_rotated: what triggered the rotation */

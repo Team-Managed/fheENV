@@ -123,9 +123,9 @@ function writeLastIndexedBlock(block: bigint): void {
   fs.writeFileSync(STATE_FILE, JSON.stringify({ lastIndexedBlock: block.toString() }, null, 2));
 }
 
-// ── Existing txHashes to deduplicate ─────────────────────────────────────────
+// ── Existing log IDs to deduplicate ─────────────────────────────────────────
 
-function loadExistingTxHashes(): Set<string> {
+function loadExistingLogIds(): Set<string> {
   const LOG_PATH = path.join(FHEENV_DIR, "audit.log");
   const seen = new Set<string>();
   if (!fs.existsSync(LOG_PATH)) return seen;
@@ -133,8 +133,11 @@ function loadExistingTxHashes(): Set<string> {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
-      const rec = JSON.parse(trimmed) as { txHash?: string };
-      if (rec.txHash) seen.add(rec.txHash);
+      const rec = JSON.parse(trimmed) as { txHash?: string; logIndex?: number };
+      if (rec.txHash) {
+        const id = rec.logIndex !== undefined ? `${rec.txHash}-${rec.logIndex}` : rec.txHash;
+        seen.add(id);
+      }
     } catch {
       /* skip malformed lines */
     }
@@ -169,7 +172,7 @@ export async function indexAuditCommand(): Promise<void> {
     `Indexing blocks ${fromBlock}–${latestBlock} for project ${config.projectId}…`,
   ).start();
 
-  const seen = loadExistingTxHashes();
+  const seen = loadExistingLogIds();
   let newRecords = 0;
 
   const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
@@ -186,8 +189,10 @@ export async function indexAuditCommand(): Promise<void> {
 
     for (const log of logs) {
       const txHash = log.transactionHash ?? "";
-      if (seen.has(txHash)) continue;
-      seen.add(txHash);
+      const logIdx = log.logIndex !== null && log.logIndex !== undefined ? Number(log.logIndex) : undefined;
+      const logId = logIdx !== undefined ? `${txHash}-${logIdx}` : txHash;
+      if (seen.has(logId)) continue;
+      seen.add(logId);
 
       const args = (log as unknown as { args?: Record<string, unknown> }).args ?? {};
 
@@ -196,6 +201,7 @@ export async function indexAuditCommand(): Promise<void> {
         source: "on_chain",
         blockNumber: log.blockNumber?.toString() ?? "",
         txHash,
+        logIndex: logIdx,
         actor: "", // not available from log; enriched below
         action: eventNameToAction(ev.name),
         projectId: config.projectId.toString(),
