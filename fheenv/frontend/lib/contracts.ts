@@ -33,6 +33,12 @@ const DEFAULT_REGISTRY_ADDRESS: Address = "0xb9a29d0Cfb402d91c6f70eF117758C118f0
 export const REGISTRY_ADDRESS =
   (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address | undefined) ?? DEFAULT_REGISTRY_ADDRESS;
 
-// Block the registry contract was deployed at. Set NEXT_PUBLIC_DEPLOY_BLOCK to narrow
-// the getLogs range and avoid slow/rate-limited full-history queries on the RPC.
-export const DEPLOY_BLOCK = BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? "0");
+export function parseDeploymentBlock(value: string | undefined): bigint | null {
+  if (!value || !/^\d+$/.test(value)) return null;
+  return BigInt(value);
+}
+
+// Event-backed screens fail closed when this is missing instead of scanning from genesis.
+export const REGISTRY_DEPLOY_BLOCK = parseDeploymentBlock(
+  process.env.NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK,
+);
