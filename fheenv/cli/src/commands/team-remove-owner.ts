@@ -3,7 +3,7 @@ import ora from "ora";
 import { readConfig } from "../lib/config";
 import { createClients } from "../lib/wallet";
 import { removeOwner } from "../lib/contracts-node";
-import { type Address } from "viem";
+import { getAddress, isAddress, type Address } from "viem";
 
 export interface TeamRemoveOwnerOptions {
   owner: string;
@@ -12,25 +12,24 @@ export interface TeamRemoveOwnerOptions {
 export async function teamRemoveOwnerCommand(opts: TeamRemoveOwnerOptions): Promise<void> {
   const config = readConfig();
 
-  if (!opts.owner.match(/^0x[0-9a-fA-F]{40}$/)) {
+  if (!isAddress(opts.owner)) {
     throw new Error(`Invalid Ethereum address: ${opts.owner}`);
   }
+  const owner = getAddress(opts.owner);
 
-  const spinner = ora(`Removing co-owner ${opts.owner}…`).start();
+  const spinner = ora(`Removing co-owner ${owner}...`).start();
   try {
     const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
 
     await removeOwner(
       config.registryAddress as Address,
       BigInt(config.projectId),
-      opts.owner as Address,
+      owner as Address,
       walletClient,
       publicClient,
     );
 
-    spinner.succeed(
-      chalk.green(`Co-owner removed: ${opts.owner} can no longer manage this project`),
-    );
+    spinner.succeed(chalk.green(`Co-owner removed: ${owner} can no longer manage this project`));
     console.log(
       chalk.dim(
         "  They retain any env-level decrypt access previously granted.\n" +

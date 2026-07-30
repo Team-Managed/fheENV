@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
 import { Users, Loader2, AlertTriangle } from "lucide-react";
+import { isAddress } from "viem";
 
 type Props = { projectId: bigint; envName: string };
 
@@ -144,8 +145,15 @@ export function TeamManager({ projectId, envName }: Props) {
   async function handleRemoveOwner() {
     if (!walletClient || !publicClient || !address) return;
     const target = removeOwnerAddr.trim();
-    if (!target || !target.startsWith("0x")) {
+    if (!isAddress(target)) {
       setRemoveOwnerError("Enter a valid 0x address");
+      return;
+    }
+    if (
+      !window.confirm(
+        `Remove ${target} as a project co-owner? This does not revoke existing environment decrypt access.`,
+      )
+    ) {
       return;
     }
     setRemoveOwnerLoading(true);
@@ -156,7 +164,7 @@ export function TeamManager({ projectId, envName }: Props) {
         address: REGISTRY_ADDRESS,
         abi: REGISTRY_ABI,
         functionName: "removeOwner",
-        args: [projectId, target as `0x${string}`],
+        args: [projectId, target],
         account: address,
       });
       await publicClient.waitForTransactionReceipt({
