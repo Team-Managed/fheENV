@@ -147,7 +147,11 @@ function loadExistingLogIds(): Set<string> {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export async function indexAuditCommand(): Promise<void> {
+export interface IndexAuditOptions {
+  tail?: number;
+}
+
+export async function indexAuditCommand(opts: IndexAuditOptions = {}): Promise<void> {
   const config = readConfig();
   const registryAddress = config.registryAddress as Address;
   const projectId = BigInt(config.projectId);
@@ -160,8 +164,22 @@ export async function indexAuditCommand(): Promise<void> {
   };
   const publicClient: PublicClient = createPublicClient({ chain, transport: http(config.rpcUrl) });
 
-  const fromBlock = readLastIndexedBlock() + (readLastIndexedBlock() > 0n ? 1n : 0n);
+  let fromBlock = readLastIndexedBlock() + (readLastIndexedBlock() > 0n ? 1n : 0n);
   const latestBlock = await publicClient.getBlockNumber();
+
+  // If the user specifies a tail (e.g. --tail 1000), always scan only the last N blocks
+  // to intentionally bypass archive node limits on old projects.
+  if (opts.tail && opts.tail > 0) {
+    const tailBig = BigInt(opts.tail);
+    fromBlock = latestBlock > tailBig ? latestBlock - tailBig : 0n;
+  } else if (fromBlock === 0n) {
+    // Fallback: If no state exists and no tail specified, start from the exact block the project was created.
+    if (config.deployedAtBlock !== undefined) {
+      fromBlock = BigInt(config.deployedAtBlock);
+    } else {
+      fromBlock = latestBlock > 10000n ? latestBlock - 10000n : 0n;
+    }
+  }
 
   if (fromBlock > latestBlock) {
     console.log(chalk.dim(`Audit log is current (last indexed block: ${fromBlock - 1n})`));
@@ -177,41 +195,72 @@ export async function indexAuditCommand(): Promise<void> {
 
   const projectIdHex = ("0x" + projectId.toString(16).padStart(64, "0")) as `0x${string}`;
 
+  // Set to 2000 to comply with Infura's strict getLogs block range limits
+  const MAX_BLOCK_RANGE = 2000n;
+
   for (const ev of EVENTS) {
-    const logs = await publicClient.getLogs({
-      address: registryAddress,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event: ev.abi as any,
-      args: { projectId } as Record<string, unknown>,
-      fromBlock,
-      toBlock: latestBlock,
-    });
+    for (
+      let currentFrom = fromBlock;
+      currentFrom <= latestBlock;
+      currentFrom += MAX_BLOCK_RANGE + 1n
+    ) {
+      let currentTo = currentFrom + MAX_BLOCK_RANGE;
+      if (currentTo > latestBlock) currentTo = latestBlock;
 
-    for (const log of logs) {
-      const txHash = log.transactionHash ?? "";
-      const logIdx = log.logIndex !== null && log.logIndex !== undefined ? Number(log.logIndex) : undefined;
-      const logId = logIdx !== undefined ? `${txHash}-${logIdx}` : txHash;
-      if (seen.has(logId)) continue;
-      seen.add(logId);
+      let logs: any[] = [];
+      let retries = 0;
+      while (true) {
+        try {
+          logs = await publicClient.getLogs({
+            address: registryAddress,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            event: ev.abi as any,
+            args: { projectId } as Record<string, unknown>,
+            fromBlock: currentFrom,
+            toBlock: currentTo,
+          });
+          // Base delay to be nice to free tiers
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          break;
+        } catch (err: any) {
+          if (err.message && err.message.includes("429") && retries < 5) {
+            retries++;
+            // Exponential backoff: 2s, 4s, 8s...
+            const delay = 1000 * Math.pow(2, retries);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            throw err;
+          }
+        }
+      }
 
-      const args = (log as unknown as { args?: Record<string, unknown> }).args ?? {};
+      for (const log of logs) {
+        const txHash = log.transactionHash ?? "";
+        const logIdx =
+          log.logIndex !== null && log.logIndex !== undefined ? Number(log.logIndex) : undefined;
+        const logId = logIdx !== undefined ? `${txHash}-${logIdx}` : txHash;
+        if (seen.has(logId)) continue;
+        seen.add(logId);
 
-      // Map on-chain event to AuditEvent shape
-      const record: AuditEvent & { source: string; blockNumber: string } = {
-        source: "on_chain",
-        blockNumber: log.blockNumber?.toString() ?? "",
-        txHash,
-        logIndex: logIdx,
-        actor: "", // not available from log; enriched below
-        action: eventNameToAction(ev.name),
-        projectId: config.projectId.toString(),
-        envName: reverseEnvHash(String(args.envHash ?? ""), projectIdHex),
-        target: String(args.member ?? args.rotator ?? ""),
-        newCid: String(args.blobCid ?? ""),
-      };
+        const args = (log as unknown as { args?: Record<string, unknown> }).args ?? {};
 
-      logAuditEvent(record);
-      newRecords++;
+        // Map on-chain event to AuditEvent shape
+        const record: AuditEvent & { source: string; blockNumber: string } = {
+          source: "on_chain",
+          blockNumber: log.blockNumber?.toString() ?? "",
+          txHash,
+          logIndex: logIdx,
+          actor: "", // not available from log; enriched below
+          action: eventNameToAction(ev.name),
+          projectId: config.projectId.toString(),
+          envName: reverseEnvHash(String(args.envHash ?? ""), projectIdHex),
+          target: String(args.member ?? args.rotator ?? ""),
+          newCid: String(args.blobCid ?? ""),
+        };
+
+        logAuditEvent(record);
+        newRecords++;
+      }
     }
   }
 
