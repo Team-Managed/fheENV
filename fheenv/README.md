@@ -257,7 +257,7 @@ fheenv team remove --member 0xTeammateAddress --env production
 
 > ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
 
-| Flag                     | Default      | Description                |
+| Flag | Default | Description |
 | ---
 
 ---
@@ -270,26 +270,26 @@ Grant a wallet address the `Rotator` role for a specific project. A Rotator can 
 fheenv rotator add --address 0xAutomationAddress
 ```
 
-| Flag                        | Default  | Description                                 |
-| --------------------------- | -------- | ------------------------------------------- |
+| Flag                      | Default  | Description                                 |
+| ------------------------- | -------- | ------------------------------------------- |
 | `-a, --address <address>` | required | Ethereum address to grant the Rotator role. |
 
 ---
 
 #### `fheenv rotator remove`
 
-Revoke the `Rotator` role from a wallet address. 
+Revoke the `Rotator` role from a wallet address.
 
 ```bash
 fheenv rotator remove --address 0xAutomationAddress
 ```
 
-| Flag                        | Default  | Description                                  |
-| --------------------------- | -------- | -------------------------------------------- |
-| `-a, --address <address>` | required | Ethereum address to revoke the Rotator role. |
---------------------- | ------------ | -------------------------- |
-| `-m, --member <address>` | required     | Ethereum address to revoke |
-| `-e, --env <name>`       | `production` | Environment                |
+| Flag                      | Default      | Description                                  |
+| ------------------------- | ------------ | -------------------------------------------- |
+| `-a, --address <address>` | required     | Ethereum address to revoke the Rotator role. |
+| ---------------------     | ------------ | --------------------------                   |
+| `-m, --member <address>`  | required     | Ethereum address to revoke                   |
+| `-e, --env <name>`        | `production` | Environment                                  |
 
 ---
 
