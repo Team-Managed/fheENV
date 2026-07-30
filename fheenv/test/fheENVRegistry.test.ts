@@ -1,8 +1,10 @@
 import hre from "hardhat";
-import { Encryptable } from "@cofhe/sdk";
+import { upgrades } from "hardhat";
+import { Encryptable, FheTypes } from "@cofhe/sdk";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import type { FheENVRegistry } from "../typechain-types/contracts";
+import type { FheENVRegistryV2 } from "../typechain-types/contracts/test/FheENVRegistryV2";
 
 describe("fheENVRegistry", function () {
   this.timeout(60000);
@@ -44,7 +46,10 @@ describe("fheENVRegistry", function () {
 
   beforeEach(async function () {
     const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
-    registry = (await Factory.deploy()) as unknown as FheENVRegistry;
+    registry = (await upgrades.deployProxy(Factory, [owner.address], {
+      kind: "uups",
+      initializer: "initialize",
+    })) as unknown as FheENVRegistry;
     await registry.waitForDeployment();
   });
 
@@ -151,7 +156,7 @@ describe("fheENVRegistry", function () {
 
   it("13. transferOwnership works", async function () {
     await registry.createProject("MyProject");
-    await registry.transferOwnership(0n, stranger.address);
+    await registry["transferOwnership(uint256,address)"](0n, stranger.address);
     expect(await registry.owners(0n, owner.address)).to.equal(false);
     expect(await registry.owners(0n, stranger.address)).to.equal(true);
   });
@@ -275,21 +280,26 @@ describe("fheENVRegistry", function () {
 
   it("27. rejects transferOwnership to self", async function () {
     await registry.createProject("MyProject");
-    await expect(registry.transferOwnership(0n, owner.address)).to.be.revertedWith("Already owner");
+    await expect(
+      registry["transferOwnership(uint256,address)"](0n, owner.address),
+    ).to.be.revertedWith("Already owner");
   });
 
   it("28. rejects transferOwnership to zero address", async function () {
     await registry.createProject("MyProject");
     await expect(
-      registry.transferOwnership(0n, "0x0000000000000000000000000000000000000000"),
+      registry["transferOwnership(uint256,address)"](
+        0n,
+        "0x0000000000000000000000000000000000000000",
+      ),
     ).to.be.revertedWith("Invalid address");
   });
 
   it("29. rejects transferOwnership by non-owner", async function () {
     await registry.createProject("MyProject");
     await expect(
-      registry.connect(stranger).transferOwnership(0n, member.address),
-    ).to.be.revertedWith("Not a project owner");
+      registry.connect(stranger)["transferOwnership(uint256,address)"](0n, member.address),
+    ).to.be.revertedWith("Only primary owner");
   });
 
   it("30. multiple projects are isolated from each other", async function () {
@@ -361,5 +371,146 @@ describe("fheENVRegistry", function () {
     const [, , cidUpper] = await registry.getEnvironment(0n, "Production");
     expect(cidLower).to.equal("QmLower");
     expect(cidUpper).to.equal("QmUpper");
+  });
+
+  // ─── UUPS proxy & upgrade ───────────────────────────────────────────────────
+
+  it("35. proxy owner is the initial owner passed to initialize()", async function () {
+    expect(await registry.owner()).to.equal(owner.address);
+  });
+
+  it("36. non-owner cannot upgrade the proxy", async function () {
+    const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
+    await expect(
+      upgrades.upgradeProxy(await registry.getAddress(), Factory.connect(stranger), {
+        kind: "uups",
+      }),
+    ).to.be.reverted;
+  });
+
+  it("37. upgrades to different bytecode and preserves state plus FHE access", async function () {
+    await registry.createProject("pre-upgrade-project");
+    const { high, low } = await encryptAesKey();
+    await registry.updateEnvironment(0n, "production", high, low, BLOB_CID, 0n);
+    await registry.grantAccess(0n, "production", member.address);
+
+    const proxyAddress = await registry.getAddress();
+    const implementationBefore = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    const [highHandle] = await registry.getEnvironment(0n, "production");
+    const decryptedBefore = await memberCofheClient
+      .decryptForView(highHandle, FheTypes.Uint128)
+      .execute();
+    expect(decryptedBefore).to.equal(AES_KEY_HIGH);
+
+    const V2 = await hre.ethers.getContractFactory("fheENVRegistryV2");
+    const upgraded = (await upgrades.upgradeProxy(proxyAddress, V2, {
+      kind: "uups",
+      call: { fn: "initializeV2", args: [42n] },
+      unsafeAllow: ["missing-initializer-call"],
+    })) as unknown as FheENVRegistryV2;
+    await upgraded.waitForDeployment();
+
+    const implementationAfter = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    expect(implementationAfter).to.not.equal(implementationBefore);
+    expect(await upgraded.getAddress()).to.equal(proxyAddress);
+    expect(await upgraded.implementationVersion()).to.equal(2n);
+    expect(await upgraded.upgradeMarker()).to.equal(42n);
+    expect(await upgraded.nextProjectId()).to.equal(1n);
+    expect(await upgraded.owners(0n, owner.address)).to.equal(true);
+    expect(await upgraded.hasAccess(0n, "production", member.address)).to.equal(true);
+
+    const [highAfter, , cidAfter, versionAfter] = await upgraded.getEnvironment(0n, "production");
+    expect(highAfter).to.equal(highHandle);
+    expect(cidAfter).to.equal(BLOB_CID);
+    expect(versionAfter).to.equal(1n);
+    const decryptedAfter = await memberCofheClient
+      .decryptForView(highAfter, FheTypes.Uint128)
+      .execute();
+    expect(decryptedAfter).to.equal(AES_KEY_HIGH);
+  });
+
+  it("38. re-initializing the proxy reverts (initializer guard)", async function () {
+    await expect(registry.initialize(stranger.address)).to.be.reverted;
+  });
+
+  it("implementation initialization is disabled", async function () {
+    const Factory = await hre.ethers.getContractFactory("fheENVRegistry");
+    const implementation = await Factory.deploy();
+    await implementation.waitForDeployment();
+    await expect(implementation.initialize(owner.address)).to.be.reverted;
+  });
+
+  it("39. owner can transfer proxy ownership via OwnableUpgradeable", async function () {
+    await registry["transferOwnership(address)"](member.address);
+    expect(await registry.owner()).to.equal(member.address);
+  });
+
+  // ─── removeOwner ─────────────────────────────────────────────────────────────
+
+  it("40. primary owner can remove a co-owner", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    expect(await registry.owners(0n, member.address)).to.equal(true);
+
+    await registry.removeOwner(0n, member.address);
+    expect(await registry.owners(0n, member.address)).to.equal(false);
+  });
+
+  it("41. removeOwner emits OwnerRemoved event", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    await expect(registry.removeOwner(0n, member.address))
+      .to.emit(registry, "OwnerRemoved")
+      .withArgs(0n, member.address);
+  });
+
+  it("42. non-primary co-owner cannot remove another co-owner", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+    await registry.addOwner(0n, member2.address);
+    await expect(registry.connect(member).removeOwner(0n, member2.address)).to.be.revertedWith(
+      "Only primary owner",
+    );
+  });
+
+  it("43. cannot remove the primary owner", async function () {
+    await registry.createProject("MyProject");
+    // Even the primary owner cannot remove themselves via removeOwner
+    await expect(registry.removeOwner(0n, owner.address)).to.be.revertedWith(
+      "Cannot remove primary owner",
+    );
+  });
+
+  it("44. cannot remove an address that is not an owner", async function () {
+    await registry.createProject("MyProject");
+    await expect(registry.removeOwner(0n, stranger.address)).to.be.revertedWith(
+      "Address is not an owner",
+    );
+  });
+
+  it("45. removeOwner with zero address reverts", async function () {
+    await registry.createProject("MyProject");
+    await expect(
+      registry.removeOwner(0n, "0x0000000000000000000000000000000000000000"),
+    ).to.be.revertedWith("Invalid address");
+  });
+
+  it("46. only the primary owner can transfer project ownership", async function () {
+    await registry.createProject("MyProject");
+    await registry.addOwner(0n, member.address);
+
+    await expect(
+      registry.connect(member)["transferOwnership(uint256,address)"](0n, stranger.address),
+    ).to.be.revertedWith("Only primary owner");
+  });
+
+  it("47. project transfer emits removal and transfer evidence", async function () {
+    await registry.createProject("MyProject");
+
+    await expect(registry["transferOwnership(uint256,address)"](0n, member.address))
+      .to.emit(registry, "OwnerRemoved")
+      .withArgs(0n, owner.address)
+      .and.to.emit(registry, "ProjectOwnershipTransferred")
+      .withArgs(0n, owner.address, member.address);
   });
 });
