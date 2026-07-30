@@ -218,6 +218,7 @@ contract fheENVRegistry {
         FHE.allow(env.aesKeyHigh, member);
         FHE.allow(env.aesKeyLow, member);
         members[projectId][envHash][member] = true;
+        memberExpiry[projectId][envHash][member] = 0;
 
         emit AccessGranted(projectId, envHash, member);
     }
@@ -239,6 +240,7 @@ contract fheENVRegistry {
             FHE.allow(env.aesKeyHigh, m);
             FHE.allow(env.aesKeyLow, m);
             members[projectId][envHash][m] = true;
+            memberExpiry[projectId][envHash][m] = 0;
             emit AccessGranted(projectId, envHash, m);
         }
     }
@@ -274,6 +276,7 @@ contract fheENVRegistry {
         require(expiry != 0, "Access has no expiry set");
         require(block.timestamp > expiry, "Access not yet expired");
         members[projectId][envHash][member] = false;
+        memberExpiry[projectId][envHash][member] = 0;
         emit AccessRevoked(projectId, envHash, member);
     }
 
@@ -290,6 +293,7 @@ contract fheENVRegistry {
         Environment storage env = environments[projectId][envHash];
         require(env.initialized, "Environment not initialized");
         members[projectId][envHash][member] = false;
+        memberExpiry[projectId][envHash][member] = 0;
         emit AccessRevoked(projectId, envHash, member);
     }
 
