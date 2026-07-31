@@ -1,7 +1,9 @@
 import chalk from "chalk";
 import ora from "ora";
-import { writeConfig, type FheEnvConfig } from "../lib/config";
-import { createClients, loadAccountKey } from "../lib/wallet";
+import { writeProjectConfig } from "../lib/config";
+import { createCommandContext, withCommandContext } from "../lib/command-context";
+import { type SignerConfig, validateConfigV2 } from "../lib/config-v2";
+import { type SecurityMode } from "../lib/credential-types";
 import { createProject } from "../lib/contracts-node";
 import { type Address } from "viem";
 import fs from "fs";
@@ -13,7 +15,9 @@ export interface InitOptions {
   registry: string;
   rpcUrl: string;
   chainId: number;
-  pinataJwt: string;
+  storageCredential: string;
+  signer: SignerConfig;
+  securityMode: SecurityMode;
   envName?: string;
   analytics?: boolean;
 }
@@ -25,48 +29,51 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   }
   if (opts.analytics) enableAnalytics();
 
-  // Validate wallet is loaded
-  loadAccountKey();
-
-  if (!opts.pinataJwt) {
-    throw new Error(
-      "Pinata JWT is required.\n" +
-        "  Set FHEENV_PINATA_JWT env var or pass --pinata-jwt <jwt>\n" +
-        "  Get a free JWT at https://app.pinata.cloud/developers/api-keys",
-    );
-  }
+  const provisionalConfig = validateConfigV2({
+    version: 2,
+    projectId: 0,
+    registryAddress: opts.registry,
+    rpc: { url: opts.rpcUrl },
+    chainId: opts.chainId,
+    securityMode: opts.securityMode,
+    signer: opts.signer,
+    storage: {
+      provider: "pinata",
+      credentialRef: opts.storageCredential,
+    },
+  });
 
   const spinner = ora(`Creating project "${opts.name}" on-chain...`).start();
   try {
-    const { publicClient, walletClient } = createClients(opts.rpcUrl, opts.chainId);
+    await withCommandContext(
+      () => createCommandContext(provisionalConfig),
+      async (context) => {
+        await context.credentials.storage();
+        const projectId = await createProject(
+          opts.registry as Address,
+          opts.name,
+          context.signer.walletClient,
+          context.publicClient,
+        );
+        const deployedAtBlock = await context.publicClient.getBlockNumber();
 
-    const projectId = await createProject(
-      opts.registry as Address,
-      opts.name,
-      walletClient,
-      publicClient,
+        writeProjectConfig({
+          ...provisionalConfig,
+          projectId: Number(projectId),
+          deployedAtBlock: Number(deployedAtBlock),
+        });
+
+        spinner.succeed(chalk.green(`Project created! ID: ${projectId}`));
+        await captureAnalytics("cli_initialized", { success: true });
+        await captureAnalytics("project_created", { success: true });
+        console.log(chalk.cyan("  .fheenv.json written to current directory."));
+        if (opts.envName) {
+          console.log(chalk.dim(`  Next: fheenv push --env ${opts.envName}`));
+        } else {
+          console.log(chalk.dim("  Next: fheenv push"));
+        }
+      },
     );
-    const deployedAtBlock = await publicClient.getBlockNumber();
-
-    const config: FheEnvConfig = {
-      projectId: Number(projectId),
-      registryAddress: opts.registry,
-      rpcUrl: opts.rpcUrl,
-      chainId: opts.chainId,
-      pinataJwt: opts.pinataJwt,
-      deployedAtBlock: Number(deployedAtBlock),
-    };
-    writeConfig(config);
-
-    spinner.succeed(chalk.green(`Project created! ID: ${projectId}`));
-    await captureAnalytics("cli_initialized", { success: true });
-    await captureAnalytics("project_created", { success: true });
-    console.log(chalk.cyan("  .fheenv.json written to current directory."));
-    if (opts.envName) {
-      console.log(chalk.dim(`  Next: fheenv push --env ${opts.envName}`));
-    } else {
-      console.log(chalk.dim("  Next: fheenv push"));
-    }
   } catch (err) {
     spinner.fail("Failed to create project");
     throw err;

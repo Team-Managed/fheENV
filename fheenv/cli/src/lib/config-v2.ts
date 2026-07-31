@@ -5,7 +5,7 @@ import { isAddress } from "viem";
 import { parseCredentialReference } from "./credential-store";
 import { SecurityMode } from "./credential-types";
 
-type SignerConfig =
+export type SignerConfig =
   | { type: "walletconnect"; credentialRef: string; expectedAddress?: string }
   | { type: "ledger"; derivationPath: string; expectedAddress?: string }
   | { type: "aws-kms"; keyId: string; expectedAddress: string }

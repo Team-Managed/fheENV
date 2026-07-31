@@ -14,6 +14,7 @@ import { updateCommand } from "./commands/update";
 import { exportAuditCommand } from "./commands/export-audit";
 import { analyticsCommand } from "./commands/analytics";
 import { migrateCredentialsCommand } from "./commands/migrate-credentials";
+import { SignerConfig } from "./lib/config-v2";
 
 const program = new Command();
 
@@ -49,6 +50,50 @@ const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
 const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 const SEPOLIA_CHAIN_ID = 11155111;
 
+function signerConfigFromOptions(opts: Record<string, string | undefined>): SignerConfig {
+  switch (opts.signer) {
+    case "walletconnect":
+      if (!opts.signerCredential) {
+        throw new Error("--signer-credential is required for WalletConnect.");
+      }
+      return {
+        type: "walletconnect",
+        credentialRef: opts.signerCredential,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "ledger":
+      return {
+        type: "ledger",
+        derivationPath: opts.ledgerPath ?? "44'/60'/0'/0/0",
+        expectedAddress: opts.expectedAddress,
+      };
+    case "aws-kms":
+      if (!opts.kmsKeyId || !opts.expectedAddress) {
+        throw new Error("--kms-key-id and --expected-address are required for AWS KMS.");
+      }
+      return {
+        type: "aws-kms",
+        keyId: opts.kmsKeyId,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "external":
+      if (!opts.externalProvider || !opts.expectedAddress) {
+        throw new Error(
+          "--external-provider and --expected-address are required for an external signer.",
+        );
+      }
+      return {
+        type: "external",
+        provider: opts.externalProvider,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "local-encrypted":
+      return { type: "local-encrypted", expectedAddress: opts.expectedAddress };
+    default:
+      throw new Error(`Unsupported signer: ${opts.signer ?? ""}`);
+  }
+}
+
 program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
@@ -57,10 +102,21 @@ program
   .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
   .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
   .option(
-    "--pinata-jwt <jwt>",
-    "Pinata JWT for IPFS uploads (or set FHEENV_PINATA_JWT)",
-    process.env.FHEENV_PINATA_JWT,
+    "--storage-credential <reference>",
+    "Pinata credential reference",
+    "env://FHEENV_PINATA_JWT",
   )
+  .option(
+    "--signer <type>",
+    "walletconnect, ledger, aws-kms, external, or local-encrypted",
+    "local-encrypted",
+  )
+  .option("--security-mode <mode>", "production or development", "development")
+  .option("--signer-credential <reference>", "WalletConnect project ID credential reference")
+  .option("--expected-address <address>", "Expected signer address")
+  .option("--ledger-path <path>", "Ledger derivation path")
+  .option("--kms-key-id <id>", "AWS KMS key ID or ARN")
+  .option("--external-provider <name>", "Configured external signer provider")
   .option("-e, --env <envName>", "Default environment name", "production")
   .option("--analytics", "Opt in to anonymous, minimal CLI product analytics")
   .action(async (opts) => {
@@ -70,7 +126,9 @@ program
         registry: opts.registry,
         rpcUrl: opts.rpc,
         chainId: opts.chainId,
-        pinataJwt: opts.pinataJwt,
+        storageCredential: opts.storageCredential,
+        signer: signerConfigFromOptions(opts),
+        securityMode: opts.securityMode,
         envName: opts.env,
         analytics: Boolean(opts.analytics),
       });

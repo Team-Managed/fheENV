@@ -17,7 +17,22 @@ export interface CommandContext {
   chain: Chain;
   publicClient: PublicClient;
   signer: SignerSession;
+  credentials: {
+    storage(): Promise<string>;
+  };
   close(): Promise<void>;
+}
+
+export async function withCommandContext<T>(
+  create: () => Promise<CommandContext>,
+  operation: (context: CommandContext) => Promise<T>,
+): Promise<T> {
+  const context = await create();
+  try {
+    return await operation(context);
+  } finally {
+    await context.close();
+  }
 }
 
 interface CommandContextDependencies {
@@ -102,6 +117,16 @@ export async function createCommandContext(
       chain,
       publicClient,
       signer,
+      credentials: {
+        storage: () =>
+          resolveCredential(parseCredentialReference(config.storage.credentialRef), {
+            mode: config.securityMode,
+            keyring: dependencies.keyring ?? new NativeCredentialStore(),
+            environment: dependencies.environment ?? process.env,
+            externalSecretProvider: dependencies.externalSecretProvider,
+            registry,
+          }),
+      },
       close: () => signer!.close(),
     };
   } catch (error) {
