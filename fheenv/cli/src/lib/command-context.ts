@@ -10,6 +10,12 @@ import { errorWithCause } from "./errors";
 import { SensitiveValueRegistry, sanitizeError } from "./redaction";
 import { assertSignerCapabilities, SignerProvider, SignerSession } from "./signer-types";
 import { LocalEncryptedSignerProvider } from "./signers/local-encrypted";
+import { WalletConnectSignerProvider } from "./signers/walletconnect";
+import {
+  EncryptedWalletConnectStorage,
+  loadInstallationId,
+  WalletConnectStateStore,
+} from "./walletconnect-state";
 
 export interface CommandContext {
   config: FheEnvConfigV2;
@@ -72,6 +78,7 @@ export async function createCommandContext(
   dependencies: CommandContextDependencies = {},
 ): Promise<CommandContext> {
   const registry = dependencies.registry ?? new SensitiveValueRegistry();
+  const keyring = dependencies.keyring ?? new NativeCredentialStore();
   let signer: SignerSession | undefined;
   try {
     const rpcUrl =
@@ -79,7 +86,7 @@ export async function createCommandContext(
         ? config.rpc.url
         : await resolveCredential(parseCredentialReference(config.rpc.credentialRef), {
             mode: config.securityMode,
-            keyring: dependencies.keyring ?? new NativeCredentialStore(),
+            keyring,
             environment: dependencies.environment ?? process.env,
             externalSecretProvider: dependencies.externalSecretProvider,
             registry,
@@ -93,14 +100,33 @@ export async function createCommandContext(
           chain: input.chain,
           transport: http(input.rpcUrl),
         }) as PublicClient);
-    const defaultProvider =
-      config.signer.type === "local-encrypted"
-        ? new LocalEncryptedSignerProvider({
-            securityMode: config.securityMode,
-            environment: dependencies.environment,
-          })
-        : undefined;
-    const provider = dependencies.signerProviders?.[config.signer.type] ?? defaultProvider;
+    let provider = dependencies.signerProviders?.[config.signer.type];
+    if (!provider && config.signer.type === "local-encrypted") {
+      provider = new LocalEncryptedSignerProvider({
+        securityMode: config.securityMode,
+        environment: dependencies.environment,
+      });
+    } else if (!provider && config.signer.type === "walletconnect") {
+      const projectId = await resolveCredential(
+        parseCredentialReference(config.signer.credentialRef),
+        {
+          mode: config.securityMode,
+          keyring,
+          environment: dependencies.environment ?? process.env,
+          externalSecretProvider: dependencies.externalSecretProvider,
+          registry,
+        },
+      );
+      provider = new WalletConnectSignerProvider({
+        projectId,
+        storage: new EncryptedWalletConnectStorage(
+          new WalletConnectStateStore({
+            credentials: keyring,
+            installationId: loadInstallationId(),
+          }),
+        ),
+      });
+    }
     if (!provider) {
       throw new Error(`Signer provider ${config.signer.type} is not configured.`);
     }
@@ -121,7 +147,7 @@ export async function createCommandContext(
         storage: () =>
           resolveCredential(parseCredentialReference(config.storage.credentialRef), {
             mode: config.securityMode,
-            keyring: dependencies.keyring ?? new NativeCredentialStore(),
+            keyring,
             environment: dependencies.environment ?? process.env,
             externalSecretProvider: dependencies.externalSecretProvider,
             registry,
