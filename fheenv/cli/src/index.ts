@@ -315,6 +315,10 @@ migrate
     "Migrate into production mode with this WalletConnect project ID reference",
   )
   .option(
+    "--expected-address <address>",
+    "Required WalletConnect address to prove and pin during production migration",
+  )
+  .option(
     "--development-local-signer",
     "Explicitly retain the encrypted local signer in development mode",
   )
@@ -326,6 +330,9 @@ migrate
           "Select exactly one: --walletconnect-credential or --development-local-signer.",
         );
       }
+      if (opts.walletconnectCredential && !opts.expectedAddress) {
+        throw new Error("--expected-address is required for a WalletConnect migration.");
+      }
       await migrateCredentialsCommand({
         credentialRef: opts.storageCredential,
         rpcCredentialRef: opts.rpcCredential,
@@ -334,6 +341,7 @@ migrate
           ? {
               type: "walletconnect",
               credentialRef: opts.walletconnectCredential,
+              expectedAddress: opts.expectedAddress,
             }
           : { type: "local-encrypted" },
         dryRun: Boolean(opts.dryRun),

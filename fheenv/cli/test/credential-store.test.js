@@ -88,4 +88,34 @@ describe("credential storage", function () {
     );
     assert.equal(await provider.resolve("test", "storage/default"), "external-secret-canary");
   });
+
+  it("escalates a timed-out provider to SIGKILL and waits for termination", async function () {
+    const fixture = path.resolve("cli/test/fixtures/external-secret-fixture.js");
+    const provider = new ExecutableSecretProvider(
+      {
+        FHEENV_SECRET_PROVIDER_TEST: process.execPath,
+        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([fixture, "ignore-term"]),
+      },
+      25,
+      25,
+    );
+    await assert.rejects(provider.resolve("test", "storage/default"), /SECRET_PROVIDER_TIMEOUT/);
+  });
+
+  it("strips control characters from untrusted provider stderr", async function () {
+    const fixture = path.resolve("cli/test/fixtures/external-secret-fixture.js");
+    const provider = new ExecutableSecretProvider(
+      {
+        FHEENV_SECRET_PROVIDER_TEST: process.execPath,
+        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([fixture, "fail-control"]),
+      },
+      2_000,
+    );
+    await assert.rejects(provider.resolve("test", "storage/default"), (error) => {
+      assert.match(error.message, /SECRET_PROVIDER_FAILED/);
+      assert.equal(error.message.includes(String.fromCharCode(0)), false);
+      assert.equal(error.message.includes(String.fromCharCode(27)), false);
+      return true;
+    });
+  });
 });

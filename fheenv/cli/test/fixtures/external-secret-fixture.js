@@ -7,6 +7,16 @@ process.stdin.on("data", (chunk) => {
   input += chunk;
 });
 process.stdin.on("end", () => {
+  if (process.argv[2] === "ignore-term") {
+    process.on("SIGTERM", () => undefined);
+    globalThis.setInterval(() => undefined, 1_000);
+    return;
+  }
+  if (process.argv[2] === "fail-control") {
+    process.stderr.write("\u001b[31muntrusted\u0000detail\u001b[0m");
+    process.exitCode = 3;
+    return;
+  }
   const request = JSON.parse(input);
   process.stdout.write(
     `${JSON.stringify({

@@ -33,6 +33,11 @@ interface WalletConnectDependencies {
   writeOutput?: (message: string) => void;
   timeoutMs?: number;
   storage?: WalletConnectKeyValueStorage;
+  simulateTransaction?: (input: {
+    request: Record<string, unknown>;
+    address: Address;
+    chain: Chain;
+  }) => Promise<void>;
   verifyTransaction?: (input: {
     hash: Hex;
     request: Record<string, unknown>;
@@ -73,12 +78,21 @@ export function assertWalletConnectTransactionMatches(
     transaction.from.toLowerCase() !== expectedSender.toLowerCase() ||
     transaction.to?.toLowerCase() !== requestedTo ||
     transaction.value !== requestedValue ||
-    transaction.input.slice(0, 10).toLowerCase() !== requestedData.slice(0, 10).toLowerCase() ||
+    transaction.input.toLowerCase() !== requestedData ||
     (request.gas !== undefined && transaction.gas !== BigInt(String(request.gas)));
   if (mismatch) {
     throw new WalletConnectError(
       "WALLETCONNECT_TRANSACTION_MISMATCH",
       "Submitted transaction does not match the approved request.",
+    );
+  }
+}
+
+export function assertWalletConnectReceiptSucceeded(receipt: { status: string }): void {
+  if (receipt.status !== "success") {
+    throw new WalletConnectError(
+      "WALLETCONNECT_TRANSACTION_REVERTED",
+      "Submitted transaction reverted.",
     );
   }
 }
@@ -199,9 +213,34 @@ export class WalletConnectSignerProvider implements SignerProvider {
           chain: Chain;
         }) => {
           const client = createPublicClient({ chain, transport: http(input.rpcUrl) });
-          await client.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 120_000 });
+          const receipt = await client.waitForTransactionReceipt({
+            hash,
+            confirmations: 1,
+            timeout: 120_000,
+          });
+          assertWalletConnectReceiptSucceeded(receipt);
           const transaction = await client.getTransaction({ hash });
           assertWalletConnectTransactionMatches(transaction, request, expectedSender, chain.id);
+        });
+      const simulateTransaction =
+        this.dependencies.simulateTransaction ??
+        (async ({
+          request,
+          address: expectedSender,
+          chain,
+        }: {
+          request: Record<string, unknown>;
+          address: Address;
+          chain: Chain;
+        }) => {
+          const client = createPublicClient({ chain, transport: http(input.rpcUrl) });
+          await client.call({
+            account: expectedSender,
+            to: request.to as Address | undefined,
+            data: request.data as Hex | undefined,
+            value: request.value === undefined ? undefined : BigInt(String(request.value)),
+            gas: request.gas === undefined ? undefined : BigInt(String(request.gas)),
+          });
         });
 
       const guardedProvider = {
@@ -217,6 +256,23 @@ export class WalletConnectSignerProvider implements SignerProvider {
             );
           }
           try {
+            const transactionRequest =
+              request.method === "eth_sendTransaction" && Array.isArray(request.params)
+                ? (request.params[0] as Record<string, unknown> | undefined)
+                : undefined;
+            if (request.method === "eth_sendTransaction") {
+              if (!transactionRequest) {
+                throw new WalletConnectError(
+                  "WALLETCONNECT_INVALID_REQUEST",
+                  "Transaction request is missing.",
+                );
+              }
+              await simulateTransaction({
+                request: transactionRequest,
+                address,
+                chain: input.chain,
+              });
+            }
             const response = await Promise.race([provider!.request(request), sessionFailure]);
             if (
               request.method === "eth_sendTransaction" &&
@@ -228,18 +284,9 @@ export class WalletConnectSignerProvider implements SignerProvider {
               );
             }
             if (request.method === "eth_sendTransaction") {
-              const transactionRequest = Array.isArray(request.params)
-                ? (request.params[0] as Record<string, unknown>)
-                : undefined;
-              if (!transactionRequest) {
-                throw new WalletConnectError(
-                  "WALLETCONNECT_INVALID_REQUEST",
-                  "Transaction request is missing.",
-                );
-              }
               await verifyTransaction({
                 hash: response as Hex,
-                request: transactionRequest,
+                request: transactionRequest!,
                 address,
                 chain: input.chain,
               });

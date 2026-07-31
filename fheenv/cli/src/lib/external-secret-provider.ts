@@ -5,11 +5,21 @@ import { SensitiveValueRegistry, sanitizeError } from "./redaction";
 
 const LIMIT = 1024 * 1024;
 
+function stripControlCharacters(value: string): string {
+  return [...value]
+    .filter((character) => {
+      if (character === "\n" || character === "\r" || character === "\t") return true;
+      return !/[\p{Cc}\p{Cf}]/u.test(character);
+    })
+    .join("");
+}
+
 export class ExecutableSecretProvider {
   constructor(
     private readonly environment:
       NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
     private readonly timeoutMs = 30_000,
+    private readonly killAfterMs = 2_000,
   ) {}
 
   async resolve(provider: string, key: string): Promise<string | null> {
@@ -71,25 +81,35 @@ export class ExecutableSecretProvider {
       let bytes = 0;
       let stderrBytes = 0;
       let settled = false;
-      const finish = (error?: Error, value?: string) => {
+      let pendingError: Error | undefined;
+      let killTimer: NodeJS.Timeout | undefined;
+      const settle = (error?: Error, value?: string) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (error) {
-          child.kill("SIGTERM");
-          reject(error);
-        } else {
-          resolve(value as string);
-        }
+        if (killTimer) clearTimeout(killTimer);
+        if (error) reject(error);
+        else resolve(value as string);
+      };
+      const terminate = (error: Error) => {
+        if (pendingError || settled) return;
+        pendingError = error;
+        child.kill("SIGTERM");
+        killTimer = setTimeout(
+          () => {
+            if (!settled) child.kill("SIGKILL");
+          },
+          Math.min(Math.max(1, this.killAfterMs), 10_000),
+        );
       };
       const timer = setTimeout(
-        () => finish(new Error("SECRET_PROVIDER_TIMEOUT: provider exceeded its deadline.")),
+        () => terminate(new Error("SECRET_PROVIDER_TIMEOUT: provider exceeded its deadline.")),
         Math.min(Math.max(1, this.timeoutMs), 120_000),
       );
       child.stdout.on("data", (chunk: Buffer) => {
         bytes += chunk.length;
         if (bytes > LIMIT) {
-          finish(new Error("SECRET_PROVIDER_OUTPUT_LIMIT: stdout exceeds 1 MiB."));
+          terminate(new Error("SECRET_PROVIDER_OUTPUT_LIMIT: stdout exceeds 1 MiB."));
           return;
         }
         stdout.push(chunk);
@@ -100,14 +120,21 @@ export class ExecutableSecretProvider {
         stderr.push(chunk.subarray(0, remaining));
         stderrBytes += Math.min(chunk.length, remaining);
       });
-      child.on("error", (error) =>
-        finish(new Error(`SECRET_PROVIDER_START_FAILED: ${error.message}`)),
-      );
+      child.on("error", (error) => {
+        pendingError = new Error(`SECRET_PROVIDER_START_FAILED: ${error.message}`);
+      });
       child.on("close", (code) => {
         if (settled) return;
+        if (pendingError) {
+          settle(pendingError);
+          return;
+        }
         if (code !== 0) {
-          const detail = sanitizeError(Buffer.concat(stderr).toString("utf8"), registry);
-          finish(
+          const detail = sanitizeError(
+            stripControlCharacters(Buffer.concat(stderr).toString("utf8")),
+            registry,
+          );
+          settle(
             new Error(
               `SECRET_PROVIDER_FAILED: provider exited with code ${code}.${detail ? ` ${detail}` : ""}`,
             ),
@@ -116,7 +143,7 @@ export class ExecutableSecretProvider {
         }
         const output = Buffer.concat(stdout).toString("utf8");
         if (!output.endsWith("\n") || output.slice(0, -1).includes("\n")) {
-          finish(new Error("SECRET_PROVIDER_INVALID_RESPONSE: expected one JSON line."));
+          settle(new Error("SECRET_PROVIDER_INVALID_RESPONSE: expected one JSON line."));
           return;
         }
         try {
@@ -133,9 +160,9 @@ export class ExecutableSecretProvider {
           ) {
             throw new Error("response identity or value is invalid.");
           }
-          finish(undefined, response.value);
+          settle(undefined, response.value);
         } catch {
-          finish(new Error("SECRET_PROVIDER_INVALID_RESPONSE: invalid provider response."));
+          settle(new Error("SECRET_PROVIDER_INVALID_RESPONSE: invalid provider response."));
         }
       });
       child.stdin.on("error", () => undefined);

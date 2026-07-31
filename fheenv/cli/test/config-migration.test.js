@@ -20,10 +20,52 @@ const productionMigration = {
   signer: {
     type: "walletconnect",
     credentialRef: "keyring://walletconnect/project-id",
+    expectedAddress: "0x2222222222222222222222222222222222222222",
   },
 };
 
 describe("credential-free project config", function () {
+  it("proves the production signer before replacing the legacy config", async function () {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migration-proof-"));
+    const configPath = path.join(directory, ".fheenv.json");
+    const legacy = legacyConfig("pinata-secret-canary");
+    fs.writeFileSync(configPath, JSON.stringify(legacy));
+    let proved = 0;
+    await migrateConfigV1ToV2(configPath, {
+      ...productionMigration,
+      credentialRef: "keyring://storage/pinata/default",
+      setCredential: async () => undefined,
+      readCredential: async () => legacy.pinataJwt,
+      proveSigner: async (config) => {
+        proved += 1;
+        assert.equal(config.signer.expectedAddress, productionMigration.signer.expectedAddress);
+        assert.equal(JSON.parse(fs.readFileSync(configPath, "utf8")).version, undefined);
+      },
+    });
+    assert.equal(proved, 1);
+    assert.equal(readConfigV2(configPath).version, 2);
+  });
+
+  it("keeps the legacy config when production signer proof fails", async function () {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migration-proof-fail-"));
+    const configPath = path.join(directory, ".fheenv.json");
+    const legacy = legacyConfig("pinata-secret-canary");
+    fs.writeFileSync(configPath, JSON.stringify(legacy));
+    await assert.rejects(
+      migrateConfigV1ToV2(configPath, {
+        ...productionMigration,
+        credentialRef: "keyring://storage/pinata/default",
+        setCredential: async () => undefined,
+        readCredential: async () => legacy.pinataJwt,
+        proveSigner: async () => {
+          throw new Error("signer proof failed");
+        },
+      }),
+      /signer proof failed/,
+    );
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")), legacy);
+  });
+
   it("stores the secret before atomically removing it from config", async function () {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migrate-"));
     const configPath = path.join(directory, ".fheenv.json");

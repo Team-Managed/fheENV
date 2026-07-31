@@ -1290,8 +1290,10 @@ Enforce:
 - [ ] **Step 4: Verify every result**
 
 Recover and compare signer addresses for returned signatures. For submitted
-transactions, fetch the transaction and verify chain, sender, destination,
-value, and calldata selector before accepting its hash.
+transactions, protocol version 1 accepts signatures only; the CLI broadcasts
+through its configured RPC client. Reject transaction-hash responses from the
+external provider. This narrows the original design so an external custody
+service cannot bypass CLI policy and preflight checks.
 
 - [ ] **Step 5: Run tests and build**
 

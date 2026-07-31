@@ -3,6 +3,7 @@ import { NativeCredentialStore, parseCredentialReference } from "../lib/credenti
 import { MigrationResult, migrateConfigV1ToV2 } from "../lib/config-v2";
 import { SignerConfig } from "../lib/config-v2";
 import { CredentialStore } from "../lib/credential-types";
+import { createCommandContext } from "../lib/command-context";
 
 export interface MigrateCredentialsOptions {
   credentialRef: string;
@@ -41,6 +42,13 @@ export async function migrateCredentialsCommand(
       dryRun: options.dryRun,
       setCredential: (reference, value) => store.set(keys.get(reference) as string, value),
       readCredential: (reference) => store.get(keys.get(reference) as string),
+      proveSigner:
+        options.securityMode === "production" && options.signer.type === "walletconnect"
+          ? async (config) => {
+              const context = await createCommandContext(config, { keyring: store });
+              await context.close();
+            }
+          : undefined,
     },
   );
   console.log(JSON.stringify(result, null, 2));

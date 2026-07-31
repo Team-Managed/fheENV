@@ -44,6 +44,7 @@ interface MigrationOptions {
   dryRun?: boolean;
   setCredential(reference: string, value: string): Promise<void>;
   readCredential(reference: string): Promise<string | null>;
+  proveSigner?(config: FheEnvConfigV2): Promise<void>;
 }
 
 export interface MigrationResult {
@@ -309,6 +310,7 @@ export async function migrateConfigV1ToV2(
       throw new Error(`Credential verification failed for ${move.field}.`);
     }
   }
+  await options.proveSigner?.(migrated);
   writeConfigAtomically(configPath, migrated);
   return result;
 }

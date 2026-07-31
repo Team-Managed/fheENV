@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const { privateKeyToAccount } = require("viem/accounts");
 const {
+  assertWalletConnectReceiptSucceeded,
   assertWalletConnectTransactionMatches,
   WalletConnectSignerProvider,
 } = require("../src/lib/signers/walletconnect");
@@ -18,7 +19,7 @@ describe("WalletConnect signer", function () {
     const request = {
       to: "0x2222222222222222222222222222222222222222",
       value: "0x0",
-      data: "0x12345678ccdd",
+      data: "0x12345678aabb",
       gas: "0x186a0",
     };
     assert.doesNotThrow(() =>
@@ -33,6 +34,24 @@ describe("WalletConnect signer", function () {
           11155111,
         ),
       /WALLETCONNECT_TRANSACTION_MISMATCH/,
+    );
+    assert.throws(
+      () =>
+        assertWalletConnectTransactionMatches(
+          { ...transaction, input: "0x12345678ccdd" },
+          request,
+          transaction.from,
+          11155111,
+        ),
+      /WALLETCONNECT_TRANSACTION_MISMATCH/,
+    );
+  });
+
+  it("rejects reverted transaction receipts", function () {
+    assert.doesNotThrow(() => assertWalletConnectReceiptSucceeded({ status: "success" }));
+    assert.throws(
+      () => assertWalletConnectReceiptSucceeded({ status: "reverted" }),
+      /WALLETCONNECT_TRANSACTION_REVERTED/,
     );
   });
   it("never logs the pairing URI and verifies the selected account", async function () {
@@ -81,6 +100,7 @@ describe("WalletConnect signer", function () {
       }),
       renderQr: () => undefined,
       writeOutput: () => undefined,
+      simulateTransaction: async () => undefined,
     });
     await assert.rejects(
       provider.connect({
@@ -105,6 +125,7 @@ describe("WalletConnect signer", function () {
       }),
       renderQr: () => undefined,
       writeOutput: () => undefined,
+      simulateTransaction: async () => undefined,
     });
     await assert.rejects(
       provider.connect({
@@ -182,6 +203,7 @@ describe("WalletConnect signer", function () {
         }),
         renderQr: () => undefined,
         writeOutput: () => undefined,
+        simulateTransaction: async () => undefined,
       });
       const session = await provider.connect({
         chain: {
@@ -229,6 +251,7 @@ describe("WalletConnect signer", function () {
       }),
       renderQr: () => undefined,
       writeOutput: () => undefined,
+      simulateTransaction: async () => undefined,
     });
     const session = await provider.connect({
       chain: {
@@ -252,6 +275,7 @@ describe("WalletConnect signer", function () {
     const methods = [];
     const account = privateKeyToAccount(`0x${"11".repeat(32)}`);
     let verifiedTransactions = 0;
+    let simulatedTransactions = 0;
     const provider = new WalletConnectSignerProvider({
       projectId: "project-id",
       createProvider: async () => ({
@@ -278,6 +302,9 @@ describe("WalletConnect signer", function () {
       }),
       renderQr: () => undefined,
       writeOutput: () => undefined,
+      simulateTransaction: async () => {
+        simulatedTransactions += 1;
+      },
       verifyTransaction: async () => {
         verifiedTransactions += 1;
       },
@@ -305,6 +332,7 @@ describe("WalletConnect signer", function () {
     assert.equal(methods.includes("eth_sendTransaction"), true);
     assert.equal(methods.includes("eth_signTypedData_v4"), true);
     assert.equal(methods.includes("personal_sign"), true);
+    assert.equal(simulatedTransactions, 1);
     assert.equal(verifiedTransactions, 1);
     await session.close();
   });

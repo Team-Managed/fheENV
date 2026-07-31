@@ -266,9 +266,14 @@ communicates using length-bounded JSON over stdin/stdout:
 }
 ```
 
-The response contains the request ID, signer address, and signature or
-transaction hash. stderr is treated as untrusted and is redacted before
-display.
+Protocol version 1 responses contain the request ID, signer address, and a
+signature. The CLI broadcasts signed transactions through its configured RPC
+client and performs its normal receipt checks. A provider-returned transaction
+hash is rejected: permitting a custody service to broadcast independently
+would bypass the CLI's transaction policy and preflight boundary. A later
+protocol version may add submitted-transaction responses only with equivalent
+policy enforcement and post-submission verification. stderr is treated as
+untrusted and is redacted before display.
 
 The executable path is absolute, must not be a project-relative executable in
 production, and is invoked with a minimal environment allowlist. Arguments

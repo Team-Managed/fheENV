@@ -6,7 +6,6 @@ import {
   parseCredentialReference,
   resolveCredential,
 } from "./credential-store";
-import { errorWithCause } from "./errors";
 import { SensitiveValueRegistry, sanitizeError } from "./redaction";
 import { assertSignerCapabilities, SignerProvider, SignerSession } from "./signer-types";
 import { LocalEncryptedSignerProvider } from "./signers/local-encrypted";
@@ -49,7 +48,7 @@ export async function withCommandContext<T>(
       typeof context.sanitize === "function"
         ? context.sanitize(error)
         : sanitizeError(error, new SensitiveValueRegistry());
-    failure = errorWithCause(message, error);
+    failure = new Error(message);
   }
   try {
     await context.close();
@@ -59,7 +58,7 @@ export async function withCommandContext<T>(
         typeof context.sanitize === "function"
           ? context.sanitize(error)
           : sanitizeError(error, new SensitiveValueRegistry());
-      failure = errorWithCause(message, error);
+      failure = new Error(message);
     }
   }
   if (failure) throw failure;
@@ -224,8 +223,17 @@ export async function createCommandContext(
       close: () => signer!.close(),
     };
   } catch (error) {
-    await signer?.close();
-    const sanitizedCause = new Error(sanitizeError(error, registry));
-    throw errorWithCause(sanitizedCause.message, sanitizedCause);
+    let cleanupError: unknown;
+    try {
+      await signer?.close();
+    } catch (closeError) {
+      cleanupError = closeError;
+    }
+    const message = sanitizeError(error, registry);
+    const cleanupMessage =
+      cleanupError === undefined ? "" : ` Cleanup failed: ${sanitizeError(cleanupError, registry)}`;
+    // The original errors can contain credentials; retaining them as causes defeats redaction.
+    // eslint-disable-next-line preserve-caught-error
+    throw new Error(`${message}${cleanupMessage}`);
   }
 }
