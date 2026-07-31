@@ -46,6 +46,7 @@ interface CommandContext {
   publicClient: PublicClient;
   signer: SignerSession;
   credentials: CredentialResolver;
+  close(): Promise<void>;
 }
 
 interface SignerSession {
