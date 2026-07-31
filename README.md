@@ -220,8 +220,9 @@ Every command (except `login`) reads this file from the current directory. `fhee
 
 Version 2 contains references and public metadata only, so it can be reviewed
 and committed. Migrate a legacy file with `fheenv migrate credentials
---storage-credential keyring://storage/pinata/default --dry-run`, then repeat
-without `--dry-run`.
+--storage-credential keyring://storage/pinata/default
+--walletconnect-credential keyring://walletconnect/project-id --dry-run`, then
+repeat without `--dry-run`.
 
 ---
 

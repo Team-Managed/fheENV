@@ -46,6 +46,7 @@ export interface WalletConnectKeyValueStorage {
   getItem<T = unknown>(key: string): Promise<T | undefined>;
   setItem<T = unknown>(key: string, value: T): Promise<void>;
   removeItem(key: string): Promise<void>;
+  clear?(): Promise<void>;
 }
 
 export interface WalletConnectStateResult {
@@ -112,6 +113,10 @@ export class WalletConnectStateStore {
         decipher.update(Buffer.from(envelope.ciphertext, "hex")),
         decipher.final(),
       ]).toString("utf8");
+      const parsed = JSON.parse(state) as unknown;
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("WalletConnect state payload is invalid.");
+      }
       return { state };
     } catch {
       this.quarantine();
@@ -184,6 +189,11 @@ export class EncryptedWalletConnectStorage implements WalletConnectKeyValueStora
   async removeItem(key: string): Promise<void> {
     await this.load();
     delete (this.values as Record<string, unknown>)[key];
+    await this.persist();
+  }
+
+  async clear(): Promise<void> {
+    this.values = {};
     await this.persist();
   }
 

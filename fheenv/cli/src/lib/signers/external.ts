@@ -1,9 +1,8 @@
-import { spawn } from "child_process";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import crypto from "crypto";
 import path from "path";
 import {
   Address,
-  createPublicClient,
   createWalletClient,
   hashMessage,
   hashTypedData,
@@ -16,6 +15,7 @@ import {
   WalletClient,
 } from "viem";
 import { toAccount } from "viem/accounts";
+import { SensitiveValueRegistry, sanitizeError } from "../redaction";
 import { createSignerSession, SignerProvider, SignerSession } from "../signer-types";
 
 const REQUEST_LIMIT = 1024 * 1024;
@@ -39,8 +39,6 @@ export interface ExternalSignerResponse {
   requestId: string;
   address: Address;
   signature?: Hex;
-  signedTransaction?: Hex;
-  transactionHash?: Hex;
 }
 
 interface ExternalSignerDependencies {
@@ -51,6 +49,7 @@ interface ExternalSignerDependencies {
   environment?: NodeJS.ProcessEnv | Record<string, string | undefined>;
   allowedEnvironmentNames?: string[];
   securityMode?: "production" | "development";
+  registry?: SensitiveValueRegistry;
 }
 
 function protocolJson(value: unknown): string {
@@ -59,14 +58,14 @@ function protocolJson(value: unknown): string {
   );
 }
 
-function safeStderr(value: Buffer): string {
+function safeStderr(value: Buffer, registry: SensitiveValueRegistry): string {
   const printable = [...value.toString("utf8")]
     .filter((character) => {
       const code = character.charCodeAt(0);
       return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
     })
     .join("");
-  return printable.replace(/\b(?:wc|https?):\/\/\S+/gi, "[REDACTED]").slice(0, STDERR_LIMIT);
+  return sanitizeError(printable, registry);
 }
 
 function validateRequest(request: ExternalSignerRequest): void {
@@ -97,12 +96,15 @@ function validateResponse(value: unknown, request: ExternalSignerRequest): Exter
 
 export class ExternalSignerProvider implements SignerProvider {
   private readonly timeoutMs: number;
+  private readonly registry: SensitiveValueRegistry;
+  private readonly children = new Set<ChildProcessWithoutNullStreams>();
 
   constructor(private readonly dependencies: ExternalSignerDependencies) {
     if (!path.isAbsolute(dependencies.executable)) {
       throw new Error("EXTERNAL_SIGNER_EXECUTABLE: executable path must be absolute.");
     }
     this.timeoutMs = Math.min(Math.max(1, dependencies.timeoutMs ?? 30_000), MAX_TIMEOUT_MS);
+    this.registry = dependencies.registry ?? new SensitiveValueRegistry();
   }
 
   async request(request: ExternalSignerRequest): Promise<ExternalSignerResponse> {
@@ -127,6 +129,7 @@ export class ExternalSignerProvider implements SignerProvider {
         .filter((name) => source[name] !== undefined)
         .map((name) => [name, source[name] as string]),
     );
+    for (const value of Object.values(env)) this.registry.register(value);
 
     return new Promise<ExternalSignerResponse>((resolve, reject) => {
       const child = spawn(this.dependencies.executable, this.dependencies.executableArgs ?? [], {
@@ -135,6 +138,7 @@ export class ExternalSignerProvider implements SignerProvider {
         stdio: ["pipe", "pipe", "pipe"],
         windowsHide: true,
       });
+      this.children.add(child);
       const stdout: Buffer[] = [];
       const stderr: Buffer[] = [];
       let stdoutBytes = 0;
@@ -187,11 +191,12 @@ export class ExternalSignerProvider implements SignerProvider {
         fail(new Error(`EXTERNAL_SIGNER_START_FAILED: ${error.message}`)),
       );
       child.on("close", (code) => {
+        this.children.delete(child);
         if (settled) return;
         clearTimeout(timeout);
         if (terminationTimer) clearTimeout(terminationTimer);
         if (code !== 0) {
-          const detail = safeStderr(Buffer.concat(stderr));
+          const detail = safeStderr(Buffer.concat(stderr), this.registry);
           fail(
             new Error(
               `EXTERNAL_SIGNER_FAILED: provider exited with code ${code}.${detail ? ` ${detail}` : ""}`,
@@ -283,15 +288,18 @@ export class ExternalSignerProvider implements SignerProvider {
       chain: input.chain,
       transport: http(input.rpcUrl),
     }) as WalletClient;
-    // Constructing the public client here validates the transport used for future
-    // submitted-transaction verification without granting the provider RPC credentials.
-    createPublicClient({ chain: input.chain, transport: http(input.rpcUrl) });
     return createSignerSession({
       type: "external",
       address,
       walletClient,
       capabilities: { transactions: true, messages: true, typedData: true },
-      close: async () => undefined,
+      close: async () => {
+        for (const child of this.children) {
+          child.kill("SIGTERM");
+          const timer = setTimeout(() => child.kill("SIGKILL"), 2_000);
+          timer.unref();
+        }
+      },
     });
   }
 }

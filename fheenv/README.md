@@ -123,6 +123,7 @@ Migrate legacy configuration with:
 ```bash
 fheenv migrate credentials \
   --storage-credential keyring://storage/pinata/default \
+  --walletconnect-credential keyring://walletconnect/project-id \
   --dry-run
 ```
 

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const { setTimeout } = require("node:timers");
 const { ExternalSignerProvider } = require("../src/lib/signers/external");
 
 describe("external signer protocol", function () {
@@ -65,5 +66,60 @@ describe("external signer protocol", function () {
       }),
       /EXTERNAL_SIGNER_INVALID_RESPONSE/,
     );
+  });
+
+  it("redacts pairing material from untrusted provider stderr", async function () {
+    const provider = new ExternalSignerProvider({
+      executable: process.execPath,
+      executableArgs: [
+        path.resolve("cli/test/fixtures/external-signer-fixture.js"),
+        "secret-error",
+      ],
+      expectedAddress: "0x1111111111111111111111111111111111111111",
+    });
+    await assert.rejects(
+      provider.request({
+        protocolVersion: 1,
+        requestId: "00000000-0000-4000-8000-000000000001",
+        operation: "getAddress",
+        chainId: 11155111,
+        expectedAddress: "0x1111111111111111111111111111111111111111",
+        payload: {},
+      }),
+      (error) => {
+        assert.doesNotMatch(error.message, /secret-canary|symKey=/);
+        assert.match(error.message, /REDACTED_WALLETCONNECT_URI/);
+        return true;
+      },
+    );
+  });
+
+  it("terminates outstanding provider requests when the session closes", async function () {
+    const provider = new ExternalSignerProvider({
+      executable: process.execPath,
+      executableArgs: [path.resolve("cli/test/fixtures/external-signer-fixture.js")],
+      expectedAddress: "0x1111111111111111111111111111111111111111",
+      timeoutMs: 20_000,
+    });
+    const session = await provider.connect({
+      chain: {
+        id: 11155111,
+        name: "Sepolia",
+        nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+        rpcUrls: { default: { http: ["https://rpc.example"] } },
+      },
+      rpcUrl: "https://rpc.example",
+    });
+    const outstanding = provider.request({
+      protocolVersion: 1,
+      requestId: "00000000-0000-4000-8000-000000000001",
+      operation: "getAddress",
+      chainId: 11155111,
+      expectedAddress: "0x1111111111111111111111111111111111111111",
+      payload: { slow: true },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    await session.close();
+    await assert.rejects(outstanding, /EXTERNAL_SIGNER_FAILED/);
   });
 });

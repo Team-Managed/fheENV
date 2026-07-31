@@ -1,6 +1,18 @@
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
 import qrcode from "qrcode-terminal";
-import { Address, Chain, createWalletClient, custom, WalletClient } from "viem";
+import {
+  Address,
+  Chain,
+  createPublicClient,
+  createWalletClient,
+  custom,
+  hashMessage,
+  hashTypedData,
+  Hex,
+  http,
+  recoverAddress,
+  WalletClient,
+} from "viem";
 import { createSignerSession, SignerProvider, SignerSession } from "../signer-types";
 import { WalletConnectKeyValueStorage } from "../walletconnect-state";
 
@@ -10,6 +22,7 @@ interface Eip1193Provider {
   on(event: string, listener: (...args: unknown[]) => void): void;
   connect(): Promise<unknown>;
   disconnect(): Promise<unknown>;
+  abortPairingAttempt?(): void;
   request(args: { method: string; params?: unknown }): Promise<unknown>;
 }
 
@@ -20,6 +33,12 @@ interface WalletConnectDependencies {
   writeOutput?: (message: string) => void;
   timeoutMs?: number;
   storage?: WalletConnectKeyValueStorage;
+  verifyTransaction?: (input: {
+    hash: Hex;
+    request: Record<string, unknown>;
+    address: Address;
+    chain: Chain;
+  }) => Promise<void>;
 }
 
 export class WalletConnectError extends Error {
@@ -30,6 +49,37 @@ export class WalletConnectError extends Error {
   ) {
     super(`${code}: ${message}`);
     if (options?.cause !== undefined) Object.assign(this, { cause: options.cause });
+  }
+}
+
+export function assertWalletConnectTransactionMatches(
+  transaction: {
+    chainId?: number;
+    from: Address;
+    to?: Address | null;
+    value: bigint;
+    input: Hex;
+    gas: bigint;
+  },
+  request: Record<string, unknown>,
+  expectedSender: Address,
+  expectedChainId: number,
+): void {
+  const requestedTo = String(request.to ?? "").toLowerCase();
+  const requestedValue = BigInt(String(request.value ?? "0x0"));
+  const requestedData = String(request.data ?? "0x").toLowerCase();
+  const mismatch =
+    transaction.chainId !== expectedChainId ||
+    transaction.from.toLowerCase() !== expectedSender.toLowerCase() ||
+    transaction.to?.toLowerCase() !== requestedTo ||
+    transaction.value !== requestedValue ||
+    transaction.input.slice(0, 10).toLowerCase() !== requestedData.slice(0, 10).toLowerCase() ||
+    (request.gas !== undefined && transaction.gas !== BigInt(String(request.gas)));
+  if (mismatch) {
+    throw new WalletConnectError(
+      "WALLETCONNECT_TRANSACTION_MISMATCH",
+      "Submitted transaction does not match the approved request.",
+    );
   }
 }
 
@@ -135,6 +185,24 @@ export class WalletConnectSignerProvider implements SignerProvider {
           "WalletConnect account does not match the configured address.",
         );
       }
+      const verifyTransaction =
+        this.dependencies.verifyTransaction ??
+        (async ({
+          hash,
+          request,
+          address: expectedSender,
+          chain,
+        }: {
+          hash: Hex;
+          request: Record<string, unknown>;
+          address: Address;
+          chain: Chain;
+        }) => {
+          const client = createPublicClient({ chain, transport: http(input.rpcUrl) });
+          await client.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 120_000 });
+          const transaction = await client.getTransaction({ hash });
+          assertWalletConnectTransactionMatches(transaction, request, expectedSender, chain.id);
+        });
 
       const guardedProvider = {
         request: async (request: { method: string; params?: unknown }) => {
@@ -158,6 +226,43 @@ export class WalletConnectSignerProvider implements SignerProvider {
                 "WALLETCONNECT_INVALID_RESPONSE",
                 "Wallet returned an invalid transaction hash.",
               );
+            }
+            if (request.method === "eth_sendTransaction") {
+              const transactionRequest = Array.isArray(request.params)
+                ? (request.params[0] as Record<string, unknown>)
+                : undefined;
+              if (!transactionRequest) {
+                throw new WalletConnectError(
+                  "WALLETCONNECT_INVALID_REQUEST",
+                  "Transaction request is missing.",
+                );
+              }
+              await verifyTransaction({
+                hash: response as Hex,
+                request: transactionRequest,
+                address,
+                chain: input.chain,
+              });
+            }
+            if (request.method === "personal_sign" || request.method === "eth_signTypedData_v4") {
+              if (typeof response !== "string" || !/^0x[0-9a-fA-F]{130}$/.test(response)) {
+                throw new WalletConnectError(
+                  "WALLETCONNECT_INVALID_RESPONSE",
+                  "Wallet returned an invalid signature.",
+                );
+              }
+              const params = Array.isArray(request.params) ? request.params : [];
+              const hash =
+                request.method === "personal_sign"
+                  ? hashMessage({ raw: params[0] as Hex })
+                  : hashTypedData(JSON.parse(String(params[1])));
+              const recovered = await recoverAddress({ hash, signature: response as Hex });
+              if (recovered.toLowerCase() !== address.toLowerCase()) {
+                throw new WalletConnectError(
+                  "WALLETCONNECT_SIGNATURE_MISMATCH",
+                  "Wallet signature does not match the configured address.",
+                );
+              }
             }
             return response;
           } catch (error) {
@@ -195,6 +300,10 @@ export class WalletConnectSignerProvider implements SignerProvider {
         },
       });
     } catch (error) {
+      if (error instanceof WalletConnectError && error.code === "WALLETCONNECT_TIMEOUT") {
+        provider?.abortPairingAttempt?.();
+        await this.dependencies.storage?.clear?.().catch(() => undefined);
+      }
       await provider?.disconnect().catch(() => undefined);
       throw error;
     }
@@ -202,13 +311,17 @@ export class WalletConnectSignerProvider implements SignerProvider {
 
   private async createProviderForChain(chainId: number): Promise<Eip1193Provider> {
     if (this.createProvider) return this.createProvider();
-    return (await EthereumProvider.init({
+    const provider = (await EthereumProvider.init({
       projectId: this.dependencies.projectId,
       chains: [chainId],
       methods: ["eth_sendTransaction", "personal_sign", "eth_signTypedData_v4"],
       events: ["accountsChanged", "chainChanged"],
       showQrModal: false,
       storage: this.dependencies.storage,
-    })) as unknown as Eip1193Provider;
+    })) as unknown as Eip1193Provider & {
+      signer?: { abortPairingAttempt?(): void };
+    };
+    provider.abortPairingAttempt = () => provider.signer?.abortPairingAttempt?.();
+    return provider;
   }
 }

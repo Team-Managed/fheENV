@@ -39,6 +39,8 @@ interface FheEnvConfigV1 {
 interface MigrationOptions {
   credentialRef: string;
   rpcCredentialRef?: string;
+  securityMode: SecurityMode;
+  signer: SignerConfig;
   dryRun?: boolean;
   setCredential(reference: string, value: string): Promise<void>;
   readCredential(reference: string): Promise<string | null>;
@@ -49,6 +51,8 @@ export interface MigrationResult {
   toVersion: 2;
   movedFields: string[];
   destinationReferences: string[];
+  securityMode: SecurityMode;
+  signerType: SignerConfig["type"];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -263,6 +267,13 @@ export async function migrateConfigV1ToV2(
     parseCredentialReference(options.rpcCredentialRef);
     rpc = { credentialRef: options.rpcCredentialRef };
   }
+  if (
+    options.rpcCredentialRef &&
+    "credentialRef" in rpc &&
+    options.rpcCredentialRef === options.credentialRef
+  ) {
+    throw new Error("Storage and RPC credentials require distinct destination references.");
+  }
 
   const moves = [
     { field: "pinataJwt", reference: options.credentialRef, value: legacy.pinataJwt },
@@ -275,6 +286,8 @@ export async function migrateConfigV1ToV2(
     toVersion: 2,
     movedFields: moves.map(({ field }) => field),
     destinationReferences: moves.map(({ reference }) => reference),
+    securityMode: options.securityMode,
+    signerType: options.signer.type,
   };
   const migrated = validateConfigV2({
     version: 2,
@@ -283,8 +296,8 @@ export async function migrateConfigV1ToV2(
     chainId: legacy.chainId,
     rpc,
     deployedAtBlock: legacy.deployedAtBlock,
-    securityMode: "development",
-    signer: { type: "local-encrypted" },
+    securityMode: options.securityMode,
+    signer: options.signer,
     storage: { provider: "pinata", credentialRef: options.credentialRef },
   });
 

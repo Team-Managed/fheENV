@@ -15,6 +15,14 @@ function legacyConfig(pinataJwt) {
   };
 }
 
+const productionMigration = {
+  securityMode: "production",
+  signer: {
+    type: "walletconnect",
+    credentialRef: "keyring://walletconnect/project-id",
+  },
+};
+
 describe("credential-free project config", function () {
   it("stores the secret before atomically removing it from config", async function () {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migrate-"));
@@ -24,6 +32,7 @@ describe("credential-free project config", function () {
     const writes = [];
 
     await migrateConfigV1ToV2(configPath, {
+      ...productionMigration,
       credentialRef: "keyring://storage/pinata/default",
       setCredential: async (_reference, value) => writes.push(value),
       readCredential: async () => jwt,
@@ -43,6 +52,7 @@ describe("credential-free project config", function () {
 
     await assert.rejects(
       migrateConfigV1ToV2(configPath, {
+        ...productionMigration,
         credentialRef: "keyring://storage/pinata/default",
         setCredential: async () => undefined,
         readCredential: async () => "wrong-value",
@@ -60,6 +70,7 @@ describe("credential-free project config", function () {
     let writes = 0;
 
     const result = await migrateConfigV1ToV2(configPath, {
+      ...productionMigration,
       credentialRef: "keyring://storage/pinata/default",
       dryRun: true,
       setCredential: async () => {
@@ -74,8 +85,36 @@ describe("credential-free project config", function () {
       toVersion: 2,
       movedFields: ["pinataJwt"],
       destinationReferences: ["keyring://storage/pinata/default"],
+      securityMode: "production",
+      signerType: "walletconnect",
     });
     assert.match(fs.readFileSync(configPath, "utf8"), /dry-run-canary/);
+  });
+
+  it("rejects colliding storage and RPC credential destinations before writing", async function () {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migrate-"));
+    const configPath = path.join(directory, ".fheenv.json");
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        ...legacyConfig("pinata-canary"),
+        rpcUrl: "https://user:rpc-canary@rpc.example",
+      }),
+    );
+    let writes = 0;
+    await assert.rejects(
+      migrateConfigV1ToV2(configPath, {
+        ...productionMigration,
+        credentialRef: "keyring://shared",
+        rpcCredentialRef: "keyring://shared",
+        setCredential: async () => {
+          writes += 1;
+        },
+        readCredential: async () => null,
+      }),
+      /distinct destination/i,
+    );
+    assert.equal(writes, 0);
   });
 
   it("rejects credentials embedded in an RPC URL", function () {

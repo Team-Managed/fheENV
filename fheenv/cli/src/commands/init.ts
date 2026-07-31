@@ -22,6 +22,12 @@ export interface InitOptions {
   analytics?: boolean;
 }
 
+export function pinInteractiveSignerAddress(signer: SignerConfig, address: Address): SignerConfig {
+  return signer.type === "walletconnect" || signer.type === "ledger"
+    ? { ...signer, expectedAddress: address }
+    : signer;
+}
+
 export async function initCommand(opts: InitOptions): Promise<void> {
   const configPath = path.resolve(process.cwd(), ".fheenv.json");
   if (fs.existsSync(configPath)) {
@@ -56,9 +62,14 @@ export async function initCommand(opts: InitOptions): Promise<void> {
           context.publicClient,
         );
         const deployedAtBlock = await context.publicClient.getBlockNumber();
+        const signer = pinInteractiveSignerAddress(
+          provisionalConfig.signer,
+          context.signer.address,
+        );
 
         writeProjectConfig({
           ...provisionalConfig,
+          signer,
           projectId: Number(projectId),
           deployedAtBlock: Number(deployedAtBlock),
         });

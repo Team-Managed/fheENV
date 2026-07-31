@@ -54,6 +54,19 @@ if (!enabled) {
         (await recoverTransactionAddress({ serializedTransaction: serialized })).toLowerCase(),
         expectedAddress.toLowerCase(),
       );
+      assert.match(
+        await session.walletClient.signMessage({ message: "fheENV KMS integration" }),
+        /^0x[0-9a-f]{130}$/i,
+      );
+      assert.match(
+        await session.walletClient.signTypedData({
+          domain: { name: "fheENV", version: "1", chainId: 11155111 },
+          types: { Proof: [{ name: "projectId", type: "uint256" }] },
+          primaryType: "Proof",
+          message: { projectId: 1n },
+        }),
+        /^0x[0-9a-f]{130}$/i,
+      );
     } finally {
       await session.close();
     }

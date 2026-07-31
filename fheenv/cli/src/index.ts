@@ -310,12 +310,32 @@ migrate
     "--rpc-credential <reference>",
     "Writable keyring reference for a credential-bearing RPC URL",
   )
+  .option(
+    "--walletconnect-credential <reference>",
+    "Migrate into production mode with this WalletConnect project ID reference",
+  )
+  .option(
+    "--development-local-signer",
+    "Explicitly retain the encrypted local signer in development mode",
+  )
   .option("--dry-run", "Validate and print the value-free migration plan")
   .action(async (opts) => {
     try {
+      if (Boolean(opts.walletconnectCredential) === Boolean(opts.developmentLocalSigner)) {
+        throw new Error(
+          "Select exactly one: --walletconnect-credential or --development-local-signer.",
+        );
+      }
       await migrateCredentialsCommand({
         credentialRef: opts.storageCredential,
         rpcCredentialRef: opts.rpcCredential,
+        securityMode: opts.walletconnectCredential ? "production" : "development",
+        signer: opts.walletconnectCredential
+          ? {
+              type: "walletconnect",
+              credentialRef: opts.walletconnectCredential,
+            }
+          : { type: "local-encrypted" },
         dryRun: Boolean(opts.dryRun),
       });
     } catch (err) {

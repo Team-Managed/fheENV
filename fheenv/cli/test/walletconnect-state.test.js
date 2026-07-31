@@ -30,10 +30,10 @@ describe("WalletConnect encrypted state", function () {
       credentials,
       installationId: "installation-1",
     });
-    await store.save("session-secret-canary");
+    await store.save('{"session":"session-secret-canary"}');
     const text = fs.readFileSync(statePath, "utf8");
     assert.doesNotMatch(text, /session-secret-canary/);
-    assert.equal((await store.load()).state, "session-secret-canary");
+    assert.equal((await store.load()).state, '{"session":"session-secret-canary"}');
     assert.equal(fs.statSync(statePath).mode & 0o777, 0o600);
   });
 
@@ -46,7 +46,7 @@ describe("WalletConnect encrypted state", function () {
       credentials,
       installationId: "installation-1",
     });
-    await store.save("session");
+    await store.save('{"session":"value"}');
     const envelope = JSON.parse(fs.readFileSync(statePath, "utf8"));
     envelope.authTag = "00".repeat(16);
     fs.writeFileSync(statePath, JSON.stringify(envelope));
@@ -69,11 +69,27 @@ describe("WalletConnect encrypted state", function () {
       credentials,
       installationId: "installation-1",
     });
-    await store.save("session");
+    await store.save('{"session":"value"}');
     credentials.values.clear();
     const result = await store.load();
     assert.equal(result.state, null);
     assert.equal(result.warningCode, "WALLETCONNECT_STATE_KEY_MISSING");
+    assert.equal(fs.existsSync(statePath), false);
+  });
+
+  it("quarantines authenticated state containing invalid JSON", async function () {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-wc-state-"));
+    const statePath = path.join(directory, "state");
+    const credentials = new MemoryStore();
+    const store = new WalletConnectStateStore({
+      credentials,
+      installationId: "test-installation",
+      statePath,
+    });
+    await store.save("not-json");
+    const result = await store.load();
+    assert.equal(result.state, null);
+    assert.equal(result.warningCode, "WALLETCONNECT_STATE_CORRUPT");
     assert.equal(fs.existsSync(statePath), false);
   });
 });

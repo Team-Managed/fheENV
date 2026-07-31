@@ -5,6 +5,8 @@ const {
   parseCredentialReference,
   resolveCredential,
 } = require("../src/lib/credential-store");
+const path = require("node:path");
+const { ExecutableSecretProvider } = require("../src/lib/external-secret-provider");
 
 class MemoryBackend {
   values = new Map();
@@ -73,5 +75,17 @@ describe("credential storage", function () {
     });
     assert.equal(value, "secret-canary");
     assert.equal(registry.redact(value), "[REDACTED]");
+  });
+
+  it("resolves exec references through a bounded absolute executable", async function () {
+    const fixture = path.resolve("cli/test/fixtures/external-secret-fixture.js");
+    const provider = new ExecutableSecretProvider(
+      {
+        FHEENV_SECRET_PROVIDER_TEST: process.execPath,
+        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([fixture]),
+      },
+      2_000,
+    );
+    assert.equal(await provider.resolve("test", "storage/default"), "external-secret-canary");
   });
 });

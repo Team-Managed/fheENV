@@ -1,0 +1,141 @@
+import { spawn } from "child_process";
+import crypto from "crypto";
+import path from "path";
+import { SensitiveValueRegistry, sanitizeError } from "./redaction";
+
+const LIMIT = 1024 * 1024;
+
+export class ExecutableSecretProvider {
+  constructor(
+    private readonly environment:
+      NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+    private readonly timeoutMs = 30_000,
+  ) {}
+
+  async resolve(provider: string, key: string): Promise<string | null> {
+    const prefix = `FHEENV_SECRET_PROVIDER_${provider.replace(/-/g, "_").toUpperCase()}`;
+    const executable = this.environment[prefix];
+    if (!executable || !path.isAbsolute(executable)) {
+      throw new Error(`Secret provider ${provider} requires an absolute executable path.`);
+    }
+    let executableArgs: string[] = [];
+    const encodedArgs = this.environment[`${prefix}_ARGS`];
+    if (encodedArgs) {
+      const parsed = JSON.parse(encodedArgs) as unknown;
+      if (!Array.isArray(parsed) || !parsed.every((value) => typeof value === "string")) {
+        throw new Error(`Secret provider ${provider} arguments must be a JSON string array.`);
+      }
+      executableArgs = parsed;
+    }
+    const allowed = (this.environment[`${prefix}_ALLOW_ENV`] ?? "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const names = new Set([
+      "PATH",
+      "HOME",
+      "USERPROFILE",
+      "SYSTEMROOT",
+      "TMPDIR",
+      "TEMP",
+      "TMP",
+      ...allowed,
+    ]);
+    const env = Object.fromEntries(
+      [...names]
+        .filter((name) => this.environment[name] !== undefined)
+        .map((name) => [name, this.environment[name] as string]),
+    );
+    const registry = new SensitiveValueRegistry();
+    for (const value of Object.values(env)) registry.register(value);
+    const requestId = crypto.randomUUID();
+    const request = `${JSON.stringify({
+      protocolVersion: 1,
+      requestId,
+      operation: "resolveCredential",
+      key,
+    })}\n`;
+    if (Buffer.byteLength(request) > LIMIT) {
+      throw new Error("SECRET_PROVIDER_REQUEST_LIMIT: request exceeds 1 MiB.");
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      const child = spawn(executable, executableArgs, {
+        shell: false,
+        env,
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
+      });
+      const stdout: Buffer[] = [];
+      const stderr: Buffer[] = [];
+      let bytes = 0;
+      let settled = false;
+      const finish = (error?: Error, value?: string) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (error) {
+          child.kill("SIGTERM");
+          reject(error);
+        } else {
+          resolve(value as string);
+        }
+      };
+      const timer = setTimeout(
+        () => finish(new Error("SECRET_PROVIDER_TIMEOUT: provider exceeded its deadline.")),
+        Math.min(Math.max(1, this.timeoutMs), 120_000),
+      );
+      child.stdout.on("data", (chunk: Buffer) => {
+        bytes += chunk.length;
+        if (bytes > LIMIT) {
+          finish(new Error("SECRET_PROVIDER_OUTPUT_LIMIT: stdout exceeds 1 MiB."));
+          return;
+        }
+        stdout.push(chunk);
+      });
+      child.stderr.on("data", (chunk: Buffer) => {
+        if (Buffer.concat(stderr).length < 8_192) stderr.push(chunk);
+      });
+      child.on("error", (error) =>
+        finish(new Error(`SECRET_PROVIDER_START_FAILED: ${error.message}`)),
+      );
+      child.on("close", (code) => {
+        if (settled) return;
+        if (code !== 0) {
+          const detail = sanitizeError(Buffer.concat(stderr).toString("utf8"), registry);
+          finish(
+            new Error(
+              `SECRET_PROVIDER_FAILED: provider exited with code ${code}.${detail ? ` ${detail}` : ""}`,
+            ),
+          );
+          return;
+        }
+        const output = Buffer.concat(stdout).toString("utf8");
+        if (!output.endsWith("\n") || output.slice(0, -1).includes("\n")) {
+          finish(new Error("SECRET_PROVIDER_INVALID_RESPONSE: expected one JSON line."));
+          return;
+        }
+        try {
+          const response = JSON.parse(output) as {
+            protocolVersion?: unknown;
+            requestId?: unknown;
+            value?: unknown;
+          };
+          if (
+            response.protocolVersion !== 1 ||
+            response.requestId !== requestId ||
+            typeof response.value !== "string" ||
+            !response.value
+          ) {
+            throw new Error("response identity or value is invalid.");
+          }
+          finish(undefined, response.value);
+        } catch {
+          finish(new Error("SECRET_PROVIDER_INVALID_RESPONSE: invalid provider response."));
+        }
+      });
+      child.stdin.on("error", () => undefined);
+      child.stdin.end(request);
+    });
+  }
+}

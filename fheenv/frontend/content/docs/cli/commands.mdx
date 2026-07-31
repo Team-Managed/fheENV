@@ -45,6 +45,18 @@ Production fails closed if the selected native backend is unavailable. A headles
 start a Secret Service session, select an explicit `env://VARIABLE` reference for a non-key
 credential, or implement `exec://provider/key`. fheENV does not try shell-command keyring fallbacks.
 
+An executable secret provider is configured separately from project config:
+
+```bash
+export FHEENV_SECRET_PROVIDER_VAULT=/opt/fheenv/vault-secret-provider
+export FHEENV_SECRET_PROVIDER_VAULT_ARGS='["--profile","production"]'
+export FHEENV_SECRET_PROVIDER_VAULT_ALLOW_ENV=VAULT_ADDR,VAULT_TOKEN_FILE
+```
+
+The executable path must be absolute. Static arguments are a JSON string array; request keys and
+returned values travel only through one bounded JSON line on stdin/stdout. Only explicitly
+allowlisted environment names are inherited.
+
 ## `fheenv signer`
 
 All production signers support transactions, personal messages, and EIP-712 typed data.
@@ -136,11 +148,15 @@ production workloads. Migrate a legacy local keyfile with `fheenv login --migrat
 fheenv migrate credentials \
   --storage-credential keyring://storage/pinata/default \
   --rpc-credential keyring://rpc/provider/default \
+  --walletconnect-credential keyring://walletconnect/project-id \
   --dry-run
 ```
 
 The dry run reports field names and destinations only. The live migration stores and verifies every
 value before atomically replacing the legacy file. It leaves the original untouched on failure.
+Select production WalletConnect explicitly with `--walletconnect-credential`, or acknowledge
+development-only local custody with `--development-local-signer`; migration never silently chooses
+the weaker mode.
 
 ## `fheenv init`
 

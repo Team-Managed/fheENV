@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { configureSigner } = require("../src/commands/signer");
+const { pinInteractiveSignerAddress } = require("../src/commands/init");
 
 describe("generated configuration safety", function () {
   const base = {
@@ -58,6 +59,22 @@ describe("generated configuration safety", function () {
       assert.ok(written);
       for (const canary of canaries) assert.doesNotMatch(written, new RegExp(canary));
       assert.doesNotMatch(written, /pinataJwt|privateKey|symKey/);
+    }
+  });
+
+  it("pins the account approved during interactive initialization", function () {
+    for (const signer of [
+      {
+        type: "walletconnect",
+        credentialRef: "keyring://walletconnect/project-id",
+      },
+      { type: "ledger", derivationPath: "44'/60'/0'/0/0" },
+    ]) {
+      assert.equal(
+        pinInteractiveSignerAddress(signer, "0x5555555555555555555555555555555555555555")
+          .expectedAddress,
+        "0x5555555555555555555555555555555555555555",
+      );
     }
   });
 });

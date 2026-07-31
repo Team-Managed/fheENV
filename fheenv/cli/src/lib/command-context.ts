@@ -20,6 +20,7 @@ import {
   loadInstallationId,
   WalletConnectStateStore,
 } from "./walletconnect-state";
+import { ExecutableSecretProvider } from "./external-secret-provider";
 
 export interface CommandContext {
   config: FheEnvConfigV2;
@@ -30,6 +31,7 @@ export interface CommandContext {
   credentials: {
     storage(): Promise<string>;
   };
+  sanitize(error: unknown): string;
   close(): Promise<void>;
 }
 
@@ -38,11 +40,30 @@ export async function withCommandContext<T>(
   operation: (context: CommandContext) => Promise<T>,
 ): Promise<T> {
   const context = await create();
+  let result: T | undefined;
+  let failure: Error | undefined;
   try {
-    return await operation(context);
-  } finally {
-    await context.close();
+    result = await operation(context);
+  } catch (error) {
+    const message =
+      typeof context.sanitize === "function"
+        ? context.sanitize(error)
+        : sanitizeError(error, new SensitiveValueRegistry());
+    failure = errorWithCause(message, error);
   }
+  try {
+    await context.close();
+  } catch (error) {
+    if (!failure) {
+      const message =
+        typeof context.sanitize === "function"
+          ? context.sanitize(error)
+          : sanitizeError(error, new SensitiveValueRegistry());
+      failure = errorWithCause(message, error);
+    }
+  }
+  if (failure) throw failure;
+  return result as T;
 }
 
 interface CommandContextDependencies {
@@ -83,6 +104,9 @@ export async function createCommandContext(
 ): Promise<CommandContext> {
   const registry = dependencies.registry ?? new SensitiveValueRegistry();
   const keyring = dependencies.keyring ?? new NativeCredentialStore();
+  const externalSecretProvider =
+    dependencies.externalSecretProvider ??
+    new ExecutableSecretProvider(dependencies.environment ?? process.env);
   let signer: SignerSession | undefined;
   try {
     const rpcUrl =
@@ -92,7 +116,7 @@ export async function createCommandContext(
             mode: config.securityMode,
             keyring,
             environment: dependencies.environment ?? process.env,
-            externalSecretProvider: dependencies.externalSecretProvider,
+            externalSecretProvider,
             registry,
           });
     assertHttpsRpcUrl(rpcUrl);
@@ -121,7 +145,7 @@ export async function createCommandContext(
           mode: config.securityMode,
           keyring,
           environment: dependencies.environment ?? process.env,
-          externalSecretProvider: dependencies.externalSecretProvider,
+          externalSecretProvider,
           registry,
         },
       );
@@ -167,6 +191,7 @@ export async function createCommandContext(
         expectedAddress: config.signer.expectedAddress as `0x${string}`,
         securityMode: config.securityMode,
         environment: dependencies.environment,
+        registry,
       });
     }
     if (!provider) {
@@ -191,10 +216,11 @@ export async function createCommandContext(
             mode: config.securityMode,
             keyring,
             environment: dependencies.environment ?? process.env,
-            externalSecretProvider: dependencies.externalSecretProvider,
+            externalSecretProvider,
             registry,
           }),
       },
+      sanitize: (error) => sanitizeError(error, registry),
       close: () => signer!.close(),
     };
   } catch (error) {

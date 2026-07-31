@@ -1,11 +1,14 @@
 import path from "path";
 import { NativeCredentialStore, parseCredentialReference } from "../lib/credential-store";
 import { MigrationResult, migrateConfigV1ToV2 } from "../lib/config-v2";
+import { SignerConfig } from "../lib/config-v2";
 import { CredentialStore } from "../lib/credential-types";
 
 export interface MigrateCredentialsOptions {
   credentialRef: string;
   rpcCredentialRef?: string;
+  securityMode: "production" | "development";
+  signer: SignerConfig;
   dryRun?: boolean;
   configPath?: string;
   store?: CredentialStore;
@@ -33,6 +36,8 @@ export async function migrateCredentialsCommand(
     {
       credentialRef: options.credentialRef,
       rpcCredentialRef: options.rpcCredentialRef,
+      securityMode: options.securityMode,
+      signer: options.signer,
       dryRun: options.dryRun,
       setCredential: (reference, value) => store.set(keys.get(reference) as string, value),
       readCredential: (reference) => store.get(keys.get(reference) as string),
