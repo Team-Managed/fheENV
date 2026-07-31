@@ -123,13 +123,15 @@ export function migrateLegacyWallet(passphrase: string, walletPath = KEYFILE_PAT
   saveWallet(legacy.privateKey, passphrase, walletPath);
 }
 
-export function loadAccountKey(): `0x${string}` {
-  const environmentKey = process.env.FHEENV_PRIVATE_KEY;
+export function loadAccountKey(
+  environment: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+): `0x${string}` {
+  const environmentKey = environment.FHEENV_PRIVATE_KEY;
   if (environmentKey) {
     assertPrivateKey(environmentKey);
     return environmentKey;
   }
-  return loadWallet(process.env.FHEENV_KEY_PASSPHRASE ?? "");
+  return loadWallet(environment.FHEENV_KEY_PASSPHRASE ?? "");
 }
 
 export interface ViemClients {
@@ -138,8 +140,12 @@ export interface ViemClients {
   account: PrivateKeyAccount;
 }
 
-export function createClients(rpcUrl: string, chainId: number): ViemClients {
-  const account = privateKeyToAccount(loadAccountKey());
+export function createClients(
+  rpcUrl: string,
+  chainId: number,
+  environment: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+): ViemClients {
+  const account = privateKeyToAccount(loadAccountKey(environment));
   const chain: Chain = {
     id: chainId,
     name: `chain-${chainId}`,
