@@ -94,10 +94,22 @@ export class ExecutableSecretProvider {
       };
       const signalProcessTree = (signal: NodeJS.Signals) => {
         if (process.platform === "win32" && child.pid !== undefined) {
+          const configuredSystemRoot =
+            this.environment.SYSTEMROOT ?? this.environment.SystemRoot ?? "C:\\Windows";
+          const systemRoot = path.win32.isAbsolute(configuredSystemRoot)
+            ? configuredSystemRoot
+            : "C:\\Windows";
+          const system32 = path.win32.join(systemRoot, "System32");
           const taskkill = spawn(
-            "taskkill",
+            path.win32.join(system32, "taskkill.exe"),
             ["/pid", String(child.pid), "/T", ...(signal === "SIGKILL" ? ["/F"] : [])],
-            { shell: false, stdio: "ignore", windowsHide: true },
+            {
+              shell: false,
+              stdio: "ignore",
+              windowsHide: true,
+              cwd: system32,
+              env: { SYSTEMROOT: systemRoot },
+            },
           );
           taskkill.on("error", () => child.kill(signal));
           return;
