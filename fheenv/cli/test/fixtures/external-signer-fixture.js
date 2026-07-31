@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
+const { setTimeout } = require("node:timers");
+
 const mode = process.argv[2];
 if (mode === "slow") {
   setTimeout(() => undefined, 10_000);
