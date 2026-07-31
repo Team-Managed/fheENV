@@ -13,6 +13,10 @@ import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
 import { exportAuditCommand } from "./commands/export-audit";
 import { analyticsCommand } from "./commands/analytics";
+import { migrateCredentialsCommand } from "./commands/migrate-credentials";
+import { SignerConfig } from "./lib/config-v2";
+import { credentialStatus, deleteCredential, setCredential } from "./commands/credentials";
+import { configureSigner, signerStatus } from "./commands/signer";
 
 const program = new Command();
 
@@ -25,16 +29,11 @@ program
 // ── fheenv login ──────────────────────────────────────────────────────────────
 program
   .command("login")
-  .description("Save your Ethereum private key to ~/.fheenv/wallet.json")
-  .option(
-    "-k, --key <privateKey>",
-    "(deprecated) inline private key — visible in shell history. Use stdin or FHEENV_PRIVATE_KEY instead",
-  )
+  .description("Configure the development-only encrypted local signer")
   .option("--migrate", "Encrypt an existing legacy plaintext wallet")
   .action(async (opts) => {
     try {
       await loginCommand({
-        key: opts.key as string | undefined,
         migrate: Boolean(opts.migrate),
       });
     } catch (err) {
@@ -48,6 +47,50 @@ const SEPOLIA_REGISTRY = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
 const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 const SEPOLIA_CHAIN_ID = 11155111;
 
+function signerConfigFromOptions(opts: Record<string, string | undefined>): SignerConfig {
+  switch (opts.signer) {
+    case "walletconnect":
+      if (!opts.signerCredential) {
+        throw new Error("--signer-credential is required for WalletConnect.");
+      }
+      return {
+        type: "walletconnect",
+        credentialRef: opts.signerCredential,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "ledger":
+      return {
+        type: "ledger",
+        derivationPath: opts.ledgerPath ?? "44'/60'/0'/0/0",
+        expectedAddress: opts.expectedAddress,
+      };
+    case "aws-kms":
+      if (!opts.kmsKeyId || !opts.expectedAddress) {
+        throw new Error("--kms-key-id and --expected-address are required for AWS KMS.");
+      }
+      return {
+        type: "aws-kms",
+        keyId: opts.kmsKeyId,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "external":
+      if (!opts.externalProvider || !opts.expectedAddress) {
+        throw new Error(
+          "--external-provider and --expected-address are required for an external signer.",
+        );
+      }
+      return {
+        type: "external",
+        provider: opts.externalProvider,
+        expectedAddress: opts.expectedAddress,
+      };
+    case "local-encrypted":
+      return { type: "local-encrypted", expectedAddress: opts.expectedAddress };
+    default:
+      throw new Error(`Unsupported signer: ${opts.signer ?? ""}`);
+  }
+}
+
 program
   .command("init")
   .description("Create a new fheENV project on-chain and write .fheenv.json")
@@ -56,10 +99,25 @@ program
   .option("--rpc <url>", "RPC URL (or set FHEENV_RPC)", process.env.FHEENV_RPC ?? SEPOLIA_RPC)
   .option("--chain-id <id>", "Chain ID", (v) => parseInt(v), SEPOLIA_CHAIN_ID)
   .option(
-    "--pinata-jwt <jwt>",
-    "Pinata JWT for IPFS uploads (or set FHEENV_PINATA_JWT)",
-    process.env.FHEENV_PINATA_JWT,
+    "--storage-credential <reference>",
+    "Pinata credential reference",
+    "keyring://storage/pinata/default",
   )
+  .option(
+    "--signer <type>",
+    "walletconnect, ledger, aws-kms, external, or local-encrypted",
+    "walletconnect",
+  )
+  .option("--security-mode <mode>", "production or development", "production")
+  .option(
+    "--signer-credential <reference>",
+    "WalletConnect project ID credential reference",
+    "keyring://walletconnect/project-id",
+  )
+  .option("--expected-address <address>", "Expected signer address")
+  .option("--ledger-path <path>", "Ledger derivation path")
+  .option("--kms-key-id <id>", "AWS KMS key ID or ARN")
+  .option("--external-provider <name>", "Configured external signer provider")
   .option("-e, --env <envName>", "Default environment name", "production")
   .option("--analytics", "Opt in to anonymous, minimal CLI product analytics")
   .action(async (opts) => {
@@ -69,7 +127,9 @@ program
         registry: opts.registry,
         rpcUrl: opts.rpc,
         chainId: opts.chainId,
-        pinataJwt: opts.pinataJwt,
+        storageCredential: opts.storageCredential,
+        signer: signerConfigFromOptions(opts),
+        securityMode: opts.securityMode,
         envName: opts.env,
         analytics: Boolean(opts.analytics),
       });
@@ -237,5 +297,135 @@ const analytics = program.command("analytics").description("Manage anonymous CLI
 analytics.command("enable").action(() => analyticsCommand("enable"));
 analytics.command("disable").action(() => analyticsCommand("disable"));
 analytics.command("status").action(() => analyticsCommand("status"));
+
+const migrate = program.command("migrate").description("Migrate fheENV project data");
+migrate
+  .command("credentials")
+  .description("Move credentials out of a version-1 project config")
+  .requiredOption(
+    "--storage-credential <reference>",
+    "Writable keyring reference for the Pinata credential",
+  )
+  .option(
+    "--rpc-credential <reference>",
+    "Writable keyring reference for a credential-bearing RPC URL",
+  )
+  .option(
+    "--walletconnect-credential <reference>",
+    "Migrate into production mode with this WalletConnect project ID reference",
+  )
+  .option(
+    "--expected-address <address>",
+    "Required WalletConnect address to prove and pin during production migration",
+  )
+  .option(
+    "--development-local-signer",
+    "Explicitly retain the encrypted local signer in development mode",
+  )
+  .option("--dry-run", "Validate and print the value-free migration plan")
+  .action(async (opts) => {
+    try {
+      if (Boolean(opts.walletconnectCredential) === Boolean(opts.developmentLocalSigner)) {
+        throw new Error(
+          "Select exactly one: --walletconnect-credential or --development-local-signer.",
+        );
+      }
+      if (opts.walletconnectCredential && !opts.expectedAddress) {
+        throw new Error("--expected-address is required for a WalletConnect migration.");
+      }
+      await migrateCredentialsCommand({
+        credentialRef: opts.storageCredential,
+        rpcCredentialRef: opts.rpcCredential,
+        securityMode: opts.walletconnectCredential ? "production" : "development",
+        signer: opts.walletconnectCredential
+          ? {
+              type: "walletconnect",
+              credentialRef: opts.walletconnectCredential,
+              expectedAddress: opts.expectedAddress,
+            }
+          : { type: "local-encrypted" },
+        dryRun: Boolean(opts.dryRun),
+      });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+const credentials = program.command("credentials").description("Manage credential references");
+credentials
+  .command("set")
+  .argument("<reference>", "Writable keyring:// credential reference")
+  .option("--stdin", "Read the credential from stdin explicitly")
+  .action(async (reference, opts) => {
+    try {
+      console.log(JSON.stringify(await setCredential({ reference, stdin: Boolean(opts.stdin) })));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+credentials
+  .command("status")
+  .argument("[reference]", "Credential reference to inspect")
+  .action(async (reference) => {
+    try {
+      console.log(JSON.stringify(await credentialStatus({ reference }), null, 2));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+credentials
+  .command("delete")
+  .argument("<reference>", "Writable keyring:// credential reference")
+  .option("--yes", "Confirm deletion in non-interactive use")
+  .action(async (reference, opts) => {
+    try {
+      console.log(JSON.stringify(await deleteCredential({ reference, yes: Boolean(opts.yes) })));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+
+const signer = program.command("signer").description("Configure the project signer");
+signer
+  .command("configure")
+  .argument("<type>", "walletconnect, ledger, aws-kms, external, or local-encrypted")
+  .option("--credential <reference>", "WalletConnect project ID credential reference")
+  .option("--derivation-path <path>", "Ledger derivation path")
+  .option("--key-id <id>", "AWS KMS key ID or ARN")
+  .option("--provider <name>", "External signer provider name")
+  .option("--expected-address <address>", "Expected signer address")
+  .action(async (type, opts) => {
+    try {
+      console.log(
+        JSON.stringify(
+          await configureSigner({
+            type,
+            credential: opts.credential,
+            derivationPath: opts.derivationPath,
+            keyId: opts.keyId,
+            provider: opts.provider,
+            expectedAddress: opts.expectedAddress,
+          }),
+          null,
+          2,
+        ),
+      );
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+signer.command("status").action(() => {
+  try {
+    console.log(JSON.stringify(signerStatus(), null, 2));
+  } catch (err) {
+    console.error(chalk.red(`Error: ${(err as Error).message}`));
+    process.exitCode = 1;
+  }
+});
 
 program.parse(process.argv);

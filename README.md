@@ -172,32 +172,24 @@ npm link            # makes `fheenv` available globally
 
 ### Authentication
 
-The CLI needs an Ethereum private key to sign transactions and decrypt FHE handles. There are two ways to provide it:
+Production mode never asks fheENV for an Ethereum private key. Interactive
+users approve requests with WalletConnect (the default) or Ledger. Headless
+workers use AWS KMS secp256k1 or a bounded external signer process. The
+passphrase-encrypted local wallet remains available only in explicit
+`development` mode.
 
-#### Option A — `fheenv login` (interactive / developer use)
-
-```bash
-fheenv login
-```
-
-Prompts without echo for the private key and wallet passphrase. The CLI stores
-only a scrypt-derived, AES-256-GCM encrypted keyfile at
-`~/.fheenv/wallet.json` with permissions `0600`.
-
-#### Option B — `FHEENV_PRIVATE_KEY` env var (CI/CD)
+Store non-signing credentials in the native OS store:
 
 ```bash
-export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
-fheenv pull --env production
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
+fheenv credentials status
 ```
 
-The env var takes priority over the keyfile. Use a narrowly scoped wallet and
-your CI provider's protected secret store. External signer/workload-identity
-support remains a production-readiness gate.
-
-> **Never commit credentials.** The current `.fheenv.json` includes the Pinata
-> JWT and must not be committed. Removing project-file credentials is tracked
-> separately.
+The first command accepts hidden terminal input; use `--stdin` explicitly in
+automation. macOS uses Keychain, Windows uses Credential Manager, and Linux
+uses Secret Service. Headless systems can use explicit `env://NAME` or
+`exec://provider/key` references.
 
 ---
 
@@ -207,38 +199,52 @@ Every command (except `login`) reads this file from the current directory. `fhee
 
 ```json
 {
+  "version": 2,
   "projectId": 0,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
-  "pinataJwt": "eyJhbGc...",
-  "deployedAtBlock": 1234567
+  "rpc": { "url": "https://ethereum-sepolia-rpc.publicnode.com" },
+  "deployedAtBlock": 1234567,
+  "securityMode": "production",
+  "signer": {
+    "type": "walletconnect",
+    "credentialRef": "keyring://walletconnect/project-id",
+    "expectedAddress": "0x..."
+  },
+  "storage": {
+    "provider": "pinata",
+    "credentialRef": "keyring://storage/pinata/default"
+  }
 }
 ```
 
-Do not commit this file while it contains `pinataJwt`.
+Version 2 contains references and public metadata only, so it can be reviewed
+and committed. Migrate a legacy file with `fheenv migrate credentials
+--storage-credential keyring://storage/pinata/default
+--walletconnect-credential keyring://walletconnect/project-id --dry-run`, then
+repeat without `--dry-run`.
 
 ---
 
 ### Commands
 
-#### `fheenv login`
-
-Save a private key to the local keyfile.
+#### `fheenv signer`
 
 ```bash
-fheenv login
-fheenv login --migrate
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
+fheenv signer configure ledger --derivation-path "44'/60'/0'/0/0"
+fheenv signer configure aws-kms --key-id <arn> --expected-address 0x...
+fheenv signer configure external --provider fireblocks --expected-address 0x...
+fheenv signer status
 ```
 
-| Flag                     | Description                         |
-| ------------------------ | ----------------------------------- |
-| `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
-| `--migrate`              | Encrypt a legacy plaintext keyfile  |
-
-Stores an AES-256-GCM encrypted keyfile at `~/.fheenv/wallet.json`
-(permissions `0600`). Non-interactive use requires
-`FHEENV_KEY_PASSPHRASE`.
+WalletConnect and Ledger display and verify the selected address before the
+configuration is written. AWS uses its default SDK credential chain. External
+providers are selected with an absolute executable path in
+`FHEENV_EXTERNAL_SIGNER_<PROVIDER>`. See the
+[CLI command reference](./fheenv/frontend/content/docs/cli/commands.mdx) for
+trust boundaries and recovery.
 
 ---
 
@@ -251,18 +257,18 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://sepolia.infura.io/v3/YOUR_KEY \
-  --chain-id 11155111 \
-  --pinata-jwt eyJhbGc...
+  --chain-id 11155111
 ```
 
-| Flag                       | Default  | Description                     |
-| -------------------------- | -------- | ------------------------------- |
-| `-n, --name <name>`        | required | Project name (1–64 chars)       |
-| `-r, --registry <address>` | required | fheENVRegistry contract address |
-| `--rpc <url>`              | required | Sepolia RPC endpoint            |
-| `--chain-id <id>`          | required | `11155111` for Sepolia          |
-| `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
-| `--analytics`              | disabled | Opt in to minimal CLI analytics |
+| Flag                         | Default       | Description                     |
+| ---------------------------- | ------------- | ------------------------------- |
+| `-n, --name <name>`          | required      | Project name (1–64 chars)       |
+| `-r, --registry <address>`   | required      | fheENVRegistry contract address |
+| `--rpc <url>`                | required      | Sepolia RPC endpoint            |
+| `--chain-id <id>`            | required      | `11155111` for Sepolia          |
+| `--storage-credential <ref>` | keyring       | Pinata credential reference     |
+| `--signer <type>`            | WalletConnect | Production signer type          |
+| `--analytics`                | disabled      | Opt in to minimal CLI analytics |
 
 ---
 
@@ -415,8 +421,9 @@ errors, and secret-derived data are excluded.
 curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
 source ~/.zshrc
 
-# 2. Save your wallet (one-time per machine)
-fheenv login
+# 2. Store credentials and pair the default WalletConnect signer
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
 
 # 3. Initialize a project in your repo
 cd my-app
@@ -424,8 +431,7 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://sepolia.infura.io/v3/YOUR_KEY \
-  --chain-id 11155111 \
-  --pinata-jwt eyJ...
+  --chain-id 11155111
 
 # 4. Push your secrets (assuming .env exists)
 fheenv push --env production
@@ -447,11 +453,12 @@ fheenv run --env production -- node index.js
 fheenv team remove --member 0xFormerTeammate --env production --file .env
 # → Revokes and rotates. Any partial failure exits non-zero with recovery guidance.
 
-# ── CI/CD: no keyfile, no MetaMask ────────────────────────────────────────────
+# ── CI/CD: organization-managed signing ───────────────────────────────────────
 
-# In your GitHub Actions workflow:
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv pull --env production
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv run --env production -- npm start
+fheenv signer configure aws-kms \
+  --key-id "$FHEENV_AWS_KMS_KEY_ARN" \
+  --expected-address 0x...
+fheenv run --env production -- npm start
 ```
 
 ---

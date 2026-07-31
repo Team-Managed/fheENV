@@ -1,186 +1,214 @@
 ---
 title: CLI Commands
-description: Complete reference for the available fheENV CLI commands
+description: Secure credential, signer, project, and environment workflows
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
 
 # CLI Commands
 
-## `fheenv login`
+## Production setup
 
-Save a wallet private key in a scrypt-derived, AES-256-GCM encrypted local keyfile with permissions
-`0600`.
+New projects default to `securityMode: production` and WalletConnect. Store the WalletConnect
+project ID and Pinata credential before initializing:
 
 ```bash
-fheenv login
-fheenv login --key 0xABC123...
-echo "0x..." | fheenv login
-fheenv login --migrate
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
+fheenv init --name my-app
 ```
 
-| Flag                     | Description                                                        |
-| ------------------------ | ------------------------------------------------------------------ |
-| `-k, --key <privateKey>` | 0x-prefixed key. Avoid it in shell history; omit it to read stdin. |
-| `--migrate`              | Encrypt an existing legacy plaintext wallet.                       |
+The terminal displays a QR containing an expiring WalletConnect pairing URI, not a localhost URL or
+transaction. The phone and CLI exchange encrypted messages through the WalletConnect relay. Confirm
+the chain, address, contract, method, and amount on the wallet before approving.
 
-Interactive login requests a non-echoing wallet passphrase. Non-interactive use requires
-`FHEENV_KEY_PASSPHRASE`. `FHEENV_PRIVATE_KEY` still overrides the keyfile for tightly scoped
-automation; external signer custody remains a production-readiness gate.
+## `fheenv credentials`
 
----
+```bash
+fheenv credentials set keyring://storage/pinata/default
+fheenv credentials status keyring://storage/pinata/default
+fheenv credentials delete keyring://storage/pinata/default
+```
+
+`set` has no value flag. It prompts without echo, or reads stdin only with `--stdin`. `status`
+returns source, presence, and backend metadata and never the value. `delete` prompts on a terminal;
+automation must pass `--yes`.
+
+Native storage maps to:
+
+- macOS Keychain Services. The login keychain must be unlocked.
+- Windows Credential Manager for the current user.
+- Linux Secret Service through GNOME Keyring, KWallet, or another compatible provider on the current
+  D-Bus session.
+
+Production fails closed if the selected native backend is unavailable. A headless Linux host should
+start a Secret Service session, select an explicit `env://VARIABLE` reference for a non-key
+credential, or implement `exec://provider/key`. fheENV does not try shell-command keyring fallbacks.
+
+An executable secret provider is configured separately from project config:
+
+```bash
+export FHEENV_SECRET_PROVIDER_VAULT=/opt/fheenv/vault-secret-provider
+export FHEENV_SECRET_PROVIDER_VAULT_ARGS='["--profile","production"]'
+export FHEENV_SECRET_PROVIDER_VAULT_ALLOW_ENV=VAULT_ADDR,VAULT_TOKEN_FILE
+```
+
+The executable path must be absolute. Static arguments are a JSON string array; request keys and
+returned values travel only through one bounded JSON line on stdin/stdout. Only explicitly
+allowlisted environment names are inherited.
+
+## `fheenv signer`
+
+All production signers support transactions, personal messages, and EIP-712 typed data.
+`fheenv signer status` reports the configured type, selected address, and security mode without
+connecting.
+
+### WalletConnect
+
+```bash
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
+```
+
+- Trust boundary: the paired wallet protects the signing key; WalletConnect relays encrypted session
+  messages.
+- Prompts: pairing approval, chain/account selection, and each signature or transaction.
+- Verification: fheENV rejects the wrong chain or account and verifies returned signatures locally.
+- Recovery: reject or retry a request, unlock the wallet, switch to the configured chain, or re-pair
+  after an expired/corrupt session.
+- Disable: configure another signer. Remove the session in the wallet and delete the WalletConnect
+  project credential if compromised.
+
+### Ledger
+
+```bash
+fheenv signer configure ledger --derivation-path "44'/60'/0'/0/0"
+```
+
+- Trust boundary: the private key remains in the Ledger secure element.
+- Prompts: open the Ethereum app, unlock the device, verify the displayed address, then approve each
+  operation on-device.
+- Verification: fheENV derives and displays the selected address and recovers every signature
+  locally.
+- Recovery: reconnect USB, reopen the Ethereum app, correct the derivation path, or retry a rejected
+  request.
+- Disable: unplug the device and configure another signer.
+
+### AWS KMS
+
+```bash
+fheenv signer configure aws-kms \
+  --key-id arn:aws:kms:REGION:ACCOUNT:key/ID \
+  --expected-address 0x...
+```
+
+- Trust boundary: AWS KMS protects an `ECC_SECG_P256K1` key; fheENV uses the default AWS SDK
+  credential chain and never accepts static AWS credentials in project config.
+- Prompts: none in an authorized workload.
+- Verification: strict DER parsing, Ethereum low-s normalization, public-key recovery,
+  expected-address matching, and a local chain/contract/selector/ value/gas/fee policy before KMS is
+  called.
+- Recovery: restore workload identity/IAM/KMS access, verify the expected address, or rotate to a
+  replacement KMS key.
+- Disable: disable the KMS key or revoke workload permissions, then configure the replacement
+  address.
+
+### External signer
+
+```bash
+export FHEENV_EXTERNAL_SIGNER_FIREBLOCKS=/opt/fheenv/fireblocks-signer
+fheenv signer configure external \
+  --provider fireblocks \
+  --expected-address 0x...
+```
+
+- Trust boundary: the absolute executable and its custody system own key security. fheENV launches
+  it without a shell and with an allowlisted environment.
+- Protocol: one JSON request and response, protocol v1, matching UUID, 1 MiB limits, bounded stderr,
+  and a maximum 120-second timeout.
+- Verification: the returned signer identity and signatures are recovered locally. Unknown
+  operations and malformed responses fail closed.
+- Recovery: inspect the provider's own audit trail, restore its workload identity, or configure a
+  replacement.
+- Disable: remove execute permission or the environment mapping and configure another signer.
+
+### Local encrypted signer
+
+```bash
+fheenv signer configure local-encrypted
+```
+
+This mode is rejected unless the project uses `securityMode: development`. Its keyfile is
+scrypt-derived AES-256-GCM with mode `0600`; it is not recommended for shared or unattended
+production workloads. Migrate a legacy local keyfile with `fheenv login --migrate`.
+
+## `fheenv migrate credentials`
+
+```bash
+fheenv migrate credentials \
+  --storage-credential keyring://storage/pinata/default \
+  --rpc-credential keyring://rpc/provider/default \
+  --walletconnect-credential keyring://walletconnect/project-id \
+  --dry-run
+```
+
+The dry run reports field names and destinations only. The live migration stores and verifies every
+value before atomically replacing the legacy file. It leaves the original untouched on failure.
+Select production WalletConnect explicitly with `--walletconnect-credential`, or acknowledge
+development-only local custody with `--development-local-signer`; migration never silently chooses
+the weaker mode.
 
 ## `fheenv init`
 
-Create an on-chain project and write `.fheenv.json`.
-
 ```bash
-fheenv init --name "my-app" --pinata-jwt eyJ...
+fheenv init --name my-app
 ```
 
-| Flag                       | Default              | Description                     |
-| -------------------------- | -------------------- | ------------------------------- |
-| `-n, --name <name>`        | required             | Project name                    |
-| `-r, --registry <address>` | Sepolia registry     | Contract address                |
-| `--rpc <url>`              | PublicNode Sepolia   | RPC endpoint                    |
-| `--chain-id <id>`          | `11155111`           | Chain ID                        |
-| `--pinata-jwt <jwt>`       | `$FHEENV_PINATA_JWT` | Pinata upload credential        |
-| `-e, --env <name>`         | `production`         | Default environment             |
-| `--analytics`              | disabled             | Opt in to minimal CLI analytics |
+Important options include `--registry`, `--rpc`, `--chain-id`, `--storage-credential`, `--signer`,
+`--signer-credential`, `--expected-address`, `--ledger-path`, `--kms-key-id`, `--external-provider`,
+`--security-mode`, and the opt-in `--analytics`. `.fheenv.json` v2 contains only public metadata and
+credential references.
 
----
-
-## `fheenv push`
-
-Encrypt and upload a local environment file.
+## Environment operations
 
 ```bash
-fheenv push
-fheenv push --env staging --file .env.staging
+fheenv push --env production --file .env
+fheenv pull --env production --output .env.local
+fheenv run --env production -- node server.js
 ```
 
-| Flag                | Default      | Description      |
-| ------------------- | ------------ | ---------------- |
-| `-e, --env <name>`  | `production` | Environment name |
-| `-f, --file <path>` | `.env`       | Source file      |
+`push` encrypts locally, uploads only ciphertext, and updates FHE key handles. `pull` writes
+mode-`0600` plaintext. `run` injects values into a child process without writing a plaintext file.
 
-It generates a fresh AES-256-GCM key, encrypts the file locally, uploads the encrypted blob to IPFS,
-and writes FHE-encrypted key handles and the CID to the registry.
-
----
-
-## `fheenv pull`
-
-Decrypt an environment and write it locally.
+## Team and rotation operations
 
 ```bash
-fheenv pull
-fheenv pull --env staging --output .env.staging.local
-```
-
-| Flag                  | Default      | Description         |
-| --------------------- | ------------ | ------------------- |
-| `-e, --env <name>`    | `production` | Environment to pull |
-| `-o, --output <path>` | `.env.local` | Destination file    |
-
-## `fheenv run`
-
-Decrypt secrets and inject them into a child process without writing a file.
-
-```bash
-fheenv run -- node server.js
-fheenv run --env staging -- npm start
-```
-
-## `fheenv team add`
-
-Grant an address access to an environment.
-
-```bash
-fheenv team add --member 0xTeammate --env production
-```
-
-| Flag                     | Default      | Description    |
-| ------------------------ | ------------ | -------------- |
-| `-m, --member <address>` | required     | Wallet address |
-| `-e, --env <name>`       | `production` | Environment    |
-
-## `fheenv team remove`
-
-Revoke a member and rotate the environment key by default.
-
-```bash
-fheenv team remove --member 0xFormer --env production
-fheenv team remove --member 0xFormer --env production --file .env
+fheenv team add --member 0x... --env production
+fheenv team remove --member 0x... --env production --file .env
+fheenv team remove-owner --owner 0x...
+fheenv rotate --env production --file .env
+fheenv rotate --env production --regrant-only
 ```
 
 <Callout type="warn">
-  The contract cannot revoke existing FHE permissions. The CLI therefore rotates immediately after
-  revocation. If rotation fails, the command exits non-zero and prints recovery guidance.
-  `--no-rotate` leaves the old handles decryptable by the removed wallet.
+  CoFHE cannot revoke permission on existing handles. Member removal therefore rotates by default.
+  `--no-rotate` is an explicit exception that leaves the old handles decryptable. If rotation partly
+  fails, the CLI exits non-zero with an idempotent recovery command.
 </Callout>
 
-| Flag                     | Default      | Description                              |
-| ------------------------ | ------------ | ---------------------------------------- |
-| `-m, --member <address>` | required     | Wallet address to revoke                 |
-| `-e, --env <name>`       | `production` | Environment                              |
-| `-f, --file <path>`      | `.env`       | Plaintext source used for rotation       |
-| `--no-rotate`            | disabled     | Explicitly skip cryptographic revocation |
+Only the primary project owner can remove a co-owner, and the primary owner cannot remove itself;
+transfer primary ownership first.
 
-## `fheenv rotate`
-
-Re-encrypt an environment with a new AES key and re-grant its current active members.
-
-```bash
-fheenv rotate
-fheenv rotate --env staging --file .env.staging
-```
-
-| Flag                | Default      | Description                                 |
-| ------------------- | ------------ | ------------------------------------------- |
-| `-e, --env <name>`  | `production` | Environment to rotate                       |
-| `-f, --file <path>` | `.env`       | Local source file                           |
-| `--regrant-only`    | disabled     | Recover member grants without a new version |
-
-## `fheenv export-audit`
-
-Export the local append-only operational log as deterministic CSV.
+## Audit and minimal analytics
 
 ```bash
 fheenv export-audit --output audit.csv
-```
-
-This file is local operational evidence. It is not a durable SOC 2 ledger and does not replace
-centralized retention or monitoring.
-
-## `fheenv analytics`
-
-CLI analytics are disabled by default.
-
-```bash
 fheenv analytics enable
 fheenv analytics status
 fheenv analytics disable
 ```
 
-Only a random installation ID, CLI version, operating-system family, command success, and optional
-coarse duration bucket may be sent. Wallets, project IDs, environment names, CIDs, transactions,
-arguments, paths, errors, and secret-derived values are excluded.
-
-## `fheenv update`
-
-Download and install the latest fheENV release.
-
-```bash
-fheenv update
-```
-
-## Environment Variables
-
-| Variable                | Description                                               |
-| ----------------------- | --------------------------------------------------------- |
-| `FHEENV_PRIVATE_KEY`    | Raw wallet key; overrides the local keyfile               |
-| `FHEENV_PINATA_JWT`     | Pinata JWT used by `init`                                 |
-| `FHEENV_RPC`            | RPC URL override                                          |
-| `FHEENV_KEY_PASSPHRASE` | Unlocks the encrypted local wallet                        |
-| `FHEENV_ANALYTICS_KEY`  | Optional analytics project key; consent is still required |
+Analytics are off by default. They allow only a random installation ID, CLI version, OS family,
+command success, and an optional coarse duration bucket. They exclude wallets, projects, environment
+names, CIDs, transactions, arguments, paths, errors, and secret-derived values. Local audit export
+is operational evidence, not a durable compliance ledger.

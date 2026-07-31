@@ -7,6 +7,8 @@
   "scripts": {
     "test": "hardhat test",
     "test:cli": "TS_NODE_PROJECT=cli/tsconfig.json mocha -r ts-node/register \"cli/test/**/*.test.js\"",
+    "test:cli:keyring-integration": "cross-env FHEENV_NATIVE_KEYRING_TEST=1 TS_NODE_PROJECT=cli/tsconfig.json mocha -r ts-node/register cli/test/native-keyring.integration.test.js",
+    "test:cli:aws-kms-integration": "cross-env FHEENV_AWS_KMS_TEST=1 TS_NODE_PROJECT=cli/tsconfig.json mocha -r ts-node/register cli/test/aws-kms.integration.test.js",
     "compile": "hardhat compile",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "prepare-upgrade": "hardhat run scripts/prepare-upgrade.ts",
@@ -58,6 +60,7 @@
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "chai": "^4.5.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",

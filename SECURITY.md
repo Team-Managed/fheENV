@@ -45,17 +45,31 @@ Instead, report it privately:
 
 - AES-256-GCM encryption happens **client-side only**
 - AES keys are stored as FHE ciphertexts — server/operators cannot decrypt
-- New local wallet files use scrypt plus AES-256-GCM and `chmod 600`
+- Production signing uses WalletConnect, Ledger, AWS KMS secp256k1, or a
+  length-bounded external signer protocol
+- Development-only local wallet files use scrypt plus AES-256-GCM and `chmod 600`
+- Storage, RPC, and WalletConnect credentials are references resolved from
+  macOS Keychain, Windows Credential Manager, Linux Secret Service, an
+  explicit environment variable, or an external secret provider
+- Project configuration contains no credential values
 - Member removal rotates the environment key by default; `--no-rotate` is an explicit security exception
-- Pinata JWT is server-side only (never exposed to browser)
+- Pinata JWT stays in the frontend server or the CLI's selected credential
+  provider; it is never exposed to browser JavaScript or project config
 - No plaintext secret ever touches any server or chain
 
 ## Current Production Boundary
 
-fheENV is a production-candidate pilot on supported CoFHE testnets. It is not
-currently represented as mainnet-supported or as an operating SOC 2 control.
-Unattended rotation and organization-managed signing remain blocked until an
-external signer or workload identity replaces long-lived raw automation keys.
+fheENV is a production-grade pilot on supported CoFHE testnets. CoFHE mainnet
+availability remains the deployment boundary, so the project is not
+represented as mainnet-supported. Organization-managed signing is available
+through AWS KMS and the external signer protocol. Production operators must
+still configure multisig ownership, monitoring, backups, retention, and
+incident response; fheENV is not itself an operating SOC 2 control.
+
+The registry is UUPS upgradeable. The proxy owner can authorize implementation
+changes and must be a Safe or equivalent multisig, preferably behind a
+timelock. Project primary owners can remove co-owners; removing access does not
+erase ciphertext or plaintext already copied by that party.
 
 Local audit exports are operational diagnostics, not a durable compliance
 ledger. Product analytics are separate from audit evidence.

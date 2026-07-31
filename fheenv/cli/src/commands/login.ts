@@ -67,7 +67,7 @@ async function readPassphrase(): Promise<string> {
   return passphrase;
 }
 
-export async function loginCommand(opts: { key?: string; migrate?: boolean }): Promise<void> {
+export async function loginCommand(opts: { migrate?: boolean }): Promise<void> {
   if (opts.migrate) {
     migrateLegacyWallet(await readPassphrase());
     console.log(
@@ -79,19 +79,12 @@ export async function loginCommand(opts: { key?: string; migrate?: boolean }): P
   let key: string | undefined;
 
   if (process.env.FHEENV_PRIVATE_KEY) {
-    // CI-preferred path — never echoed, not in shell history
+    // Backward-compatible development path. Production mode rejects this signer.
     key = process.env.FHEENV_PRIVATE_KEY;
-    console.log(chalk.dim("Using FHEENV_PRIVATE_KEY from environment."));
-  } else if (opts.key) {
-    // Deprecated: key appears in `ps aux` output and shell history
-    key = opts.key;
     console.warn(
       chalk.yellow(
-        "\u26a0  --key is deprecated: the private key is visible in shell history\n" +
-          "   and process listings. Use a secure alternative instead:\n" +
-          "     \u2022 Pipe:     echo $PRIVATE_KEY | fheenv login\n" +
-          "     \u2022 CI/CD:    export FHEENV_PRIVATE_KEY=0x...\n" +
-          "     \u2022 Prompt:   fheenv login  (hides input)\n",
+        "\u26a0  FHEENV_PRIVATE_KEY is supported only for development migration.\n" +
+          "   Production projects must use WalletConnect, Ledger, AWS KMS, or an external signer.\n",
       ),
     );
   } else if (!process.stdin.isTTY) {
@@ -102,7 +95,7 @@ export async function loginCommand(opts: { key?: string; migrate?: boolean }): P
     key = await promptSecret(chalk.cyan("? ") + "Private key (input hidden): ");
   }
 
-  if (!key) throw new Error("No private key provided.");
+  if (!key) throw new Error("No development key provided.");
   if (!key.match(/^0x[0-9a-fA-F]{64}$/)) {
     throw new Error("Invalid private key format. Must be a 0x-prefixed 32-byte hex string.");
   }

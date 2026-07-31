@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import ora from "ora";
 import { type Address } from "viem";
-import { readConfig } from "../lib/config";
-import { createClients } from "../lib/wallet";
+import { readProjectConfig } from "../lib/config";
+import { createCommandContext, withCommandContext } from "../lib/command-context";
 import { revokeAccess } from "../lib/contracts-node";
 import { rotateCommand } from "./rotate";
 import { appendAuditEvent } from "../lib/audit";
@@ -65,29 +65,39 @@ export async function removeMemberAndRotate(
 }
 
 export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> {
-  const config = readConfig();
+  const config = readProjectConfig();
   const envName = (opts.envName ?? "production").toLowerCase();
   const spinner = ora(`Revoking access for ${opts.member}...`).start();
   let revoked = false;
   let memberAuditAttempted = false;
 
   try {
-    const { publicClient, walletClient } = createClients(config.rpcUrl, config.chainId);
-    const result = await removeMemberAndRotate(opts, {
-      revoke: async () => {
-        await revokeAccess(
-          config.registryAddress as Address,
-          BigInt(config.projectId),
-          envName,
-          opts.member as Address,
-          walletClient,
-          publicClient,
-        );
-        revoked = true;
-        spinner.succeed(chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`));
-      },
-      rotate: (options) => rotateCommand({ ...options, trigger: "team_remove" }),
-    });
+    const result = await withCommandContext(
+      () => createCommandContext(config),
+      async (context) =>
+        removeMemberAndRotate(opts, {
+          revoke: async () => {
+            await revokeAccess(
+              config.registryAddress as Address,
+              BigInt(config.projectId),
+              envName,
+              opts.member as Address,
+              context.signer.walletClient,
+              context.publicClient,
+            );
+            revoked = true;
+            spinner.succeed(
+              chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`),
+            );
+          },
+          rotate: async (options) => {
+            // Release USB/WalletConnect resources before the rotation command
+            // creates its own context. close() is idempotent.
+            await context.close();
+            return rotateCommand({ ...options, trigger: "team_remove" });
+          },
+        }),
+    );
 
     memberAuditAttempted = true;
     appendAuditEvent({

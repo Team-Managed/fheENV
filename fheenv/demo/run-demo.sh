@@ -36,22 +36,10 @@ fi
 # ── Step 0: Prerequisites check ───────────────────────────────────────────────
 header "Step 0 — Prerequisites"
 
-if [ -z "$FHEENV_PRIVATE_KEY" ] && [ ! -f "$HOME/.fheenv/wallet.json" ]; then
-  echo -e "${RED}No wallet found.${RESET}"
-  echo -e "Either:"
-  echo -e "  ${YELLOW}export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY${RESET}"
-  echo -e "  or:"
-  echo -e "  ${YELLOW}${CLI} login --key 0xYOUR_PRIVATE_KEY${RESET}"
-  exit 1
-fi
-success "Wallet found"
-
-if [ -z "$PINATA_JWT" ]; then
-  echo -e "${RED}PINATA_JWT not set.${RESET}"
-  echo -e "  ${YELLOW}export PINATA_JWT=eyJhbGc...${RESET}"
-  exit 1
-fi
-success "Pinata JWT found"
+info "Checking native credentials (values are never printed)..."
+$CLI credentials status keyring://walletconnect/project-id
+$CLI credentials status keyring://storage/pinata/default
+success "Credential references checked"
 
 # ── Step 1: Init project ───────────────────────────────────────────────────────
 header "Step 1 — Init project on Sepolia"
@@ -64,8 +52,7 @@ $CLI init \
   --name "demo-app" \
   --registry "$REGISTRY" \
   --rpc "$RPC" \
-  --chain-id "$CHAIN_ID" \
-  --pinata-jwt "$PINATA_JWT"
+  --chain-id "$CHAIN_ID"
 
 success "Project created — .fheenv.json written"
 echo ""
