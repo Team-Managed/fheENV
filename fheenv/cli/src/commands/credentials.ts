@@ -85,7 +85,7 @@ export async function credentialStatus(
 ): Promise<{
   reference?: string;
   source?: string;
-  present?: boolean;
+  present?: boolean | null;
   available?: boolean;
   backend: string;
   reason?: string;
@@ -119,7 +119,7 @@ export async function credentialStatus(
   return {
     reference: options.reference,
     source: parsed.source,
-    present: undefined,
+    present: null,
     backend: `external provider ${parsed.provider}`,
   };
 }

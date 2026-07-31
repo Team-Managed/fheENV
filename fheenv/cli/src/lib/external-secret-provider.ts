@@ -69,6 +69,7 @@ export class ExecutableSecretProvider {
       const stdout: Buffer[] = [];
       const stderr: Buffer[] = [];
       let bytes = 0;
+      let stderrBytes = 0;
       let settled = false;
       const finish = (error?: Error, value?: string) => {
         if (settled) return;
@@ -94,7 +95,10 @@ export class ExecutableSecretProvider {
         stdout.push(chunk);
       });
       child.stderr.on("data", (chunk: Buffer) => {
-        if (Buffer.concat(stderr).length < 8_192) stderr.push(chunk);
+        if (stderrBytes >= 8_192) return;
+        const remaining = 8_192 - stderrBytes;
+        stderr.push(chunk.subarray(0, remaining));
+        stderrBytes += Math.min(chunk.length, remaining);
       });
       child.on("error", (error) =>
         finish(new Error(`SECRET_PROVIDER_START_FAILED: ${error.message}`)),

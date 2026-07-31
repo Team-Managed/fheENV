@@ -81,6 +81,10 @@ validation result. Never paste a credential value into the incident record.
 7. **Evidence capture** — Retain binary digest/signature, provider audit IDs,
    policy diff, approvals, validation, and revocation result.
 
+Use this same procedure for any legacy Lit credential or other delegated
+secret/signing provider, then remove its project/member authorization if it is
+no longer supported.
+
 After any compromise, search CI logs, shell history, crash reports, analytics,
 and tickets for accidental disclosure. If an attacker may have decrypted an
 environment, rotate the environment values themselves and run `fheenv rotate`;

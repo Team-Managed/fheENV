@@ -87,7 +87,9 @@ export function saveWallet(
 
 export function loadWallet(passphrase: string, walletPath = KEYFILE_PATH): `0x${string}` {
   if (!fs.existsSync(walletPath)) {
-    throw new Error("No wallet found. Run `fheenv login` first or set FHEENV_PRIVATE_KEY.");
+    throw new Error(
+      "No development wallet found. Run `fheenv login`; raw-key environment input is development-only.",
+    );
   }
 
   const keyfile = JSON.parse(fs.readFileSync(walletPath, "utf8")) as
