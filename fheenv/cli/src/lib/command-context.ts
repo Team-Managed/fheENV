@@ -13,6 +13,7 @@ import { LocalEncryptedSignerProvider } from "./signers/local-encrypted";
 import { LedgerSignerProvider } from "./signers/ledger";
 import { WalletConnectSignerProvider } from "./signers/walletconnect";
 import { AwsKmsSignerProvider } from "./signers/aws-kms";
+import { ExternalSignerProvider } from "./signers/external";
 import { toFunctionSelector } from "viem";
 import {
   EncryptedWalletConnectStorage,
@@ -152,6 +153,20 @@ export async function createCommandContext(
           maxGas: "5000000",
           maxFeePerGasWei: "500000000000",
         },
+      });
+    } else if (!provider && config.signer.type === "external") {
+      const variable = `FHEENV_EXTERNAL_SIGNER_${config.signer.provider
+        .replace(/-/g, "_")
+        .toUpperCase()}`;
+      const executable = (dependencies.environment ?? process.env)[variable];
+      if (!executable) {
+        throw new Error(`External signer provider ${config.signer.provider} is not configured.`);
+      }
+      provider = new ExternalSignerProvider({
+        executable,
+        expectedAddress: config.signer.expectedAddress as `0x${string}`,
+        securityMode: config.securityMode,
+        environment: dependencies.environment,
       });
     }
     if (!provider) {
