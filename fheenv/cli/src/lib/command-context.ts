@@ -12,6 +12,8 @@ import { assertSignerCapabilities, SignerProvider, SignerSession } from "./signe
 import { LocalEncryptedSignerProvider } from "./signers/local-encrypted";
 import { LedgerSignerProvider } from "./signers/ledger";
 import { WalletConnectSignerProvider } from "./signers/walletconnect";
+import { AwsKmsSignerProvider } from "./signers/aws-kms";
+import { toFunctionSelector } from "viem";
 import {
   EncryptedWalletConnectStorage,
   loadInstallationId,
@@ -130,6 +132,26 @@ export async function createCommandContext(
             installationId: loadInstallationId(),
           }),
         ),
+      });
+    } else if (!provider && config.signer.type === "aws-kms") {
+      provider = new AwsKmsSignerProvider({
+        keyId: config.signer.keyId,
+        policy: {
+          chainIds: [config.chainId],
+          contracts: {
+            [config.registryAddress]: [
+              "createProject(string)",
+              "updateEnvironment(uint256,string,(uint256,uint8,uint8,bytes),(uint256,uint8,uint8,bytes),string,uint256)",
+              "grantAccess(uint256,string,address)",
+              "revokeAccess(uint256,string,address)",
+              "batchGrantAccess(uint256,string,address[])",
+              "removeOwner(uint256,address)",
+            ].map(toFunctionSelector),
+          },
+          maxValueWei: "0",
+          maxGas: "5000000",
+          maxFeePerGasWei: "500000000000",
+        },
       });
     }
     if (!provider) {
