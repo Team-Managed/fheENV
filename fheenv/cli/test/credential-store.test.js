@@ -94,12 +94,14 @@ describe("credential storage", function () {
     const provider = new ExecutableSecretProvider(
       {
         FHEENV_SECRET_PROVIDER_TEST: process.execPath,
-        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([fixture, "ignore-term"]),
+        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([fixture, "descendant-ignore-term"]),
       },
       25,
       25,
     );
+    const startedAt = Date.now();
     await assert.rejects(provider.resolve("test", "storage/default"), /SECRET_PROVIDER_TIMEOUT/);
+    assert.ok(Date.now() - startedAt < 500, "timeout must not wait on descendant-owned pipes");
   });
 
   it("strips control characters from untrusted provider stderr", async function () {

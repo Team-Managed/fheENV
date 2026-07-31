@@ -75,6 +75,7 @@ export class ExecutableSecretProvider {
         env,
         stdio: ["pipe", "pipe", "pipe"],
         windowsHide: true,
+        detached: process.platform !== "win32",
       });
       const stdout: Buffer[] = [];
       const stderr: Buffer[] = [];
@@ -91,13 +92,24 @@ export class ExecutableSecretProvider {
         if (error) reject(error);
         else resolve(value as string);
       };
+      const signalProcessTree = (signal: NodeJS.Signals) => {
+        if (process.platform !== "win32" && child.pid !== undefined) {
+          try {
+            process.kill(-child.pid, signal);
+            return;
+          } catch {
+            // Fall back to the direct process when its process group no longer exists.
+          }
+        }
+        child.kill(signal);
+      };
       const terminate = (error: Error) => {
         if (pendingError || settled) return;
         pendingError = error;
-        child.kill("SIGTERM");
+        signalProcessTree("SIGTERM");
         killTimer = setTimeout(
           () => {
-            if (!settled) child.kill("SIGKILL");
+            if (!settled) signalProcessTree("SIGKILL");
           },
           Math.min(Math.max(1, this.killAfterMs), 10_000),
         );
@@ -122,6 +134,13 @@ export class ExecutableSecretProvider {
       });
       child.on("error", (error) => {
         pendingError = new Error(`SECRET_PROVIDER_START_FAILED: ${error.message}`);
+      });
+      child.on("exit", () => {
+        if (!pendingError || settled) return;
+        child.stdin.destroy();
+        child.stdout.destroy();
+        child.stderr.destroy();
+        settle(pendingError);
       });
       child.on("close", (code) => {
         if (settled) return;

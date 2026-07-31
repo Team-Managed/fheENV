@@ -282,6 +282,16 @@ export async function migrateConfigV1ToV2(
       ? [{ field: "rpcUrl", reference: options.rpcCredentialRef, value: legacy.rpcUrl }]
       : []),
   ];
+  const walletConnectCredentialRef =
+    options.signer.type === "walletconnect" ? options.signer.credentialRef : undefined;
+  if (
+    walletConnectCredentialRef !== undefined &&
+    moves.some(({ reference }) => reference === walletConnectCredentialRef)
+  ) {
+    throw new Error(
+      "WalletConnect, storage, and RPC credentials require distinct destination references.",
+    );
+  }
   const result: MigrationResult = {
     fromVersion: 1,
     toVersion: 2,

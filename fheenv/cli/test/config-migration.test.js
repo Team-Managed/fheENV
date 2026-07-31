@@ -66,6 +66,29 @@ describe("credential-free project config", function () {
     assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")), legacy);
   });
 
+  it("rejects WalletConnect credential collisions before writing any credential", async function () {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migration-collision-"));
+    const configPath = path.join(directory, ".fheenv.json");
+    fs.writeFileSync(configPath, JSON.stringify(legacyConfig("pinata-secret-canary")));
+    let writes = 0;
+    await assert.rejects(
+      migrateConfigV1ToV2(configPath, {
+        ...productionMigration,
+        signer: {
+          ...productionMigration.signer,
+          credentialRef: "keyring://storage/pinata/default",
+        },
+        credentialRef: "keyring://storage/pinata/default",
+        setCredential: async () => {
+          writes += 1;
+        },
+        readCredential: async () => null,
+      }),
+      /require distinct destination references/,
+    );
+    assert.equal(writes, 0);
+  });
+
   it("stores the secret before atomically removing it from config", async function () {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-migrate-"));
     const configPath = path.join(directory, ".fheenv.json");
