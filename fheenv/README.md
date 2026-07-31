@@ -70,37 +70,25 @@ npm link            # makes `fheenv` available globally
 
 ### Authentication
 
-The CLI needs an Ethereum private key to sign transactions and decrypt FHE handles. There are two ways to provide it:
-
-#### Option A — `fheenv login` (interactive / developer use)
-
-```bash
-# Interactive: key is not echoed to the terminal
-fheenv login
-
-# Pipe from an env var: avoids shell history entirely
-echo $PRIVATE_KEY | fheenv login
-```
-
-Prompts for a wallet passphrase and stores a scrypt-derived,
-AES-256-GCM encrypted keyfile at `~/.fheenv/wallet.json` with permissions
-`0600`.
-
-> **⚠ Deprecated:** `fheenv login --key 0x...` is still accepted for backward compatibility but prints a warning — the key is visible in `ps aux` output and written to shell history.
-
-#### Option B — `FHEENV_PRIVATE_KEY` env var (CI/CD)
+Production mode keeps Ethereum signing keys outside fheENV. WalletConnect is
+the default for interactive users; Ledger provides USB hardware signing. AWS
+KMS secp256k1 and the external signer protocol support headless workloads. The
+passphrase-encrypted local signer is retained only for explicit development
+mode.
 
 ```bash
-export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
-node dist/index.js pull --env production
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
+fheenv credentials status
+
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
 ```
 
-The env var takes priority over the keyfile. Use a narrowly scoped wallet in a
-protected CI secret store. External signer/workload-identity support remains a
-production-readiness gate.
-
-> **Never commit credentials.** The current `.fheenv.json` includes the Pinata
-> JWT and must not be committed.
+Secret input is hidden. Use `--stdin` only when deliberately piping a value.
+The native backend is macOS Keychain, Windows Credential Manager, or Linux
+Secret Service. Headless systems can select `env://NAME` or
+`exec://provider/key` explicitly.
 
 ---
 
@@ -110,36 +98,52 @@ Every command (except `login`) reads this file from the current directory. `fhee
 
 ```json
 {
+  "version": 2,
   "projectId": 0,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
-  "pinataJwt": "eyJhbGc...",
-  "deployedAtBlock": 1234567
+  "rpc": { "url": "https://ethereum-sepolia-rpc.publicnode.com" },
+  "deployedAtBlock": 1234567,
+  "securityMode": "production",
+  "signer": {
+    "type": "walletconnect",
+    "credentialRef": "keyring://walletconnect/project-id",
+    "expectedAddress": "0x..."
+  },
+  "storage": {
+    "provider": "pinata",
+    "credentialRef": "keyring://storage/pinata/default"
+  }
 }
 ```
 
-Do not commit this file while it contains `pinataJwt`.
+The v2 file contains public metadata and credential references, not values.
+Migrate legacy configuration with:
+
+```bash
+fheenv migrate credentials \
+  --storage-credential keyring://storage/pinata/default \
+  --dry-run
+```
 
 ---
 
 ### Commands
 
-#### `fheenv login`
-
-Save a private key to the local keyfile.
+#### `fheenv signer`
 
 ```bash
-fheenv login
-fheenv login --migrate
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
+fheenv signer configure ledger --derivation-path "44'/60'/0'/0/0"
+fheenv signer configure aws-kms --key-id <arn> --expected-address 0x...
+fheenv signer configure external --provider turnkey --expected-address 0x...
+fheenv signer status
 ```
 
-| Flag                     | Description                         |
-| ------------------------ | ----------------------------------- |
-| `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
-| `--migrate`              | Encrypt a legacy plaintext keyfile  |
-
-Stores at `~/.fheenv/wallet.json` (permissions `0600`).
+WalletConnect and Ledger prove the selected address before persisting it. AWS
+uses the default AWS SDK credential chain. The external provider executable is
+configured with `FHEENV_EXTERNAL_SIGNER_<PROVIDER>` and must be absolute.
 
 ---
 
@@ -152,18 +156,18 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://ethereum-sepolia-rpc.publicnode.com \
-  --chain-id 11155111 \
-  --pinata-jwt eyJhbGc...
+  --chain-id 11155111
 ```
 
-| Flag                       | Default  | Description                     |
-| -------------------------- | -------- | ------------------------------- |
-| `-n, --name <name>`        | required | Project name (1–64 chars)       |
-| `-r, --registry <address>` | required | fheENVRegistry contract address |
-| `--rpc <url>`              | required | Sepolia RPC endpoint            |
-| `--chain-id <id>`          | required | `11155111` for Sepolia          |
-| `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
-| `--analytics`              | disabled | Opt in to minimal CLI analytics |
+| Flag                         | Default       | Description                     |
+| ---------------------------- | ------------- | ------------------------------- |
+| `-n, --name <name>`          | required      | Project name (1–64 chars)       |
+| `-r, --registry <address>`   | required      | fheENVRegistry contract address |
+| `--rpc <url>`                | required      | Sepolia RPC endpoint            |
+| `--chain-id <id>`            | required      | `11155111` for Sepolia          |
+| `--storage-credential <ref>` | keyring       | Pinata credential reference     |
+| `--signer <type>`            | WalletConnect | Production signer type          |
+| `--analytics`                | disabled      | Opt in to minimal CLI analytics |
 
 Creates `.fheenv.json` in the current directory. Run once per project.
 
@@ -326,8 +330,9 @@ environment, CID, transaction, argument, path, error, and secret-derived data.
 ```bash
 # ── Day 1: Setup ──────────────────────────────────────────────────────────────
 
-# 1. Save your wallet (one-time per machine)
-fheenv login
+# 1. Store credentials in the native keyring
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
 
 # 2. Initialize a project in your repo
 cd my-app
@@ -335,8 +340,7 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://ethereum-sepolia-rpc.publicnode.com \
-  --chain-id 11155111 \
-  --pinata-jwt eyJ...
+  --chain-id 11155111
 
 # 3. Push your secrets (assuming .env exists)
 fheenv push --env production
@@ -360,11 +364,12 @@ fheenv run --env production -- node index.js
 fheenv team remove --member 0xFormerTeammate --env production --file .env
 # → Revokes and rotates. Partial failure exits non-zero with recovery guidance.
 
-# ── CI/CD: no keyfile, no MetaMask ────────────────────────────────────────────
+# ── CI/CD: organization-managed signing ───────────────────────────────────────
 
-# In your CI pipeline (GitHub Actions, etc.):
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv pull --env production
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv run --env production -- npm start
+fheenv signer configure aws-kms \
+  --key-id "$FHEENV_AWS_KMS_KEY_ARN" \
+  --expected-address 0x...
+fheenv run --env production -- npm start
 ```
 
 ---
@@ -398,17 +403,18 @@ npx hardhat run scripts/deploy.ts --network sepolia
 
 Copy `.env.example` to `.env`:
 
-| Variable                       | Used by                 | Description                       |
-| ------------------------------ | ----------------------- | --------------------------------- |
-| `SEPOLIA_RPC_URL`              | Hardhat deploy          | Infura / Alchemy Sepolia endpoint |
-| `PRIVATE_KEY`                  | Hardhat deploy          | Deployer wallet private key       |
-| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend                | Deployed contract address         |
-| `NEXT_PUBLIC_CHAIN_ID`         | Frontend                | `11155111` (Sepolia)              |
-| `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend                | Sepolia RPC endpoint              |
-| `PINATA_JWT`                   | Frontend (server) + CLI | Pinata JWT for IPFS uploads       |
-| `FHEENV_KEY_PASSPHRASE`        | CLI                     | Encrypted wallet unlock value     |
-| `FHEENV_ANALYTICS_KEY`         | CLI                     | Optional analytics project key    |
-| `NEXT_PUBLIC_POSTHOG_KEY`      | Frontend                | Optional anonymous page views     |
+| Variable                       | Used by             | Description                                |
+| ------------------------------ | ------------------- | ------------------------------------------ |
+| `SEPOLIA_RPC_URL`              | Hardhat deploy      | Infura / Alchemy Sepolia endpoint          |
+| `PRIVATE_KEY`                  | Hardhat deploy only | Deployer key; never used by production CLI |
+| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend            | Deployed contract address                  |
+| `NEXT_PUBLIC_CHAIN_ID`         | Frontend            | `11155111` (Sepolia)                       |
+| `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend            | Sepolia RPC endpoint                       |
+| `PINATA_JWT`                   | Frontend server     | Pinata JWT for server uploads              |
+| `FHEENV_KEY_PASSPHRASE`        | Development CLI     | Local encrypted signer unlock              |
+| `FHEENV_EXTERNAL_SIGNER_*`     | Headless CLI        | Absolute external signer executable        |
+| `FHEENV_ANALYTICS_KEY`         | CLI                 | Optional analytics project key             |
+| `NEXT_PUBLIC_POSTHOG_KEY`      | Frontend            | Optional anonymous page views              |
 
 ---
 

@@ -1,61 +1,86 @@
 ---
 title: CI/CD Integration
-description: Use a dedicated wallet to consume encrypted environments in automation
+description: Use workload identity and organization-managed signing in automation
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
 
 # CI/CD Integration
 
-Use a dedicated wallet for automation and grant it only the environment it needs. The current CLI
-uses a raw `FHEENV_PRIVATE_KEY`, so store it in your CI provider's encrypted secret store and scope
-it to the smallest possible job.
+Production automation should use AWS KMS or a protocol-v1 external signer. Long-lived raw Ethereum
+keys are not accepted by production mode.
+
+## AWS KMS with workload identity
+
+Create an `ECC_SECG_P256K1` KMS key, derive and record its Ethereum address, then grant that address
+only the required fheENV environment access:
 
 ```bash
-fheenv team add --member 0xCI_WALLET --env production
+fheenv team add --member 0xKMS_ADDRESS --env production
+fheenv signer configure aws-kms \
+  --key-id arn:aws:kms:REGION:ACCOUNT:key/ID \
+  --expected-address 0xKMS_ADDRESS
 ```
 
+Use GitHub OIDC or the equivalent CI workload identity. The AWS SDK default credential chain
+consumes the short-lived role credentials:
+
 ```yaml title=".github/workflows/deploy.yml"
-name: Deploy
-on:
-  push:
-    branches: [main]
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
-      - name: Install fheENV
-        run: curl -fsSL https://raw.githubusercontent.com/Team-Managed/fheENV/main/install.sh | bash
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.FHEENV_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Start application
         env:
-          FHEENV_PRIVATE_KEY: ${{ secrets.FHEENV_PRIVATE_KEY }}
+          FHEENV_PINATA_JWT: ${{ secrets.FHEENV_PINATA_JWT }}
         run: fheenv run --env production -- npm start
 ```
 
-<Callout type="warn">
-  This release does not provide expiring grants, scheduled rotation, a Rotator role, or Lit/OIDC
-  signing. Rotate the environment manually after removing a CI wallet or whenever its key may be
-  exposed.
-</Callout>
+The local KMS policy permits only the configured chain, registry, known function selectors, zero
+native value, and bounded gas/fees before calling KMS. IAM and organization controls remain the
+outer authorization boundary.
 
-## Rotation
+## External custody systems
 
-When a CI wallet no longer needs access, remove it from a trusted machine that has the source
-environment file. Removal rotates by default:
+Fireblocks, Turnkey, MPC services, Azure/Google/Vault adapters, and internal signers can implement
+the external signer protocol:
 
 ```bash
-fheenv team remove --member 0xCI_WALLET --env production --file .env
+export FHEENV_EXTERNAL_SIGNER_CUSTODY=/opt/fheenv/custody-signer
+fheenv signer configure external \
+  --provider custody \
+  --expected-address 0x...
 ```
 
-The command exits non-zero if revocation succeeds but rotation or member regrant fails. Follow the
-printed recovery command. `--no-rotate` is an explicit security exception and leaves the removed
-wallet able to decrypt the current ciphertext handles.
+The wrapper executable receives one bounded JSON request on stdin and returns one JSON line on
+stdout. Keep provider tokens inside its workload identity or an allowlisted environment. Payloads
+and credentials must never be command arguments.
 
-The on-chain dashboard provides public evidence of project, ownership, environment, and membership
-changes. It does not read local CLI activity or replace your organization’s logging, review,
-retention, and incident-response controls.
+## Non-signing credentials
 
-Scheduled unattended rotation is intentionally not included. A production worker must use
-organization-managed signing or workload identity rather than a long-lived raw repository secret.
+Headless jobs may use explicit `env://VARIABLE` references for Pinata or credential-bearing RPC
+endpoints. Native keyrings fail closed when no desktop Secret Service exists; fheENV does not
+silently fall back to environment variables.
+
+<Callout type="warn">
+  Grants do not expire automatically. Remove a retired worker and rotate with the source environment
+  file. `--no-rotate` leaves its current FHE handles decryptable.
+</Callout>
+
+```bash
+fheenv team remove --member 0xOLD_WORKER --env production --file .env
+```
+
+If revocation succeeds but rotation/regrant fails, the command exits non-zero. Run the printed
+idempotent recovery command. Retain the on-chain receipt, provider audit entry, CLI audit export,
+review approval, and validation result under your organization's retention policy.
