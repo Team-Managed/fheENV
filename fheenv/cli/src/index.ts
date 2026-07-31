@@ -13,6 +13,7 @@ import { rotateCommand } from "./commands/rotate";
 import { updateCommand } from "./commands/update";
 import { exportAuditCommand } from "./commands/export-audit";
 import { analyticsCommand } from "./commands/analytics";
+import { migrateCredentialsCommand } from "./commands/migrate-credentials";
 
 const program = new Command();
 
@@ -237,5 +238,31 @@ const analytics = program.command("analytics").description("Manage anonymous CLI
 analytics.command("enable").action(() => analyticsCommand("enable"));
 analytics.command("disable").action(() => analyticsCommand("disable"));
 analytics.command("status").action(() => analyticsCommand("status"));
+
+const migrate = program.command("migrate").description("Migrate fheENV project data");
+migrate
+  .command("credentials")
+  .description("Move credentials out of a version-1 project config")
+  .requiredOption(
+    "--storage-credential <reference>",
+    "Writable keyring reference for the Pinata credential",
+  )
+  .option(
+    "--rpc-credential <reference>",
+    "Writable keyring reference for a credential-bearing RPC URL",
+  )
+  .option("--dry-run", "Validate and print the value-free migration plan")
+  .action(async (opts) => {
+    try {
+      await migrateCredentialsCommand({
+        credentialRef: opts.storageCredential,
+        rpcCredentialRef: opts.rpcCredential,
+        dryRun: Boolean(opts.dryRun),
+      });
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
 
 program.parse(process.argv);
