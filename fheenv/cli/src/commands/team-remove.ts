@@ -90,7 +90,12 @@ export async function teamRemoveCommand(opts: TeamRemoveOptions): Promise<void> 
               chalk.yellow(`Access revoked for ${opts.member} from env "${envName}"`),
             );
           },
-          rotate: (options) => rotateCommand({ ...options, trigger: "team_remove" }),
+          rotate: async (options) => {
+            // Release USB/WalletConnect resources before the rotation command
+            // creates its own context. close() is idempotent.
+            await context.close();
+            return rotateCommand({ ...options, trigger: "team_remove" });
+          },
         }),
     );
 

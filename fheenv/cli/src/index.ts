@@ -29,16 +29,11 @@ program
 // ── fheenv login ──────────────────────────────────────────────────────────────
 program
   .command("login")
-  .description("Save your Ethereum private key to ~/.fheenv/wallet.json")
-  .option(
-    "-k, --key <privateKey>",
-    "(deprecated) inline private key — visible in shell history. Use stdin or FHEENV_PRIVATE_KEY instead",
-  )
+  .description("Configure the development-only encrypted local signer")
   .option("--migrate", "Encrypt an existing legacy plaintext wallet")
   .action(async (opts) => {
     try {
       await loginCommand({
-        key: opts.key as string | undefined,
         migrate: Boolean(opts.migrate),
       });
     } catch (err) {
