@@ -15,6 +15,8 @@ import { exportAuditCommand } from "./commands/export-audit";
 import { analyticsCommand } from "./commands/analytics";
 import { migrateCredentialsCommand } from "./commands/migrate-credentials";
 import { SignerConfig } from "./lib/config-v2";
+import { credentialStatus, deleteCredential, setCredential } from "./commands/credentials";
+import { configureSigner, signerStatus } from "./commands/signer";
 
 const program = new Command();
 
@@ -104,15 +106,19 @@ program
   .option(
     "--storage-credential <reference>",
     "Pinata credential reference",
-    "env://FHEENV_PINATA_JWT",
+    "keyring://storage/pinata/default",
   )
   .option(
     "--signer <type>",
     "walletconnect, ledger, aws-kms, external, or local-encrypted",
-    "local-encrypted",
+    "walletconnect",
   )
-  .option("--security-mode <mode>", "production or development", "development")
-  .option("--signer-credential <reference>", "WalletConnect project ID credential reference")
+  .option("--security-mode <mode>", "production or development", "production")
+  .option(
+    "--signer-credential <reference>",
+    "WalletConnect project ID credential reference",
+    "keyring://walletconnect/project-id",
+  )
   .option("--expected-address <address>", "Expected signer address")
   .option("--ledger-path <path>", "Ledger derivation path")
   .option("--kms-key-id <id>", "AWS KMS key ID or ARN")
@@ -322,5 +328,81 @@ migrate
       process.exit(1);
     }
   });
+
+const credentials = program.command("credentials").description("Manage credential references");
+credentials
+  .command("set")
+  .argument("<reference>", "Writable keyring:// credential reference")
+  .option("--stdin", "Read the credential from stdin explicitly")
+  .action(async (reference, opts) => {
+    try {
+      console.log(JSON.stringify(await setCredential({ reference, stdin: Boolean(opts.stdin) })));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+credentials
+  .command("status")
+  .argument("[reference]", "Credential reference to inspect")
+  .action(async (reference) => {
+    try {
+      console.log(JSON.stringify(await credentialStatus({ reference }), null, 2));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+credentials
+  .command("delete")
+  .argument("<reference>", "Writable keyring:// credential reference")
+  .option("--yes", "Confirm deletion in non-interactive use")
+  .action(async (reference, opts) => {
+    try {
+      console.log(JSON.stringify(await deleteCredential({ reference, yes: Boolean(opts.yes) })));
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+
+const signer = program.command("signer").description("Configure the project signer");
+signer
+  .command("configure")
+  .argument("<type>", "walletconnect, ledger, aws-kms, external, or local-encrypted")
+  .option("--credential <reference>", "WalletConnect project ID credential reference")
+  .option("--derivation-path <path>", "Ledger derivation path")
+  .option("--key-id <id>", "AWS KMS key ID or ARN")
+  .option("--provider <name>", "External signer provider name")
+  .option("--expected-address <address>", "Expected signer address")
+  .action(async (type, opts) => {
+    try {
+      console.log(
+        JSON.stringify(
+          await configureSigner({
+            type,
+            credential: opts.credential,
+            derivationPath: opts.derivationPath,
+            keyId: opts.keyId,
+            provider: opts.provider,
+            expectedAddress: opts.expectedAddress,
+          }),
+          null,
+          2,
+        ),
+      );
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exitCode = 1;
+    }
+  });
+signer.command("status").action(() => {
+  try {
+    console.log(JSON.stringify(signerStatus(), null, 2));
+  } catch (err) {
+    console.error(chalk.red(`Error: ${(err as Error).message}`));
+    process.exitCode = 1;
+  }
+});
 
 program.parse(process.argv);
