@@ -22,7 +22,9 @@ allowBuilds:
   core-js: false
   esbuild: true
   keccak: true
+  node-hid: true
   secp256k1: true
   sharp: false
   unrs-resolver: true
+  usb: true
   utf-8-validate: true

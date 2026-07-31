@@ -10,6 +10,7 @@ import { errorWithCause } from "./errors";
 import { SensitiveValueRegistry, sanitizeError } from "./redaction";
 import { assertSignerCapabilities, SignerProvider, SignerSession } from "./signer-types";
 import { LocalEncryptedSignerProvider } from "./signers/local-encrypted";
+import { LedgerSignerProvider } from "./signers/ledger";
 import { WalletConnectSignerProvider } from "./signers/walletconnect";
 import {
   EncryptedWalletConnectStorage,
@@ -105,6 +106,10 @@ export async function createCommandContext(
       provider = new LocalEncryptedSignerProvider({
         securityMode: config.securityMode,
         environment: dependencies.environment,
+      });
+    } else if (!provider && config.signer.type === "ledger") {
+      provider = new LedgerSignerProvider({
+        derivationPath: config.signer.derivationPath,
       });
     } else if (!provider && config.signer.type === "walletconnect") {
       const projectId = await resolveCredential(
