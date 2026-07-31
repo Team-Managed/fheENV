@@ -271,7 +271,11 @@ export class ExternalSignerProvider implements SignerProvider {
           { transaction },
           keccak256(unsigned),
         );
-        return serializer(transaction, parseSignature(signature));
+        const parsed = parseSignature(signature);
+        return serializer(transaction, {
+          ...parsed,
+          v: BigInt(parsed.yParity + 27),
+        });
       },
     });
     const walletClient = createWalletClient({

@@ -138,7 +138,13 @@ export function completeKmsSignature(input: {
   ) {
     throw new Error("AWS_KMS_ADDRESS_MISMATCH: KMS key does not match the configured address.");
   }
-  return { r: toPaddedHex(r), s: toPaddedHex(s), yParity, recoveredAddress };
+  return {
+    r: toPaddedHex(r),
+    s: toPaddedHex(s),
+    yParity,
+    v: BigInt(yParity + 27),
+    recoveredAddress,
+  };
 }
 
 class AwsSdkKmsBoundary implements KmsBoundary {

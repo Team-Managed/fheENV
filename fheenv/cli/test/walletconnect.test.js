@@ -59,6 +59,30 @@ describe("WalletConnect signer", function () {
     assert.equal(disconnected, 1);
   });
 
+  it("rejects a wallet account different from the configured address", async function () {
+    const provider = new WalletConnectSignerProvider({
+      projectId: "project-id",
+      createProvider: async () => ({
+        accounts: ["0x2222222222222222222222222222222222222222"],
+        chainId: 11155111,
+        on() {},
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        request: async () => undefined,
+      }),
+      renderQr: () => undefined,
+      writeOutput: () => undefined,
+    });
+    await assert.rejects(
+      provider.connect({
+        chain: { id: 11155111 },
+        rpcUrl: "https://rpc.example",
+        expectedAddress: "0x1111111111111111111111111111111111111111",
+      }),
+      /WALLETCONNECT_WRONG_ACCOUNT/,
+    );
+  });
+
   it("times out pairing and disconnects the provider", async function () {
     let disconnected = 0;
     const provider = new WalletConnectSignerProvider({
@@ -177,5 +201,53 @@ describe("WalletConnect signer", function () {
       }),
       /WALLETCONNECT_DISCONNECTED/,
     );
+  });
+
+  it("routes transactions and EIP-712 signatures through the paired wallet", async function () {
+    const methods = [];
+    const provider = new WalletConnectSignerProvider({
+      projectId: "project-id",
+      createProvider: async () => ({
+        accounts: ["0x1111111111111111111111111111111111111111"],
+        chainId: 11155111,
+        on() {},
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        request: async ({ method }) => {
+          methods.push(method);
+          if (method === "eth_sendTransaction") return `0x${"22".repeat(32)}`;
+          if (method === "eth_signTypedData_v4") return `0x${"33".repeat(65)}`;
+          if (method === "eth_chainId") return "0xaa36a7";
+          if (method === "eth_getTransactionCount") return "0x0";
+          if (method === "eth_estimateGas") return "0x5208";
+          if (method === "eth_gasPrice") return "0x1";
+          return "0x0";
+        },
+      }),
+      renderQr: () => undefined,
+      writeOutput: () => undefined,
+    });
+    const session = await provider.connect({
+      chain: {
+        id: 11155111,
+        name: "Sepolia",
+        nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+        rpcUrls: { default: { http: ["https://rpc.example"] } },
+      },
+      rpcUrl: "https://rpc.example",
+    });
+    await session.walletClient.sendTransaction({
+      to: "0x2222222222222222222222222222222222222222",
+      value: 0n,
+    });
+    await session.walletClient.signTypedData({
+      domain: { name: "fheENV", version: "1", chainId: 11155111 },
+      types: { Proof: [{ name: "projectId", type: "uint256" }] },
+      primaryType: "Proof",
+      message: { projectId: 1n },
+    });
+    assert.equal(methods.includes("eth_sendTransaction"), true);
+    assert.equal(methods.includes("eth_signTypedData_v4"), true);
+    await session.close();
   });
 });

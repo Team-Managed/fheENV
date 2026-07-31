@@ -67,6 +67,7 @@ function canonicalSignature(signature: LedgerSignature): Signature {
     r: pad(signature.r, { size: 32 }),
     s: pad(signature.s, { size: 32 }),
     yParity,
+    v: BigInt(yParity + 27),
   };
 }
 
