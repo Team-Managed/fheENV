@@ -9,13 +9,23 @@ process.stdin.on("data", (chunk) => {
   input += chunk;
 });
 process.stdin.on("end", () => {
-  if (process.argv[2] === "ignore-term" || process.argv[2] === "descendant-ignore-term") {
-    if (process.argv[2] === "descendant-ignore-term") {
-      spawn(process.execPath, ["-e", "setInterval(() => undefined, 1000)"], {
-        stdio: "inherit",
-      });
+  if (
+    process.argv[2] === "ignore-term" ||
+    process.argv[2] === "descendant-ignore-term" ||
+    process.argv[2] === "parent-exits-descendant-ignores"
+  ) {
+    if (
+      process.argv[2] === "descendant-ignore-term" ||
+      process.argv[2] === "parent-exits-descendant-ignores"
+    ) {
+      const script =
+        "if(process.argv[1])require('fs').writeFileSync(process.argv[1],String(process.pid));" +
+        "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)";
+      spawn(process.execPath, ["-e", script, process.argv[3] ?? ""], { stdio: "inherit" });
     }
-    process.on("SIGTERM", () => undefined);
+    if (process.argv[2] !== "parent-exits-descendant-ignores") {
+      process.on("SIGTERM", () => undefined);
+    }
     globalThis.setInterval(() => undefined, 1_000);
     return;
   }

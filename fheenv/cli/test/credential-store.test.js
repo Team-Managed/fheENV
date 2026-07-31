@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
 const { SensitiveValueRegistry } = require("../src/lib/redaction");
 const {
   NativeCredentialStore,
@@ -102,6 +104,37 @@ describe("credential storage", function () {
     const startedAt = Date.now();
     await assert.rejects(provider.resolve("test", "storage/default"), /SECRET_PROVIDER_TIMEOUT/);
     assert.ok(Date.now() - startedAt < 500, "timeout must not wait on descendant-owned pipes");
+  });
+
+  it("keeps SIGKILL escalation active after the direct child exits", async function () {
+    const fixture = path.resolve("cli/test/fixtures/external-secret-fixture.js");
+    const pidPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), "fheenv-secret-tree-")),
+      "descendant.pid",
+    );
+    const provider = new ExecutableSecretProvider(
+      {
+        FHEENV_SECRET_PROVIDER_TEST: process.execPath,
+        FHEENV_SECRET_PROVIDER_TEST_ARGS: JSON.stringify([
+          fixture,
+          "parent-exits-descendant-ignores",
+          pidPath,
+        ]),
+      },
+      250,
+      100,
+    );
+    await assert.rejects(provider.resolve("test", "storage/default"), /SECRET_PROVIDER_TIMEOUT/);
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 200));
+    const descendantPid = Number(fs.readFileSync(pidPath, "utf8"));
+    let descendantAlive = true;
+    try {
+      process.kill(descendantPid, 0);
+    } catch {
+      descendantAlive = false;
+    }
+    if (descendantAlive) process.kill(descendantPid, "SIGKILL");
+    assert.equal(descendantAlive, false, "SIGKILL must terminate descendants after parent exit");
   });
 
   it("strips control characters from untrusted provider stderr", async function () {

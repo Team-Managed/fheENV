@@ -88,11 +88,20 @@ export class ExecutableSecretProvider {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (killTimer) clearTimeout(killTimer);
+        if (killTimer && pendingError === undefined) clearTimeout(killTimer);
         if (error) reject(error);
         else resolve(value as string);
       };
       const signalProcessTree = (signal: NodeJS.Signals) => {
+        if (process.platform === "win32" && child.pid !== undefined) {
+          const taskkill = spawn(
+            "taskkill",
+            ["/pid", String(child.pid), "/T", ...(signal === "SIGKILL" ? ["/F"] : [])],
+            { shell: false, stdio: "ignore", windowsHide: true },
+          );
+          taskkill.on("error", () => child.kill(signal));
+          return;
+        }
         if (process.platform !== "win32" && child.pid !== undefined) {
           try {
             process.kill(-child.pid, signal);
@@ -109,7 +118,7 @@ export class ExecutableSecretProvider {
         signalProcessTree("SIGTERM");
         killTimer = setTimeout(
           () => {
-            if (!settled) signalProcessTree("SIGKILL");
+            signalProcessTree("SIGKILL");
           },
           Math.min(Math.max(1, this.killAfterMs), 10_000),
         );
