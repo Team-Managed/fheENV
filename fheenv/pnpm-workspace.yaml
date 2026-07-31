@@ -17,6 +17,7 @@ shamefullyHoist: true
 # pnpm v11: allowBuilds replaces onlyBuiltDependencies.
 allowBuilds:
   "@fhenixprotocol/cofhe-contracts": true
+  "@reown/appkit": false
   bufferutil: true
   core-js: false
   esbuild: true
