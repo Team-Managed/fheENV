@@ -31,10 +31,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable                       | Description                                        |
 | ------------------------------ | -------------------------------------------------- |
-| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Deployed fheENVRegistry contract address           |
-| `NEXT_PUBLIC_CHAIN_ID`         | Chain ID (`11155111` for Sepolia)                  |
-| `NEXT_PUBLIC_SEPOLIA_RPC`      | Sepolia RPC endpoint                               |
-| `PINATA_JWT`                   | Server-side Pinata JWT (used by `/api/ipfs` route) |
+| `NEXT_PUBLIC_REGISTRY_ADDRESS`     | Deployed fheENVRegistry contract address           |
+| `NEXT_PUBLIC_CHAIN_ID`             | Chain ID (`11155111` for Sepolia)                  |
+| `NEXT_PUBLIC_SEPOLIA_RPC`          | Sepolia RPC endpoint                               |
+| `NEXT_PUBLIC_INDEXER_GRAPHQL_URL`  | (Optional) Ponder GraphQL URL (e.g. `http://localhost:42069`) |
+| `PINATA_JWT`                       | Server-side Pinata JWT (used by `/api/ipfs` route) |
 
 > `PINATA_JWT` is **server-side only** — it's used by the API route at `app/api/ipfs/route.ts` and never exposed to the browser.
 
