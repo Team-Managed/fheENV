@@ -8,12 +8,16 @@ async function main() {
 
   const Factory = await ethers.getContractFactory("fheENVRegistry");
   const registry = await Factory.deploy();
-  await registry.waitForDeployment();
+  const deploymentTx = registry.deploymentTransaction();
+  const receipt = deploymentTx ? await deploymentTx.wait() : null;
   const address = await registry.getAddress();
 
   console.log("\nfheENVRegistry deployed to:", address);
   console.log("\n--- Add to your .env ---");
   console.log(`NEXT_PUBLIC_REGISTRY_ADDRESS=${address}`);
+  if (receipt?.blockNumber) {
+    console.log(`REGISTRY_START_BLOCK=${receipt.blockNumber}`);
+  }
 }
 
 main().catch((e) => {

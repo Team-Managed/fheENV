@@ -8,6 +8,9 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "indexer:dev": "pnpm --filter indexer dev",
+    "indexer:start": "pnpm --filter indexer start",
+    "indexer:codegen": "pnpm --filter indexer codegen",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -32,7 +35,7 @@
   "devDependencies": {
     "@cofhe/hardhat-plugin": "^0.5.2",
     "@cofhe/mock-contracts": "^0.5.2",
-    "@cofhe/sdk": "^0.5.2",
+    "@cofhe/sdk": "^0.6.1",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
