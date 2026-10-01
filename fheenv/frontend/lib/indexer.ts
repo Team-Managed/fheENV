@@ -1,11 +1,7 @@
 import type { Hex } from "viem";
 
 export type EventName =
-  | "ProjectCreated"
-  | "EnvironmentUpdated"
-  | "AccessGranted"
-  | "AccessRevoked"
-  | "OwnerAdded";
+  "ProjectCreated" | "EnvironmentUpdated" | "AccessGranted" | "AccessRevoked" | "OwnerAdded";
 
 export interface AuditEntry {
   eventName: EventName;
