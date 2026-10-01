@@ -4,31 +4,15 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { decodeEventLog, type Hex } from "viem";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/lib/contracts";
+import {
+  fetchAuditEventsFromIndexer,
+  type AuditEntry,
+  type EventName,
+  EVENT_STYLES,
+  EVENT_TYPES,
+} from "@/lib/indexer";
 
 const BLOCKSCOUT_API = "https://eth-sepolia.blockscout.com/api/v2";
-
-type EventName =
-  "ProjectCreated" | "EnvironmentUpdated" | "AccessGranted" | "AccessRevoked" | "OwnerAdded";
-
-const EVENT_STYLES: Record<EventName, { label: string; color: string; dot: string }> = {
-  ProjectCreated: { label: "Project Created", color: "text-brand-blue", dot: "bg-brand-blue" },
-  EnvironmentUpdated: {
-    label: "Key Rotated",
-    color: "text-indigo-400",
-    dot: "bg-indigo-400",
-  },
-  AccessGranted: { label: "Access Granted", color: "text-green-400", dot: "bg-green-400" },
-  AccessRevoked: { label: "Access Revoked", color: "text-red-400", dot: "bg-red-400" },
-  OwnerAdded: { label: "Owner Added", color: "text-cyan-400", dot: "bg-cyan-400" },
-};
-
-const EVENT_TYPES: Record<EventName, string> = {
-  ProjectCreated: "project_created",
-  EnvironmentUpdated: "rotation",
-  AccessGranted: "access_granted",
-  AccessRevoked: "access_revoked",
-  OwnerAdded: "owner_added",
-};
 
 interface BlockscoutLog {
   block_number: number;
@@ -46,23 +30,6 @@ interface BlockscoutResponse {
 
 interface BlockscoutTransaction {
   from?: { hash?: string } | string;
-}
-
-interface AuditEntry {
-  eventName: EventName;
-  label: string;
-  color: string;
-  dot: string;
-  blockNumber: number;
-  timestamp: string;
-  transactionHash: Hex;
-  logIndex: number;
-  actor: string;
-  target: string;
-  environment: string;
-  newCid: string;
-  version: string;
-  expiresAt: string;
 }
 
 type Props = { projectId: bigint };
@@ -178,29 +145,56 @@ export function AuditLog({ projectId }: Props) {
       setError(null);
 
       try {
-        const entries = (await fetchRegistryLogs(controller.signal))
-          .map((log) => decodeAuditEntry(log, projectId))
-          .filter((entry): entry is AuditEntry => entry !== null)
-          .sort(
-            (left, right) => right.blockNumber - left.blockNumber || right.logIndex - left.logIndex,
+        const indexerUrl = process.env.NEXT_PUBLIC_INDEXER_GRAPHQL_URL;
+        let resolvedEntries: AuditEntry[] | null = null;
+
+        if (indexerUrl) {
+          try {
+            resolvedEntries = await fetchAuditEventsFromIndexer(
+              projectId,
+              indexerUrl,
+              controller.signal,
+            );
+          } catch (indexerError: unknown) {
+            if (!controller.signal.aborted) {
+              console.warn(
+                "Ponder indexer query failed, falling back to Blockscout:",
+                indexerError instanceof Error ? indexerError.message : indexerError,
+              );
+            }
+            resolvedEntries = null;
+          }
+        }
+
+        if (!resolvedEntries) {
+          const rawLogs = await fetchRegistryLogs(controller.signal);
+          const entries = rawLogs
+            .map((log) => decodeAuditEntry(log, projectId))
+            .filter((entry): entry is AuditEntry => entry !== null)
+            .sort(
+              (left, right) =>
+                right.blockNumber - left.blockNumber || right.logIndex - left.logIndex,
+            );
+          const actors = await Promise.all(
+            entries.map(async (entry) => ({
+              transactionHash: entry.transactionHash,
+              actor:
+                entry.actor ||
+                (await fetchTransactionActor(entry.transactionHash, controller.signal)),
+            })),
           );
-        const actors = await Promise.all(
-          entries.map(async (entry) => ({
-            transactionHash: entry.transactionHash,
-            actor:
-              entry.actor ||
-              (await fetchTransactionActor(entry.transactionHash, controller.signal)),
-          })),
-        );
-        const actorsByTransaction = new Map(
-          actors.map((entry) => [entry.transactionHash, entry.actor]),
-        );
-        setLogs(
-          entries.map((entry) => ({
+          const actorsByTransaction = new Map(
+            actors.map((entry) => [entry.transactionHash, entry.actor]),
+          );
+          resolvedEntries = entries.map((entry) => ({
             ...entry,
             actor: actorsByTransaction.get(entry.transactionHash) ?? entry.actor,
-          })),
-        );
+          }));
+        }
+
+        if (!controller.signal.aborted) {
+          setLogs(resolvedEntries);
+        }
       } catch (caught: unknown) {
         if (!controller.signal.aborted) {
           setError(caught instanceof Error ? caught.message : "Could not load audit events.");
