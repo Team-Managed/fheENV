@@ -1,0 +1,21 @@
+{
+  "name": "indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ponder dev",
+    "start": "ponder start",
+    "codegen": "ponder codegen",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "ponder": "^0.17.12",
+    "viem": "^2.55.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}
