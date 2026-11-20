@@ -1,0 +1,28 @@
+# fheENV
+
+> Zero-trust secrets management powered by Fully Homomorphic Encryption. Your .env, encrypted. Not even us.
+
+## Docs
+
+- [Introduction](https://www.fheenv.com/docs): Zero-trust secrets management powered by Fully Homomorphic Encryption
+- [Getting Started](https://www.fheenv.com/docs/getting-started): Install fheENV and push your first secret in under 2 minutes
+- [Installation](https://www.fheenv.com/docs/cli/install): Install the fheENV CLI on macOS, Linux, or Windows
+- [CLI Commands](https://www.fheenv.com/docs/cli/commands): Secure credential, signer, project, and environment workflows
+- [CI/CD Integration](https://www.fheenv.com/docs/cli/ci-cd): Use workload identity and organization-managed signing in automation
+- [Dashboard Overview](https://www.fheenv.com/docs/dashboard/overview): Create projects and inspect public on-chain evidence
+
+## Architecture
+
+- [Architecture Overview](https://www.fheenv.com/docs/architecture/overview): Technical deep-dive into how fheENV works end-to-end
+- [Smart Contract](https://www.fheenv.com/docs/architecture/smart-contract): UUPS registry, authorization, FHE storage, and deployment boundary
+- [Encryption Flow](https://www.fheenv.com/docs/architecture/encryption-flow): Step-by-step walkthrough of the cryptographic operations in fheENV
+- [Security Model](https://www.fheenv.com/docs/architecture/security-model): Threat model, custody boundaries, and operational limits
+
+## Resources
+
+- [Resources](https://fheenv.com/resources/)
+
+## Optional
+
+- [Contributing](https://www.fheenv.com/docs/contributing): How to contribute to fheENV
+- [Source code](https://github.com/Team-Managed/fheENV)
