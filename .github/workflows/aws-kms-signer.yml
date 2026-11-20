@@ -1,0 +1,38 @@
+name: AWS KMS signer integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  kms:
+    name: Sign and verify with AWS KMS
+    runs-on: ubuntu-latest
+    environment: kms-integration
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: fheenv/pnpm-lock.yaml
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_KMS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Install dependencies
+        working-directory: fheenv
+        run: pnpm install --frozen-lockfile
+      - name: Sign a zero-value transaction without broadcasting
+        working-directory: fheenv
+        env:
+          FHEENV_AWS_KMS_TEST: "1"
+          FHEENV_AWS_KMS_KEY_ARN: ${{ vars.AWS_KMS_TEST_KEY_ARN }}
+          FHEENV_AWS_KMS_EXPECTED_ADDRESS: ${{ vars.AWS_KMS_EXPECTED_ADDRESS }}
+        run: pnpm run test:cli:aws-kms-integration

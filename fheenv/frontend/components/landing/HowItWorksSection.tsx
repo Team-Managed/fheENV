@@ -234,17 +234,16 @@ export function HowItWorksSection({
               </div>
             </StepCard>
 
-            {/* Step 2: Login */}
+            {/* Step 2: Credentials */}
             <StepCard
               num="02"
               icon={<KeyRound className="size-4 text-brand-sand" />}
-              title="Save your wallet"
-              description="Enter your key in a hidden prompt. fheENV saves it locally with mode 0600."
+              title="Store credentials"
+              description="Use your native OS credential store. Your wallet keeps the signing key."
             >
-              <CodeBlock code="fheenv login" />
+              <CodeBlock code="fheenv credentials set keyring://walletconnect/project-id" />
               <div className="mt-2 font-mono text-[10px] text-slate-500 flex items-center gap-2">
-                <span className="text-green-400">✓</span> Saved to ~/.fheenv/wallet.json
-                (permissions: 0600)
+                <span className="text-green-400">✓</span> Saved to the native credential store
               </div>
             </StepCard>
 
@@ -256,7 +255,7 @@ export function HowItWorksSection({
               description="Create a project on-chain and write its public config to .fheenv.json."
             >
               <CodeBlock
-                code={`cd my-app\nfheenv init \\\n  --name "my-app" \\\n  --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \\\n  --rpc https://sepolia.infura.io/v3/YOUR_KEY \\\n  --chain-id 11155111 \\\n  --pinata-jwt eyJ...`}
+                code={`cd my-app\nfheenv init \\\n  --name "my-app" \\\n  --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \\\n  --rpc https://ethereum-sepolia-rpc.publicnode.com \\\n  --chain-id 11155111`}
               />
             </StepCard>
 

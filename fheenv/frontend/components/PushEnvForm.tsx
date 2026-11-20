@@ -47,26 +47,26 @@ export function PushEnvForm({ projectId, envName }: Props) {
 
       addLog("⚙️  Connecting to CoFHE...");
       const { cofheClient, Encryptable } = await import("@/lib/cofhe");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await cofheClient.connect(publicClient as any, walletClient as any);
+      await cofheClient.connect(publicClient, walletClient);
 
       addLog("🔐 FHE-encrypting AES key (2x euint128)...");
       const [keyHigh, keyLow] = splitAesKeyToUint128(aesKey);
-      const [encHigh, encLow] = (await cofheClient
+      const [encHigh, encLow] = await cofheClient
         .encryptInputs([Encryptable.uint128(keyHigh), Encryptable.uint128(keyLow)])
         .onStep((step, ctx) => {
           if (ctx?.isStart) addLog(`   ⏳ ${step}...`);
           if (ctx?.isEnd) addLog(`   ✓ ${step} (${ctx.duration}ms)`);
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .execute()) as any;
+        .execute();
+      const inKeyHigh = { ...encHigh, signature: encHigh.signature as `0x${string}` };
+      const inKeyLow = { ...encLow, signature: encLow.signature as `0x${string}` };
 
       addLog("📝 Submitting to blockchain...");
       const { request } = await publicClient.simulateContract({
         address: REGISTRY_ADDRESS,
         abi: REGISTRY_ABI,
         functionName: "updateEnvironment",
-        args: [projectId, envName, encHigh, encLow, cid, currentVersion],
+        args: [projectId, envName, inKeyHigh, inKeyLow, cid, currentVersion],
         account: address,
       });
       const hash = await walletClient.writeContract(request);

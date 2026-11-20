@@ -38,17 +38,16 @@ fheenv --version
 
 <Steps>
 <Step>
-### Authenticate
+### Store credentials
 
 ```bash
-fheenv login
-# Enter private key: 0x...
-# Enter a passphrase to encrypt the local keyfile
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
 ```
 
-<Callout type="warn">
-Never pass your key as a CLI flag in production. Use the interactive prompt for developer machines,
-or a tightly scoped platform secret for automation.
+<Callout type="info">
+  Values are entered in a hidden prompt and stored in macOS Keychain, Windows Credential Manager, or
+  Linux Secret Service. WalletConnect keeps the Ethereum signing key in your wallet.
 </Callout>
 </Step>
 
@@ -57,7 +56,7 @@ or a tightly scoped platform secret for automation.
 
 ```bash
 cd my-app
-fheenv init --name "my-app" --pinata-jwt YOUR_PINATA_JWT
+fheenv init --name "my-app"
 ```
 
 This creates `.fheenv.json` in your directory. Commit this file — it contains no secrets.

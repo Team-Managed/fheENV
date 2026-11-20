@@ -1,6 +1,6 @@
 ---
 title: Security Model
-description: Threat model, implemented guarantees, and operational limits of fheENV
+description: Threat model, custody boundaries, and operational limits
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
@@ -8,59 +8,78 @@ import { Callout } from "fumadocs-ui/components/callout";
 # Security Model
 
 <Callout type="warn">
-  Found a vulnerability? Do not open a public issue. See our [Security
-  Policy](https://github.com/Team-Managed/fheENV/blob/main/SECURITY.md) for responsible disclosure.
+  Report vulnerabilities through GitHub private vulnerability reporting or security@fheenv.com, not
+  a public issue.
 </Callout>
 
 ## Core model
 
-Environment content is encrypted locally with a fresh AES-256-GCM key. The encrypted blob is
-uploaded to IPFS; the AES key is split into two FHE ciphertext handles stored on Sepolia. A
-permitted wallet decrypts the handles through the threshold network and decrypts the blob locally.
+Environment content is encrypted locally with a fresh AES-256-GCM key. Only the encrypted blob
+reaches IPFS. The key is split into two FHE ciphertext handles on the supported CoFHE testnet. A
+permitted signer obtains a CoFHE permit, decrypts the handles through the threshold network, and
+decrypts the blob locally.
 
-## What is protected
+## Protected boundaries
 
-| Threat                    | Current protection                              |
-| ------------------------- | ----------------------------------------------- |
-| IPFS or gateway access    | The blob is AES-256-GCM encrypted               |
-| Public chain inspection   | The AES key is stored as FHE ciphertext handles |
-| fheENV service compromise | No fheENV server stores plaintext               |
-| Network interception      | HTTPS plus encrypted application data           |
+| Threat                     | Protection                                                           |
+| -------------------------- | -------------------------------------------------------------------- |
+| IPFS/gateway disclosure    | AES-256-GCM ciphertext                                               |
+| Public chain inspection    | FHE ciphertext handles                                               |
+| fheENV service compromise  | No service-side plaintext or signing key                             |
+| Credential file disclosure | v2 config stores references only                                     |
+| Desktop credential theft   | Native OS credential store                                           |
+| Arbitrary KMS signing      | Local chain/contract/selector/value/gas/fee policy                   |
+| External process abuse     | Absolute executable, no shell, minimal environment, bounded protocol |
+
+Production signing keys remain in WalletConnect wallets, Ledger secure elements, AWS KMS, or an
+external custody system. WalletConnect session state is AES-256-GCM encrypted with a random key held
+in the native credential store. The development-only local keyfile is scrypt-derived AES-256-GCM
+with mode `0600`.
 
 ## Important limits
 
-- A compromised client can expose its key and any plaintext it decrypts.
-- `~/.fheenv/wallet.json` is a plaintext private-key JSON file protected by filesystem mode `0600`;
-  it is not passphrase-encrypted.
-- The contract has no `revokeAllow` operation. `team remove` only marks a member inactive. You must
-  run `fheenv rotate` with the source environment file to replace old FHE handles.
-- Rotation cannot make plaintext or old encrypted blobs already copied by a former member disappear.
-- The current contract supports project creation, owner addition, environment updates, grants, and
-  revocations. It does not provide expiring grants, a Rotator role, scheduled rotation, or Lit/OIDC
-  signing.
+- A compromised client, wallet, signer provider, or authorized process can expose plaintext it
+  legitimately decrypts.
+- CoFHE has no `revokeAllow` for an existing handle. `team remove` must rotate to new handles;
+  copied old plaintext cannot be recalled.
+- Native keyrings depend on an unlocked macOS/Windows user session or a Linux Secret Service/D-Bus
+  session. Production fails rather than falling back.
+- Local KMS policy reduces accidental misuse but does not contain a fully compromised workload. IAM
+  and organization policy are authoritative.
+- The external signer executable is part of the trusted computing base.
+- Analytics are opt-in and minimal; local audit export is not a durable SOC 2 ledger.
+- Current chain support is limited by CoFHE network availability. The product is not represented as
+  mainnet-supported until the protocol is available and the deployment is separately audited.
 
-## Access control
+## Authorization
 
+```text
+Proxy multisig ──► authorize UUPS implementation upgrades
+Primary owner  ──► project operations and co-owner removal
+Co-owner       ──► environment updates and member grants/revocations
+Member         ──► decrypt current handles when CoFHE permits it
 ```
-Project owner ──► create projects, update environments, grant/revoke members, add owners
-Member        ──► decrypt an environment when permitted on its current FHE handles
-```
 
-Owners are stored on-chain. Members are tracked per project and environment. The FHE permission on a
-handle is the cryptographic gate, so rotating after a removal is essential.
+The UUPS proxy owner and project owners are distinct roles. Production must place proxy ownership in
+a Safe or equivalent multisig, preferably with a timelock. Project primary ownership should also use
+organization-controlled signing where practical.
 
 ## Data at rest
 
-| Data                       | Location                | Protection                |
-| -------------------------- | ----------------------- | ------------------------- |
-| `.env` plaintext           | Local machine           | Local filesystem controls |
-| Encrypted environment blob | IPFS                    | AES-256-GCM               |
-| AES key handles            | Sepolia                 | FHE ciphertexts           |
-| Wallet private key         | `~/.fheenv/wallet.json` | Filesystem mode `0600`    |
+| Data                  | Location                          | Protection                        |
+| --------------------- | --------------------------------- | --------------------------------- |
+| Source `.env`         | Operator machine                  | Filesystem and endpoint controls  |
+| Encrypted environment | IPFS                              | AES-256-GCM                       |
+| AES key handles       | CoFHE-supported chain             | FHE ciphertext                    |
+| Credential values     | Native store or selected provider | Provider controls                 |
+| WalletConnect state   | Local state file                  | AES-256-GCM; key in native store  |
+| Development signer    | `~/.fheenv/wallet.json`           | scrypt + AES-256-GCM, mode `0600` |
 
-## Audit evidence
+## Incident response
 
-The dashboard exports public on-chain events: project creation, owner addition, environment updates,
-access grants, and access revocations. It derives the transaction sender from the public chain
-indexer. The contract does not emit a prior CID or IPFS unpin status, so those are not represented
-as authoritative audit evidence.
+Follow the
+[credential compromise runbook](https://github.com/Team-Managed/fheENV/blob/main/docs/runbooks/credential-compromise.md)
+and
+[signer rotation runbook](https://github.com/Team-Managed/fheENV/blob/main/docs/runbooks/signer-rotation.md).
+Rotation must capture detection, containment, authorization updates, validation, revocation, and
+durable evidence.

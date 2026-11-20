@@ -1,101 +1,79 @@
 ---
 title: Smart Contract
-description: fheENVRegistry.sol — the on-chain registry for all projects and environments
+description: UUPS registry, authorization, FHE storage, and deployment boundary
 ---
 
 # Smart Contract
 
-## Overview
+`fheENVRegistry.sol` is the implementation behind an ERC-1967 UUPS proxy on Ethereum Sepolia. It
+stores project authorization, encrypted environment metadata, and CoFHE `euint128` AES-key handles.
 
-`fheENVRegistry.sol` is a single Solidity contract deployed on Ethereum Sepolia that manages:
-
-- Project creation and ownership
-- Environment storage (FHE-encrypted AES key handles + IPFS CID)
-- Access control (per-environment, per-address)
-
-**Address:**
+**Current proxy:**
 [`0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2`](https://sepolia.etherscan.io/address/0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2)
 
-**Solidity version:** 0.8.25
+## Roles
 
-**Dependencies:** `@fhenixprotocol/cofhe-contracts/FHE.sol`
+| Role                  | Authority                                                    |
+| --------------------- | ------------------------------------------------------------ |
+| Proxy owner           | Authorize UUPS implementation upgrades                       |
+| Project primary owner | Manage project, remove co-owners, transfer primary ownership |
+| Project co-owner      | Update environments and grant/revoke members                 |
+| Member                | Decrypt current environment handles when permitted           |
 
-## Data Structures
+The proxy owner must be a Safe or equivalent multisig in production, preferably behind a timelock.
+It is separate from per-project ownership.
 
-### Project
+## Project management
 
-```solidity
-struct Project {
-    string   name;          // 1-64 characters
-    address  primaryOwner;  // can transfer ownership
-    uint256  createdAt;
-    bool     exists;
-}
-```
+| Function                                | Access        | Purpose                                        |
+| --------------------------------------- | ------------- | ---------------------------------------------- |
+| `createProject(name)`                   | Anyone        | Create a project; caller becomes primary owner |
+| `addOwner(projectId, address)`          | Project owner | Add a co-owner                                 |
+| `removeOwner(projectId, address)`       | Primary owner | Remove a co-owner                              |
+| `transferOwnership(projectId, address)` | Primary owner | Replace primary owner and revoke caller        |
 
-### Environment
+The primary owner cannot remove itself with `removeOwner`; it must transfer ownership.
 
-```solidity
-struct Environment {
-    euint128 aesKeyHigh;   // upper 16 bytes of AES-256 key (FHE encrypted)
-    euint128 aesKeyLow;    // lower 16 bytes of AES-256 key (FHE encrypted)
-    string   blobCid;      // IPFS CID of AES-GCM encrypted .env blob
-    uint256  version;      // optimistic locking counter
-    uint256  updatedAt;
-    bool     initialized;
-}
-```
+## Environment and access
 
-## Functions
+| Function                 | Access        | Purpose                                                    |
+| ------------------------ | ------------- | ---------------------------------------------------------- |
+| `updateEnvironment(...)` | Project owner | Validate optimistic version, store new FHE handles and CID |
+| `getEnvironment(...)`    | Anyone        | Read ciphertext handles, CID, version, timestamp           |
+| `grantAccess(...)`       | Project owner | Permit one member on current handles                       |
+| `batchGrantAccess(...)`  | Project owner | Permit up to 100 members                                   |
+| `revokeAccess(...)`      | Project owner | Mark member inactive and emit revocation                   |
+| `hasAccess(...)`         | Anyone        | Read membership state                                      |
 
-### Project Management
+`revokeAccess` cannot revoke a CoFHE permission already attached to the current handles. The CLI
+rotates the AES key and handles by default after removal.
 
-| Function                                | Access | Description                             |
-| --------------------------------------- | ------ | --------------------------------------- |
-| `createProject(name)`                   | Anyone | Creates project, caller becomes owner   |
-| `addOwner(projectId, address)`          | Owner  | Add a co-owner                          |
-| `transferOwnership(projectId, address)` | Owner  | Transfer primary ownership, revoke self |
+## Upgrade safety
 
-### Environment Management
+The implementation disables direct initialization. `initialize(initialOwner)` runs once through the
+proxy. `_authorizeUpgrade` is guarded by OpenZeppelin `onlyOwner`. Every upgrade must:
 
-| Function                                                                               | Access | Description                          |
-| -------------------------------------------------------------------------------------- | ------ | ------------------------------------ |
-| `updateEnvironment(projectId, envName, inKeyHigh, inKeyLow, blobCid, expectedVersion)` | Owner  | Push new encrypted environment       |
-| `getEnvironment(projectId, envName)`                                                   | Anyone | Read handles + CID (still encrypted) |
-| `envNameToHash(envName)`                                                               | Anyone | Get keccak256 hash of env name       |
+1. preserve and validate storage layout;
+2. deploy and verify the new implementation;
+3. pass contract, upgrade, and CLI compatibility tests;
+4. receive multisig/timelock approval;
+5. execute `upgradeToAndCall` through the proxy;
+6. verify implementation slot, owner, state, events, and application reads;
+7. retain proposal, reviews, simulation, transaction, and validation evidence.
 
-### Access Control
+## Security properties
 
-| Function                                          | Access | Description                         |
-| ------------------------------------------------- | ------ | ----------------------------------- |
-| `grantAccess(projectId, envName, member)`         | Owner  | Grant single address decrypt access |
-| `batchGrantAccess(projectId, envName, members[])` | Owner  | Grant up to 100 addresses at once   |
-| `revokeAccess(projectId, envName, member)`        | Owner  | Mark member inactive (soft revoke)  |
-| `hasAccess(projectId, envName, member)`           | Anyone | Check if address has access         |
+- Optimistic locking rejects concurrent environment overwrites.
+- Inputs validate project names, addresses, CIDs, and batch limits.
+- State updates precede FHE permission interactions.
+- Only FHE handles and encrypted blobs are public; no environment plaintext is written to chain.
+- Upgrades are explicit and access-controlled; they are not trustless.
 
-## Events
+## Deployment boundary
 
-```solidity
-event ProjectCreated(uint256 indexed projectId, address indexed owner, string name);
-event EnvironmentUpdated(uint256 indexed projectId, bytes32 indexed envHash, string blobCid, uint256 version);
-event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
-event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member);
-event OwnerAdded(uint256 indexed projectId, address indexed newOwner);
-```
-
-## Security Properties
-
-1. **Optimistic locking** — `expectedVersion` must match current version, preventing silent
-   overwrites from concurrent pushes
-2. **CEI pattern** — state changes happen before external interactions (FHE calls)
-3. **Input validation** — project names 1-64 chars, non-zero addresses, batch max 100
-4. **No plaintext on-chain** — only FHE ciphertext handles and encrypted IPFS CIDs
-5. **No admin backdoor** — no pause, no upgrade, no special access for deployer
-
-## Limitations
-
-- **No `removeOwner`** — owners can only be added or transferred. Design choice for simplicity.
-- **Soft revoke only** — `revokeAccess` marks inactive but doesn't revoke FHE permits. Rotation
-  required.
-- **No proxy/upgrade** — contract is immutable once deployed. Bugs require redeployment.
-- **Sepolia only** — currently deployed on testnet. Mainnet deployment planned.
+The current deployment is a CoFHE-supported testnet pilot. Testnet tokens, relayers, RPCs, and
+protocol services have no production availability or economic guarantees. A mainnet deployment
+requires CoFHE mainnet support, independent contract and client audits, multisig/timelock
+governance, monitoring, incident drills, supported-chain configuration, and a separately approved
+deployment record. Cheaper EVM chains such as Base or Arbitrum are usable only after CoFHE supports
+the selected network and all integration tests pass there.

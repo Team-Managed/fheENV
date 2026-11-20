@@ -15,6 +15,7 @@ export default tseslint.config(
       "**/typechain-types/**",
       "**/coverage/**",
       "**/.source/**",
+      "frontend/**",
     ],
   },
   {
@@ -27,6 +28,23 @@ export default tseslint.config(
       "@typescript-eslint/no-require-imports": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "no-console": "off",
+    },
+  },
+  {
+    files: ["cli/test/**/*.js"],
+    languageOptions: {
+      globals: {
+        afterEach: "readonly",
+        beforeEach: "readonly",
+        Buffer: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        process: "readonly",
+        require: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 );

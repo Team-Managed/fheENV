@@ -70,32 +70,25 @@ npm link            # makes `fheenv` available globally
 
 ### Authentication
 
-The CLI needs an Ethereum private key to sign transactions and decrypt FHE handles. There are two ways to provide it:
-
-#### Option A — `fheenv login` (interactive / developer use)
-
-```bash
-# Interactive: key is not echoed to the terminal
-fheenv login
-
-# Pipe from an env var: avoids shell history entirely
-echo $PRIVATE_KEY | fheenv login
-```
-
-Saves the key to `~/.fheenv/wallet.json` with `chmod 600`. All subsequent commands read from there automatically. Only needed once per machine.
-
-> **⚠ Deprecated:** `fheenv login --key 0x...` is still accepted for backward compatibility but prints a warning — the key is visible in `ps aux` output and written to shell history.
-
-#### Option B — `FHEENV_PRIVATE_KEY` env var (CI/CD)
+Production mode keeps Ethereum signing keys outside fheENV. WalletConnect is
+the default for interactive users; Ledger provides USB hardware signing. AWS
+KMS secp256k1 and the external signer protocol support headless workloads. The
+passphrase-encrypted local signer is retained only for explicit development
+mode.
 
 ```bash
-export FHEENV_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
-node dist/index.js pull --env production
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
+fheenv credentials status
+
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
 ```
 
-The env var takes priority over the keyfile. Use a scoped read-only wallet for CI pipelines.
-
-> **Never commit your private key.** The `.fheenv.json` project config (committed) contains no secrets — only the registry address, RPC URL, and project ID.
+Secret input is hidden. Use `--stdin` only when deliberately piping a value.
+The native backend is macOS Keychain, Windows Credential Manager, or Linux
+Secret Service. Headless systems can select `env://NAME` or
+`exec://provider/key` explicitly.
 
 ---
 
@@ -105,33 +98,53 @@ Every command (except `login`) reads this file from the current directory. `fhee
 
 ```json
 {
+  "version": 2,
   "projectId": 0,
   "registryAddress": "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2",
-  "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": 11155111,
-  "pinataJwt": "eyJhbGc..."
+  "rpc": { "url": "https://ethereum-sepolia-rpc.publicnode.com" },
+  "deployedAtBlock": 1234567,
+  "securityMode": "production",
+  "signer": {
+    "type": "walletconnect",
+    "credentialRef": "keyring://walletconnect/project-id",
+    "expectedAddress": "0x..."
+  },
+  "storage": {
+    "provider": "pinata",
+    "credentialRef": "keyring://storage/pinata/default"
+  }
 }
 ```
 
-Commit this file to your repo. It contains no secrets.
+The v2 file contains public metadata and credential references, not values.
+Migrate legacy configuration with:
+
+```bash
+fheenv migrate credentials \
+  --storage-credential keyring://storage/pinata/default \
+  --walletconnect-credential keyring://walletconnect/project-id \
+  --dry-run
+```
 
 ---
 
 ### Commands
 
-#### `fheenv login`
-
-Save a private key to the local keyfile.
+#### `fheenv signer`
 
 ```bash
-fheenv login --key 0xABC123...
+fheenv signer configure walletconnect \
+  --credential keyring://walletconnect/project-id
+fheenv signer configure ledger --derivation-path "44'/60'/0'/0/0"
+fheenv signer configure aws-kms --key-id <arn> --expected-address 0x...
+fheenv signer configure external --provider turnkey --expected-address 0x...
+fheenv signer status
 ```
 
-| Flag                     | Description                         |
-| ------------------------ | ----------------------------------- |
-| `-k, --key <privateKey>` | 0x-prefixed 64-hex-char private key |
-
-Stores at `~/.fheenv/wallet.json` (permissions `0600`).
+WalletConnect and Ledger prove the selected address before persisting it. AWS
+uses the default AWS SDK credential chain. The external provider executable is
+configured with `FHEENV_EXTERNAL_SIGNER_<PROVIDER>` and must be absolute.
 
 ---
 
@@ -144,17 +157,18 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://ethereum-sepolia-rpc.publicnode.com \
-  --chain-id 11155111 \
-  --pinata-jwt eyJhbGc...
+  --chain-id 11155111
 ```
 
-| Flag                       | Default  | Description                     |
-| -------------------------- | -------- | ------------------------------- |
-| `-n, --name <name>`        | required | Project name (1–64 chars)       |
-| `-r, --registry <address>` | required | fheENVRegistry contract address |
-| `--rpc <url>`              | required | Sepolia RPC endpoint            |
-| `--chain-id <id>`          | required | `11155111` for Sepolia          |
-| `--pinata-jwt <jwt>`       | required | Pinata JWT for IPFS uploads     |
+| Flag                         | Default       | Description                     |
+| ---------------------------- | ------------- | ------------------------------- |
+| `-n, --name <name>`          | required      | Project name (1–64 chars)       |
+| `-r, --registry <address>`   | required      | fheENVRegistry contract address |
+| `--rpc <url>`                | required      | Sepolia RPC endpoint            |
+| `--chain-id <id>`            | required      | `11155111` for Sepolia          |
+| `--storage-credential <ref>` | keyring       | Pinata credential reference     |
+| `--signer <type>`            | WalletConnect | Production signer type          |
+| `--analytics`                | disabled      | Opt in to minimal CLI analytics |
 
 Creates `.fheenv.json` in the current directory. Run once per project.
 
@@ -249,18 +263,22 @@ Calls `grantAccess(projectId, envName, memberAddress)` on Sepolia. After this, t
 
 #### `fheenv team remove`
 
-Revoke a teammate's access.
+Revoke a teammate and rotate the environment key by default.
 
 ```bash
-fheenv team remove --member 0xTeammateAddress --env production
+fheenv team remove --member 0xTeammateAddress --env production --file .env
 ```
 
-> ⚠️ **KEY ROTATION REQUIRED.** The contract marks the member inactive, but because CoFHE's ACL is append-only there is no `revokeAllow` primitive. The removed member retains cryptographic access to the current ciphertexts until you run `fheenv rotate`. The CLI prints a prominent warning and tells you exactly what to do.
+The command exits non-zero if revocation succeeds but rotation or member
+regrant fails. `--no-rotate` deliberately leaves access to the current
+ciphertext handles in place.
 
 | Flag                     | Default      | Description                |
 | ------------------------ | ------------ | -------------------------- |
 | `-m, --member <address>` | required     | Ethereum address to revoke |
 | `-e, --env <name>`       | `production` | Environment                |
+| `-f, --file <path>`      | `.env`       | Plaintext source to rotate |
+| `--no-rotate`            | disabled     | Explicitly skip rotation   |
 
 ---
 
@@ -289,6 +307,22 @@ After rotation, any removed members' old FHE permits are worthless — the old c
 | ------------------- | ------------ | ----------------------------- |
 | `-e, --env <name>`  | `production` | Environment to rotate         |
 | `-f, --file <path>` | `.env`       | Local .env file to re-encrypt |
+| `--regrant-only`    | disabled     | Recover member grants only    |
+
+---
+
+#### Local audit and analytics
+
+```bash
+fheenv export-audit --output audit.csv
+fheenv analytics enable
+fheenv analytics status
+fheenv analytics disable
+```
+
+The audit file is local operational evidence, not a durable compliance ledger.
+CLI analytics are disabled by default and exclude wallet, project,
+environment, CID, transaction, argument, path, error, and secret-derived data.
 
 ---
 
@@ -297,8 +331,9 @@ After rotation, any removed members' old FHE permits are worthless — the old c
 ```bash
 # ── Day 1: Setup ──────────────────────────────────────────────────────────────
 
-# 1. Save your wallet (one-time per machine)
-fheenv login --key 0xYOUR_PRIVATE_KEY
+# 1. Store credentials in the native keyring
+fheenv credentials set keyring://walletconnect/project-id
+fheenv credentials set keyring://storage/pinata/default
 
 # 2. Initialize a project in your repo
 cd my-app
@@ -306,8 +341,7 @@ fheenv init \
   --name "my-app" \
   --registry 0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2 \
   --rpc https://ethereum-sepolia-rpc.publicnode.com \
-  --chain-id 11155111 \
-  --pinata-jwt eyJ...
+  --chain-id 11155111
 
 # 3. Push your secrets (assuming .env exists)
 fheenv push --env production
@@ -328,17 +362,15 @@ fheenv run --env production -- node index.js
 
 # ── Day 4: Someone leaves the team ────────────────────────────────────────────
 
-fheenv team remove --member 0xFormerTeammate --env production
-# ⚠️  CLI warns: rotation required
+fheenv team remove --member 0xFormerTeammate --env production --file .env
+# → Revokes and rotates. Partial failure exits non-zero with recovery guidance.
 
-fheenv rotate --env production
-# → New AES key, new IPFS blob, new FHE handles. Former teammate's old permit is worthless.
+# ── CI/CD: organization-managed signing ───────────────────────────────────────
 
-# ── CI/CD: no keyfile, no MetaMask ────────────────────────────────────────────
-
-# In your CI pipeline (GitHub Actions, etc.):
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv pull --env production
-FHEENV_PRIVATE_KEY=${{ secrets.DEPLOY_KEY }} fheenv run --env production -- npm start
+fheenv signer configure aws-kms \
+  --key-id "$FHEENV_AWS_KMS_KEY_ARN" \
+  --expected-address 0x...
+fheenv run --env production -- npm start
 ```
 
 ---
@@ -372,14 +404,18 @@ npx hardhat run scripts/deploy.ts --network sepolia
 
 Copy `.env.example` to `.env`:
 
-| Variable                       | Used by                 | Description                       |
-| ------------------------------ | ----------------------- | --------------------------------- |
-| `SEPOLIA_RPC_URL`              | Hardhat deploy          | Infura / Alchemy Sepolia endpoint |
-| `PRIVATE_KEY`                  | Hardhat deploy          | Deployer wallet private key       |
-| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend                | Deployed contract address         |
-| `NEXT_PUBLIC_CHAIN_ID`         | Frontend                | `11155111` (Sepolia)              |
-| `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend                | Sepolia RPC endpoint              |
-| `PINATA_JWT`                   | Frontend (server) + CLI | Pinata JWT for IPFS uploads       |
+| Variable                       | Used by             | Description                                |
+| ------------------------------ | ------------------- | ------------------------------------------ |
+| `SEPOLIA_RPC_URL`              | Hardhat deploy      | Infura / Alchemy Sepolia endpoint          |
+| `PRIVATE_KEY`                  | Hardhat deploy only | Deployer key; never used by production CLI |
+| `NEXT_PUBLIC_REGISTRY_ADDRESS` | Frontend            | Deployed contract address                  |
+| `NEXT_PUBLIC_CHAIN_ID`         | Frontend            | `11155111` (Sepolia)                       |
+| `NEXT_PUBLIC_SEPOLIA_RPC`      | Frontend            | Sepolia RPC endpoint                       |
+| `PINATA_JWT`                   | Frontend server     | Pinata JWT for server uploads              |
+| `FHEENV_KEY_PASSPHRASE`        | Development CLI     | Local encrypted signer unlock              |
+| `FHEENV_EXTERNAL_SIGNER_*`     | Headless CLI        | Absolute external signer executable        |
+| `FHEENV_ANALYTICS_KEY`         | CLI                 | Optional analytics project key             |
+| `NEXT_PUBLIC_POSTHOG_KEY`      | Frontend            | Optional anonymous page views              |
 
 ---
 

@@ -9,6 +9,7 @@ import { parseAbi, type Address } from "viem";
 export const REGISTRY_ABI = parseAbi([
   "function createProject(string name) returns (uint256)",
   "function addOwner(uint256 projectId, address newOwner)",
+  "function removeOwner(uint256 projectId, address ownerToRemove)",
   "function transferOwnership(uint256 projectId, address newOwner)",
   "function updateEnvironment(uint256 projectId, string envName, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyHigh, (uint256 ctHash, uint8 securityZone, uint8 utype, bytes signature) inKeyLow, string blobCid, uint256 expectedVersion)",
   "function grantAccess(uint256 projectId, string envName, address member)",
@@ -24,9 +25,20 @@ export const REGISTRY_ABI = parseAbi([
   "event AccessGranted(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event AccessRevoked(uint256 indexed projectId, bytes32 indexed envHash, address indexed member)",
   "event OwnerAdded(uint256 indexed projectId, address indexed newOwner)",
+  "event OwnerRemoved(uint256 indexed projectId, address indexed removedOwner)",
 ]);
 
 const DEFAULT_REGISTRY_ADDRESS: Address = "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2";
 
 export const REGISTRY_ADDRESS =
   (process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as Address | undefined) ?? DEFAULT_REGISTRY_ADDRESS;
+
+export function parseDeploymentBlock(value: string | undefined): bigint | null {
+  if (!value || !/^\d+$/.test(value)) return null;
+  return BigInt(value);
+}
+
+// Event-backed screens fail closed when this is missing instead of scanning from genesis.
+export const REGISTRY_DEPLOY_BLOCK = parseDeploymentBlock(
+  process.env.NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK,
+);

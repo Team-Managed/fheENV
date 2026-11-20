@@ -9,7 +9,8 @@ on:
 jobs:
   branch-name:
     name: Branch name check
-    if: github.event_name == 'pull_request'
+    # dev -> main is the release PR, already guarded by "Only dev can target main".
+    if: github.event_name == 'pull_request' && !(github.base_ref == 'main' && github.head_ref == 'dev')
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch naming convention
@@ -75,6 +76,9 @@ jobs:
       - name: ESLint check
         run: pnpm run lint
         working-directory: fheenv
+      - name: Frontend ESLint check
+        run: pnpm run lint
+        working-directory: fheenv/frontend
 
   contracts:
     name: Contracts (compile + test)
@@ -115,6 +119,8 @@ jobs:
         working-directory: fheenv
       - run: npx tsc --noEmit
         working-directory: fheenv/cli
+      - run: pnpm run test:cli
+        working-directory: fheenv
       - run: pnpm run build
         working-directory: fheenv/cli
 
@@ -143,6 +149,7 @@ jobs:
         working-directory: fheenv/frontend
         env:
           NEXT_PUBLIC_REGISTRY_ADDRESS: "0xb9a29d0Cfb402d91c6f70eF117758C118f00F5B2"
+          NEXT_PUBLIC_REGISTRY_DEPLOY_BLOCK: "0"
           NEXT_PUBLIC_CHAIN_ID: "11155111"
           NEXT_PUBLIC_SEPOLIA_RPC: "https://ethereum-sepolia-rpc.publicnode.com"
           PINATA_JWT: "ci-placeholder"

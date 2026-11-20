@@ -1,6 +1,6 @@
 import * as readline from "readline";
 import { Writable } from "stream";
-import { saveWallet } from "../lib/wallet";
+import { migrateLegacyWallet, saveWallet } from "../lib/wallet";
 import chalk from "chalk";
 
 /** Read a full line from non-TTY stdin (piped input). */
@@ -18,7 +18,7 @@ function readStdin(): Promise<string> {
  * Prompt for a secret value on a TTY without echoing characters.
  * Uses a muted Writable so keystrokes are never written to stdout.
  */
-function promptSecret(prompt: string): Promise<string> {
+export function promptSecret(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     let muted = false;
     const output = new Writable({
@@ -51,23 +51,40 @@ function promptSecret(prompt: string): Promise<string> {
   });
 }
 
-export async function loginCommand(opts: { key?: string }): Promise<void> {
+async function readPassphrase(): Promise<string> {
+  const environmentPassphrase = process.env.FHEENV_KEY_PASSPHRASE;
+  if (environmentPassphrase?.trim()) return environmentPassphrase;
+  if (!process.stdin.isTTY) {
+    throw new Error(
+      "FHEENV_KEY_PASSPHRASE is required for non-interactive encrypted wallet storage.",
+    );
+  }
+
+  const passphrase = await promptSecret(chalk.cyan("? ") + "Wallet passphrase (input hidden): ");
+  if (!passphrase.trim()) throw new Error("Passphrase is required for encrypted wallet storage.");
+  const confirmation = await promptSecret(chalk.cyan("? ") + "Confirm passphrase: ");
+  if (passphrase !== confirmation) throw new Error("Passphrases do not match.");
+  return passphrase;
+}
+
+export async function loginCommand(opts: { migrate?: boolean }): Promise<void> {
+  if (opts.migrate) {
+    migrateLegacyWallet(await readPassphrase());
+    console.log(
+      chalk.green("✓ Legacy wallet migrated to AES-256-GCM encrypted storage (permissions: 0600)"),
+    );
+    return;
+  }
+
   let key: string | undefined;
 
   if (process.env.FHEENV_PRIVATE_KEY) {
-    // CI-preferred path — never echoed, not in shell history
+    // Backward-compatible development path. Production mode rejects this signer.
     key = process.env.FHEENV_PRIVATE_KEY;
-    console.log(chalk.dim("Using FHEENV_PRIVATE_KEY from environment."));
-  } else if (opts.key) {
-    // Deprecated: key appears in `ps aux` output and shell history
-    key = opts.key;
     console.warn(
       chalk.yellow(
-        "\u26a0  --key is deprecated: the private key is visible in shell history\n" +
-          "   and process listings. Use a secure alternative instead:\n" +
-          "     \u2022 Pipe:     echo $PRIVATE_KEY | fheenv login\n" +
-          "     \u2022 CI/CD:    export FHEENV_PRIVATE_KEY=0x...\n" +
-          "     \u2022 Prompt:   fheenv login  (hides input)\n",
+        "\u26a0  FHEENV_PRIVATE_KEY is supported only for development migration.\n" +
+          "   Production projects must use WalletConnect, Ledger, AWS KMS, or an external signer.\n",
       ),
     );
   } else if (!process.stdin.isTTY) {
@@ -78,11 +95,17 @@ export async function loginCommand(opts: { key?: string }): Promise<void> {
     key = await promptSecret(chalk.cyan("? ") + "Private key (input hidden): ");
   }
 
-  if (!key) throw new Error("No private key provided.");
+  if (!key) throw new Error("No development key provided.");
   if (!key.match(/^0x[0-9a-fA-F]{64}$/)) {
     throw new Error("Invalid private key format. Must be a 0x-prefixed 32-byte hex string.");
   }
-  saveWallet(key);
-  console.log(chalk.green("\u2713 Wallet saved to ~/.fheenv/wallet.json (permissions: 0600)"));
-  console.log(chalk.yellow("  Keep your private key secure. Never commit it to version control."));
+  saveWallet(key, await readPassphrase());
+  console.log(
+    chalk.green(
+      "\u2713 Wallet saved to ~/.fheenv/wallet.json (AES-256-GCM encrypted, permissions: 0600)",
+    ),
+  );
+  console.log(
+    chalk.dim("  Set FHEENV_KEY_PASSPHRASE through your secure local secret source to unlock it."),
+  );
 }
