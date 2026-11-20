@@ -9,7 +9,8 @@ on:
 jobs:
   branch-name:
     name: Branch name check
-    if: github.event_name == 'pull_request'
+    # dev -> main is the release PR, already guarded by "Only dev can target main".
+    if: github.event_name == 'pull_request' && !(github.base_ref == 'main' && github.head_ref == 'dev')
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch naming convention
